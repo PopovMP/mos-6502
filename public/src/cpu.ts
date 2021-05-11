@@ -90,15 +90,15 @@ class Cpu {
 	}
 
 	public run(): void {
+		this.isStopRequired = false
+
 		while (!this.isStopRequired) {
 			this.step()
 		}
 	}
 
 	public step(): boolean {
-		if (this.isStopRequired) {
-			return true
-		}
+		this.isStopRequired = false
 
 		const opc: number  = this.memory[this.PC]
 		const name: string = this.dataSheet.opCodeName[opc]

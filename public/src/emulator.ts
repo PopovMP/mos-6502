@@ -25,8 +25,11 @@ class Emulator {
 
 		this.codeEditor.addEventListener('keydown', this.codeEditor_keyDown.bind(this))
 
-		const btnGenerateCode: HTMLElement = document.getElementById('btn-generate-code') as HTMLElement
-		btnGenerateCode.addEventListener('click', this.btnGenerateCode_click.bind(this))
+		const btnLoadCode: HTMLElement = document.getElementById('btn-load-code') as HTMLElement
+		btnLoadCode.addEventListener('click', this.btnLoadCode_click.bind(this))
+
+		const btnCpuReset: HTMLElement = document.getElementById('btn-cpu-reset') as HTMLElement
+		btnCpuReset.addEventListener('click', this.btnReset_click.bind(this))
 
 		const btnCpuStep: HTMLElement = document.getElementById('btn-cpu-step') as HTMLElement
 		btnCpuStep.addEventListener('click', this.btnCpuStep_click.bind(this))
@@ -35,13 +38,13 @@ class Emulator {
 		btnCpuDebug.addEventListener('click', this.btnDebug_click.bind(this))
 
 		const btnCpuStop: HTMLElement = document.getElementById('btn-cpu-stop') as HTMLElement
-		btnCpuStop.addEventListener('click', this.btnStop_click.bind(this))
+		btnCpuStop.addEventListener('click', this.btnPause_click.bind(this))
 
 		const btnCpuRun: HTMLElement = document.getElementById('btn-cpu-run') as HTMLElement
 		btnCpuRun.addEventListener('click', this.btnRun_click.bind(this))
 	}
 
-	private btnGenerateCode_click(event: Event): void {
+	private btnLoadCode_click(event: Event): void {
 		event.preventDefault()
 
 		const sourceCode = this.codeEditor.value
@@ -72,7 +75,6 @@ class Emulator {
 
 		try {
 			this.assembler.load(sourceCode, this.memory)
-			this.cpu.reset()
 		}
 		catch (e) {
 			this.terminal.innerText += e.message
@@ -96,6 +98,14 @@ class Emulator {
 			'---------------------------------------------------------\n' +
 			Assembler.hexDump(codePages)
 
+	}
+
+	private btnReset_click(event: Event): void {
+		event.preventDefault()
+
+		this.isStopRequired = true
+		this.cpu.reset()
+		this.dump()
 	}
 
 	private btnCpuStep_click(event: Event): void {
@@ -152,7 +162,7 @@ class Emulator {
 		}
 	}
 
-	private btnStop_click(event: Event): void {
+	private btnPause_click(event: Event): void {
 		event.preventDefault()
 
 		this.isStopRequired = true

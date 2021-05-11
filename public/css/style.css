@@ -64,6 +64,14 @@ button {
     background-color: cornflowerblue;
 }
 
+.btn-warning {
+    background-color: coral;
+}
+
+.btn-success {
+    background-color: green;
+}
+
 textarea::-webkit-scrollbar {
     width: 11px;
 }
