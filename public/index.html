@@ -13,6 +13,8 @@
   <div class="row center">
       <label for="source-code" style="display: none">Source Code</label>
       <textarea id="source-code" spellcheck="false">
+        ; Fibonacci numbers
+
         * = $0800
 
         maxCnt   = $00
@@ -30,10 +32,10 @@
         LDX #1             ; Current numbers count
 
 loop
-        LDA currFibo
         CPX maxCnt
         BEQ exit           ; Exit if max count reached
 
+        LDA currFibo
         STA temp
         CLC
         ADC prevFibo
@@ -45,6 +47,7 @@ loop
         JMP loop
 
 exit
+        LDA currFibo       ; Load final Fibo in A
         BRK
       </textarea>
   </div>
