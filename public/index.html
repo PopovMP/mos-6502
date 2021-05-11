@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MOS 6502 emulator</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<h1 id="header">MOS 6502 emulator</h1>
+
+<div class="container">
+  <div class="row center">
+      <label for="source-code" style="display: none">Source Code</label>
+      <textarea id="source-code" spellcheck="false">
+        * = $0800
+
+        maxCnt   = $00
+        prevFibo = $01
+        currFibo = $02
+        temp     = $03
+
+
+        LDA #13            ; Numbers to find
+        STA maxCnt
+        LDA #0
+        STA prevFibo
+        LDA #1
+        STA currFibo
+        LDX #1             ; Current numbers count
+
+loop
+        LDA currFibo
+        CPX maxCnt
+        BEQ exit           ; Exit if max count reached
+
+        STA temp
+        CLC
+        ADC prevFibo
+        STA currFibo
+        LDA temp
+        STA prevFibo
+
+        INX
+        JMP loop
+
+exit
+        BRK
+      </textarea>
+  </div>
+
+  <div class="row center">
+      <button class="btn-success inverse"  id="btn-generate-code">Generate Code</button>
+      <button class="btn-primary"   id="btn-cpu-step">Step</button>
+      <button class="btn-primary"   id="btn-cpu-debug">Debug</button>
+      <button class="btn-secondary" id="btn-cpu-stop">Pause</button>
+      <button class="btn-success inverse"  id="btn-cpu-run">Run</button>
+  </div>
+
+  <div class="row center">
+    <div id="terminal">
+    </div>
+  </div>
+</div>
+
+<script>
+    'use strict';
+    const module = { exports: {} }
+</script>
+<script src="js/index.js"></script>
+<script>
+    let emu
+    window.addEventListener("load", () => {
+        emu = new Emulator()
+        emu.initialize()
+    })
+</script>
+</body>
+</html>
