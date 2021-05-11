@@ -53,7 +53,7 @@ class Emulator {
 		}
 
 		this.cpu.stop()
-		this.isStopRequired = false
+		this.isStopRequired = true
 		this.terminal.innerText = ''
 		this.memory.fill(0x00)
 
@@ -131,7 +131,7 @@ class Emulator {
 
 	private debugLoop() {
 		if (this.isStopRequired) {
-			return;
+			return
 		}
 
 		try {
@@ -139,7 +139,7 @@ class Emulator {
 			this.dump()
 
 			if (isReady) {
-				return;
+				return
 			}
 		}
 		catch (e) {
