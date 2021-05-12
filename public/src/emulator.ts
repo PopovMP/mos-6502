@@ -74,6 +74,7 @@ class Emulator {
 
 		try {
 			this.assembler.load(sourceCode, this.memory)
+			this.cpu.reset()
 		}
 		catch (e) {
 			this.terminal.innerText += e.message + '\n'
@@ -81,22 +82,18 @@ class Emulator {
 
 		const codePages: CodePages = this.assembler.parse(codeDto)
 		const codeBytes: number[]  = this.assembler.codePagesToBytes(codePages)
-		const disassemblyTokens: DisassemblyToken[] = this.assembler.disassemble(codeBytes, this.cpu.currentPC)
-
-		const output = []
-
-		for (const tkn of disassemblyTokens) {
-			output.push(`$${tkn.address}   ${tkn.code.join(' ').padEnd(8, ' ')}   ${tkn.text.padEnd(13, ' ')}  ; ${tkn.description}`)
-		}
+		const disassembly: string  = this.assembler
+			.disassemble(codeBytes, this.cpu.currentPC)
+			.map(tkn => `$${tkn.address}   ${tkn.code.join(' ').padEnd(8, ' ')}   ${tkn.text.padEnd(13, ' ')}  ; ${tkn.description}`)
+			.join('\n')
 
 		this.terminal.innerText = '' +
 			'                       Disassembly\n' +
 			'---------------------------------------------------------\n' +
-			output.join('\n') + '\n\n\n' +
+			disassembly + '\n\n\n' +
 			'                       Object code\n' +
 			'---------------------------------------------------------\n' +
 			Assembler.hexDump(codePages)
-
 	}
 
 	private btnReset_click(event: Event): void {

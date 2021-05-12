@@ -274,7 +274,7 @@ class Assembler {
 	private parseInstructions(codeDtoPassOne: CodeTokenDto): InstructionToken[] {
 		const instructionTokens: InstructionToken[] = []
 
-		let pc = 0
+		let pc = 0x0800 // Default PC
 
 		for (const token of codeDtoPassOne.codeTokens) {
 			if (token.tokenType === 'set-pc') {
@@ -288,12 +288,12 @@ class Assembler {
 				continue
 			}
 
-			const name = token.instrName
-			const line = token.codeLine
+			const name: string = token.instrName
+			const line: string = token.codeLine
 
 			// OPC ; Implied
 			if (name === line) {
-				const opc = this.dataSheet.getOpc(name, 'IMPL')
+				const opc: number = this.dataSheet.getOpc(name, 'IMPL')
 				instructionTokens.push({pc, opc, name, bytes : [opc]})
 				pc += this.dataSheet.opCodeBytes[opc]
 				continue
@@ -301,17 +301,17 @@ class Assembler {
 
 			// BCC $FF   ; Relative
 			// BCC LABEL ; Relative
-			if (['BPL', 'BMI', 'BVC', 'BVS', 'BCC', 'BCS', 'BNE', 'BEQ'].includes(name)) {
-				const opc = this.dataSheet.getOpc(name, 'REL')
-				const operandText: string = line.slice(4)
+			if ( ['BPL', 'BMI', 'BVC', 'BVS', 'BCC', 'BCS', 'BNE', 'BEQ'].includes(name) ) {
+				const opc: number            = this.dataSheet.getOpc(name, 'REL')
+				const operandText: string    = line.slice(4)
 				const value: number | string = this.parseValue(operandText, codeDtoPassOne.labels)
 				instructionTokens.push(typeof value === 'number' ? {
-					pc, opc, name,
-					bytes: [opc, value - pc - 2],
-				} : {
-					pc, opc, name,
-					bytes: [opc, NaN],
-					labelRequired: value,
+						pc, opc, name,
+						bytes: [opc, value - pc - 2],
+					} : {
+						pc, opc, name,
+						bytes: [opc, NaN],
+						labelRequired: value,
 				})
 				pc += this.dataSheet.opCodeBytes[opc]
 				continue
@@ -320,7 +320,7 @@ class Assembler {
 			// OPC #$FF ; Immediate
 			const matchIMM = /^[A-Z]{3} #([$%]?[0-9A-Z]+)$/.exec(line)
 			if (matchIMM) {
-				const opc = this.dataSheet.getOpc(name, 'IMM')
+				const opc: number   = this.dataSheet.getOpc(name, 'IMM')
 				const value: number = this.parseValue(matchIMM[1]) as number
 				instructionTokens.push({pc, opc, name, bytes : [opc, value]})
 				pc += this.dataSheet.opCodeBytes[opc]
@@ -334,14 +334,14 @@ class Assembler {
 
 				// Zero Page
 				if (typeof value === 'number' && value >= 0x00 && value <= 0xFF) {
-					const opc = this.dataSheet.getOpc(name, 'ZP')
+					const opc: number = this.dataSheet.getOpc(name, 'ZP')
 					instructionTokens.push({pc, opc, name, bytes: [opc, value]})
 					pc += this.dataSheet.opCodeBytes[opc]
 					continue
 				}
 
 				// Absolute
-				const opc = this.dataSheet.getOpc(name, 'ABS')
+				const opc: number = this.dataSheet.getOpc(name, 'ABS')
 				instructionTokens.push( getInstrToken(pc, name, opc, value) )
 				pc += this.dataSheet.opCodeBytes[opc]
 				continue
@@ -354,14 +354,14 @@ class Assembler {
 
 				// X-Indexed Zero Page
 				if (typeof value === 'number' && value >= 0x00 && value <= 0xFF) {
-					const opc = this.dataSheet.getOpc(name, 'ZPX')
+					const opc: number = this.dataSheet.getOpc(name, 'ZPX')
 					instructionTokens.push({pc, opc, name, bytes: [opc, value]})
 					pc += this.dataSheet.opCodeBytes[opc]
 					continue
 				}
 
 				// X-Indexed Absolute
-				const opc = this.dataSheet.getOpc(name, 'ABSX')
+				const opc: number = this.dataSheet.getOpc(name, 'ABSX')
 				instructionTokens.push( getInstrToken(pc, name, opc, value) )
 				pc += this.dataSheet.opCodeBytes[opc]
 				continue
@@ -370,18 +370,18 @@ class Assembler {
 			// OPC $FFFF,Y ; Y-Indexed Absolute
 			const matchABSY = /^[A-Z]{3} ([$%]?[0-9A-Z_]+),Y$/.exec(line)
 			if (matchABSY) {
-				const value = this.parseValue(matchABSY[1])
+				const value: string | number = this.parseValue(matchABSY[1])
 
 				// Y-Indexed Zero Page
 				if (typeof value === 'number' && value >= 0x00 && value <= 0xFF) {
-					const opc = this.dataSheet.getOpc(name, 'ZPY')
+					const opc: number = this.dataSheet.getOpc(name, 'ZPY')
 					instructionTokens.push({pc, opc, name, bytes: [opc, value]})
 					pc += this.dataSheet.opCodeBytes[opc]
 					continue
 				}
 
 				// Y-Indexed Absolute
-				const opc = this.dataSheet.getOpc(name, 'ABSY')
+				const opc: number = this.dataSheet.getOpc(name, 'ABSY')
 				instructionTokens.push( getInstrToken(pc, name, opc, value) )
 				pc += this.dataSheet.opCodeBytes[opc]
 				continue
@@ -390,7 +390,7 @@ class Assembler {
 			// OPC ($FFFF) ; Absolut Indirect
 			const matchIND = /^[A-Z]{3} \(([$%]?[0-9A-Z_]+)\)$/.exec(line)
 			if (matchIND) {
-				const opc = this.dataSheet.getOpc(name, 'IND')
+				const opc: number = this.dataSheet.getOpc(name, 'IND')
 				const value: number | string = this.parseValue(matchIND[1], codeDtoPassOne.labels)
 				instructionTokens.push( getInstrToken(pc, name, opc, value) )
 				pc += this.dataSheet.opCodeBytes[opc]
@@ -400,7 +400,7 @@ class Assembler {
 			// OPC ($FF,X) ; X-Indexed Zero Page Indirect
 			const matchINDX = /^[A-Z]{3} \(([$%]?[0-9A-Z]+),X\)$/.exec(line)
 			if (matchINDX) {
-				const opc = this.dataSheet.getOpc(name, 'INDX')
+				const opc: number   = this.dataSheet.getOpc(name, 'INDX')
 				const value: number = this.parseValue(matchINDX[1]) as number
 				instructionTokens.push({pc, opc, name, bytes: [opc, value]})
 				pc += this.dataSheet.opCodeBytes[opc]
@@ -410,7 +410,7 @@ class Assembler {
 			// OPC ($FF),Y ; Zero Page Indirect Y-Indexed
 			const matchINDY = /^[A-Z]{3} \(([$%]?[0-9A-Z]+)\),Y$/.exec(line)
 			if (matchINDY) {
-				const opc: number = this.dataSheet.getOpc(name, 'INDY')
+				const opc: number   = this.dataSheet.getOpc(name, 'INDY')
 				const value: number = this.parseValue(matchINDY[1]) as number
 				instructionTokens.push({pc, opc, name, bytes: [opc, value]})
 				pc += this.dataSheet.opCodeBytes[opc]
@@ -418,8 +418,7 @@ class Assembler {
 			}
 
 			instructionTokens.push({
-				pc,
-				name,
+				pc, name,
 				opc: NaN,
 				bytes: [],
 				error: `Cannot parse instruction:  ${line}`,
@@ -430,13 +429,13 @@ class Assembler {
 
 		function getInstrToken(pc: number, name: string, opc: number, value: number | string): InstructionToken {
 			return typeof value === 'number' ? {
-				pc, opc, name,
-				bytes: [opc, value & 0xFF, (value >> 8) & 0xFF],
-			} : {
-				pc, opc, name,
-				bytes: [opc, NaN, NaN],
-				labelRequired: value,
-			}
+					pc, opc, name,
+					bytes: [opc, value & 0xFF, (value >> 8) & 0xFF],
+				} : {
+					pc, opc, name,
+					bytes: [opc, NaN, NaN],
+					labelRequired: value,
+				}
 		}
 	}
 

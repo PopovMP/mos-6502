@@ -35,6 +35,33 @@ describe('CPU - addressing modes', () => {
 		})
 	})
 
+	describe('(variable,X)', () => {
+		const sourceCode = `
+			* = $0800
+			var = $00
+			
+			LDX #$01
+			
+			LDA #$05
+			STA $01
+			
+			LDA #$07
+			STA $02
+			
+			LDY #$0A
+			STY $0705
+			
+			LDA (var,X)
+		`
+		assembler.load(sourceCode, memory)
+		cpu.reset()
+		cpu.run()
+
+		it('Gets correct value', () => {
+			strictEqual(cpu.A, 0x0A)
+		})
+	})
+
 	describe('($nn),Y', () => {
 		const sourceCode = `
 			* = $0800
