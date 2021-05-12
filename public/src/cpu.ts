@@ -357,9 +357,7 @@ class Cpu {
 
 		DEC: (addr: number) => {
 			// Decrement memory By One
-			const val = isNaN(addr)
-				? (this.A = this.A > 0 ? this.A - 1 : 0)
-				: (this.memory[addr] = this.memory[addr] > 0 ? this.memory[addr] - 1 : 0xFF)
+			const val = this.memory[addr] = this.memory[addr] > 0 ? this.memory[addr] - 1 : 0xFF
 			this.setNZ(val)
 			return true
 		},
@@ -387,9 +385,7 @@ class Cpu {
 
 		INC: (addr: number) => {
 			// Increment Memory By One
-			const val = isNaN(addr)
-				? (this.A = this.A < 0xFF ? this.A + 1 : 0)
-				: (this.memory[addr] = this.memory[addr] < 0xFF ? this.memory[addr] + 1 : 0)
+			const val = this.memory[addr] = this.memory[addr] < 0xFF ? this.memory[addr] + 1 : 0
 			this.setNZ(val)
 			return true
 		},
