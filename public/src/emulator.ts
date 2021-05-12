@@ -10,6 +10,7 @@ class Emulator {
 	private terminal: HTMLElement
 
 	private isStopRequired: boolean = false
+	private instructionLog: string[] = []
 
 	constructor() {
 		this.dataSheet = new DataSheet()
@@ -53,9 +54,10 @@ class Emulator {
 		}
 
 		this.cpu.stop()
-		this.isStopRequired = true
-		this.terminal.innerText = ''
 		this.memory.fill(0x00)
+		this.isStopRequired     = true
+		this.terminal.innerText = ''
+		this.instructionLog     = []
 
 		const codeDto: CodeTokenDto = this.assembler.tokenize(sourceCode)
 
@@ -186,10 +188,18 @@ class Emulator {
 		const tokens: DisassemblyToken[] = this.assembler.disassemble(code, pc)
 		const tkn: DisassemblyToken = tokens[0]
 
+		const currentInst = `$${tkn.address}   ${tkn.code.join(' ').padEnd(8, ' ')}   ${tkn.text.padEnd(13, ' ')}  ; ${tkn.description}`
+		this.instructionLog.push(currentInst)
+		this.instructionLog = this.instructionLog.slice(-3)
 
-		return '                         Current Instruction\n' +
-			'-------------------------------------------------------------------------\n' +
-			`$${tkn.address}   ${tkn.code.join(' ').padEnd(8, ' ')}   ${tkn.text.padEnd(13, ' ')}  ; ${tkn.description}`
+		const logText = this.instructionLog.map((line, index) =>
+			index === this.instructionLog.length - 1
+				? ' --> ' + line
+				: '     ' + line
+		).join('\n')
+
+		return '                         Instruction Log\n' +
+			'-------------------------------------------------------------------------\n' + logText
 	}
 
 	private getMemoryDump(): string {
