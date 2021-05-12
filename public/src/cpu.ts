@@ -1,9 +1,9 @@
 // noinspection DuplicatedCode
 
 class Cpu {
-	// The following instructions acts mostly on the address
+	// The following instructions need the address
 	// designated by the operand instead of its value
-	private readonly addressOperands = [
+	private readonly addressInstructions = [
 		'ASL', 'DEC', 'INC', 'LSR', 'JMP', 'JSR', 'ROL', 'ROR', 'STA', 'STX', 'STY'
 	]
 	private readonly dataSheet: DataSheet
@@ -103,12 +103,11 @@ class Cpu {
 		const opc: number  = this.memory[this.PC]
 		const name: string = this.dataSheet.opCodeName[opc]
 		const mode: string = this.dataSheet.opCodeMode[opc]
-		const addr: number = this.effectiveAddress[mode]()
-		const opr: number  = this.addressOperands.includes(name)
-				? addr                      // Instruction needs the address to modify memory
-				: mode === 'IMPL'           // Implied addressing mode doesn't require address
-					? this.A                // However, it may need A register (Accumulator mode)
-					: this.memory[addr]     // Instruction needs the operand value
+		const opr: number  = this.addressInstructions.includes(name)
+				? this.operandAddress[mode]()                   // Instruction needs an effective address
+				: mode === 'IMPL'                               // Implied addressing mode doesn't require address
+					? this.A                                    // However, it may need the A register value
+					: this.memory[this.operandAddress[mode]()]  // Instruction needs the operand value
 		const bytes: number  = this.dataSheet.opCodeBytes[opc]
 		const cycles: number = this.dataSheet.opCodeCycles[opc]
 
@@ -147,8 +146,8 @@ class Cpu {
 		this.isStopRequired = true
 	}
 
-	private readonly effectiveAddress: Record<string, () => number> = {
-		IMPL: () => NaN,
+	private readonly operandAddress: Record<string, () => number> = {
+		IMPL: () => NaN, // Implied and Accumulator modes don't need address
 		IMM : () => this.PC + 1,
 		ZP  : () => this.memory[this.PC + 1],
 		ZPX : () => this.memory[this.PC + 1] + this.X,
