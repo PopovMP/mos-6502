@@ -101,6 +101,10 @@ class Cpu {
 		this.isStopRequired = false
 
 		const opc: number  = this.memory[this.PC]
+		if (opc === undefined) {
+			throw new Error(`Invalid instruction: $${Utils.wordToHex(this.PC)}   ${Utils.byteToHex(opc)}`)
+		}
+
 		const name: string = this.dataSheet.opCodeName[opc]
 		const mode: string = this.dataSheet.opCodeMode[opc]
 		const opr: number  = this.addressInstructions.includes(name)
@@ -108,23 +112,18 @@ class Cpu {
 				: mode === 'IMPL'                               // Implied addressing mode doesn't require address
 					? this.A                                    // However, it may need the A register value
 					: this.memory[this.operandAddress[mode]()]  // Instruction needs the operand value
-		const bytes: number  = this.dataSheet.opCodeBytes[opc]
+
 		const cycles: number = this.dataSheet.opCodeCycles[opc]
 
-		const instrFunction: (opr: number, cycles: number) => boolean = this.instruction[name]
-
-		if (instrFunction === undefined) {
-			throw new Error('Instruction not implemented: ' + name)
-		}
-
-		const isGenericOperation = instrFunction(opr, cycles)
+		const isGenericOperation = this.instruction[name](opr, cycles)
 
 		if (isGenericOperation) {
-			this.PC     += bytes
+			this.PC     += this.dataSheet.opCodeBytes[opc]
 			this.cycles += cycles
 		}
 
 		this.isStopRequired = this.B || this.I || this.memory[this.PC] === 0x00
+
 		return this.isStopRequired
 	}
 
