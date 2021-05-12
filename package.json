@@ -1,12 +1,12 @@
 {
-  "name": "emulator-6502",
+  "name": "mos-6502",
   "version": "1.0.0",
   "description": "MOS 6502 emulator",
-  "author": "PopovMP <info@forexsb.com>",
+  "author": "Popov <info@forexsb.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "popovmp@emulator-6502"
+    "url": "https://github.com/popovmp/mos-6502"
   },
   "keywords": [
     "6502",
@@ -20,6 +20,6 @@
   },
   "scripts": {
     "test": "mocha-tiny",
-    "compile": "tsc --build"
+    "build": "tsc --build"
   }
 }
