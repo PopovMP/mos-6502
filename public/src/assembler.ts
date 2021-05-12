@@ -1,11 +1,12 @@
 // noinspection JSMethodCanBeStatic
 
 type CodeToken = {
-	tokenType: 'label' | 'instruction' | 'set-pc' | 'error',
+	tokenType: 'label' | 'instruction' | 'set-pc' | 'error' | 'directive',
 	instrName: string,
 	codeLine: string,
 	pcValue?: number,
-	error?: string
+	error?: string,
+	directiveData?: string,
 }
 
 type CodeTokenDto = {
@@ -288,6 +289,30 @@ class Assembler {
 				continue
 			}
 
+			// Set directives
+			if (token.tokenType === 'directive') {
+				if (token.instrName === '.BYTE' && token.directiveData) {
+					const bytes: number[] = token.directiveData
+						.split(/,[ \t]*/)
+						.map(num => this.parseValue(num as string) as number)
+					instructionTokens.push({pc, bytes, name: '.BYTE', opc: -1})
+					pc += bytes.length
+				}
+				if (token.instrName === '.WORD' && token.directiveData) {
+					const bytes: number[] = token.directiveData
+						.split(/,[ \t]*/)
+						.map(num => this.parseValue(num as string) as number)
+						.reduce( (acc: number[], word: number) => {
+							acc.push( word & 0xFF )
+							acc.push( (word >> 8) & 0xFF )
+							return acc
+						}, [])
+					instructionTokens.push({pc, bytes, name: '.BYTE', opc: -1})
+					pc += bytes.length
+				}
+				continue
+			}
+
 			const name: string = token.instrName
 			const line: string = token.codeLine
 
@@ -492,6 +517,17 @@ class Assembler {
 						return acc
 					}
 				}
+				const matchLabelDirective = /^([a-zA-Z_][a-zA-Z_0-9]+):?[ \t]+(\.[a-zA-Z]+)[ \t]+(.+)$/m.exec(line)
+				if (matchLabelDirective) {
+					const labelName = matchLabelDirective[1]
+					const directive = matchLabelDirective[2]
+					const data      = matchLabelDirective[3]
+					if (!this.dataSheet.instructions.includes(labelName.toUpperCase())) {
+						acc.push(labelName.trim().toUpperCase())
+						acc.push(directive.trim().toUpperCase() + ' ' + data.trim())
+						return acc
+					}
+				}
 				const matchLabelColon = /^([a-zA-Z_][a-zA-Z_0-9]+):$/m.exec(line)
 				if (matchLabelColon) {
 					const labelName = matchLabelColon[1]
@@ -499,6 +535,13 @@ class Assembler {
 						acc.push(labelName.trim().toUpperCase())
 						return acc
 					}
+				}
+				const matchDirective = /^[ \t]*(\.[a-zA-Z]+)[ \t]+(.+)$/m.exec(line)
+				if (matchDirective) {
+					const directive = matchDirective[1]
+					const data      = matchDirective[2]
+					acc.push(directive.trim().toUpperCase() + ' ' + data.trim())
+					return acc
 				}
 				acc.push(line.toUpperCase())
 				return acc
@@ -514,6 +557,13 @@ class Assembler {
 						acc.push(instrName.trim().toUpperCase() + ' ' + operand.replace(/[ \t]*/g, '').toUpperCase())
 						return acc
 					}
+				}
+				const matchDirective = /^(\.[A-Z]+) (.+)$/m.exec(line)
+				if (matchDirective) {
+					const directive = matchDirective[1]
+					const data      = matchDirective[2]
+					acc.push(directive + ' ' + data)
+					return acc
 				}
 				// Clean all other spaces
 				acc.push(line.replace(/[ \t]*/g, '').toUpperCase())
@@ -627,6 +677,17 @@ class Assembler {
 					tokenType: 'instruction',
 					instrName: matchInstrLine[1],
 					codeLine: line,
+				})
+				return tokens
+			}
+
+			const matchDirective = /^(\.[A-Z]+) (.+)/m.exec(line)
+			if (matchDirective) {
+				tokens.push({
+					tokenType: 'directive',
+					instrName: matchDirective[1],
+					codeLine: line,
+					directiveData: matchDirective[2],
 				})
 				return tokens
 			}
