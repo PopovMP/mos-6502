@@ -92,7 +92,7 @@ class Cpu {
 	public run(): void {
 		this.isStopRequired = false
 
-		while (!this.isStopRequired) {
+		while (!this.isStopRequired && this.cycles < 1_000_000) {
 			this.step()
 		}
 	}
@@ -478,9 +478,10 @@ class Cpu {
 			return true
 		},
 
-		JMP: (addr: number) => {
+		JMP: (addr: number, cycles: number) => {
 			// Jump
 			this.PC = addr
+			this.cycles += cycles
 			return false
 		},
 
