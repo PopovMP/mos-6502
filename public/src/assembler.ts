@@ -73,23 +73,24 @@ class Assembler {
 
 	public load(sourcecode: string, memory: Uint8Array): void {
 		const codePages: CodePages = this.assemble(sourcecode)
-		let initialPC = 0xFFFC
+		let isPcSet = false
+
 		for (const pageTag of Object.keys(codePages)) {
 			const pageAddress = parseInt(pageTag, 16)
 			for (let offset = 0; offset < codePages[pageTag].length; offset++){
-				const address = pageAddress + offset
-				if (address < initialPC) {
-					initialPC = address
-				}
 				const value = codePages[pageTag][offset]
 				if (typeof value === 'number') {
+					const address = pageAddress + offset
 					memory[address] = value
+
+					if (!isPcSet ) {
+						memory[0xFFFC] = address & 0x00FF
+						memory[0xFFFD] = (address >> 8) & 0x00FF
+						isPcSet = true
+					}
 				}
 			}
 		}
-
-		memory[0xFFFC] = initialPC & 0x00FF
-		memory[0xFFFD] = (initialPC >> 8) & 0x00FF
 	}
 
 	public assemble(sourceCode: string): CodePages {

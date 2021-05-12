@@ -15,7 +15,7 @@ class Emulator {
 	constructor() {
 		this.dataSheet = new DataSheet()
 		this.assembler = new Assembler()
-		this.memory    = new Uint8Array(0xFFFF)
+		this.memory    = new Uint8Array(0xFFFF + 1)
 		this.cpu       = new Cpu(this.memory)
 	}
 
@@ -49,9 +49,6 @@ class Emulator {
 		event.preventDefault()
 
 		const sourceCode = this.codeEditor.value
-		if (!sourceCode) {
-			return
-		}
 
 		this.cpu.stop()
 		this.memory.fill(0x00)
@@ -71,7 +68,7 @@ class Emulator {
 			}, [])
 
 		if (errorOutput.length > 0) {
-			this.terminal.innerHTML = '<div class="inverse">' + errorOutput.join('\n') + '</div>'
+			this.terminal.innerText = errorOutput.join('\n') + '\n'
 			return
 		}
 
@@ -79,7 +76,7 @@ class Emulator {
 			this.assembler.load(sourceCode, this.memory)
 		}
 		catch (e) {
-			this.terminal.innerText += e.message
+			this.terminal.innerText += e.message + '\n'
 		}
 
 		const codePages: CodePages = this.assembler.parse(codeDto)
@@ -120,7 +117,7 @@ class Emulator {
 			this.dump()
 		}
 		catch (e) {
-			this.terminal.innerText += e.message
+			this.terminal.innerText += e.message + '\n'
 		}
 	}
 
@@ -145,7 +142,7 @@ class Emulator {
 			}
 		}
 		catch (e) {
-			this.terminal.innerText += e.message
+			this.terminal.innerText += e.message + '\n'
 		}
 
 		setTimeout(this.debugLoop.bind(this), 700)
@@ -160,7 +157,7 @@ class Emulator {
 			this.dump()
 		}
 		catch (e) {
-			this.terminal.innerText += e.message
+			this.terminal.innerText += e.message + '\n'
 		}
 	}
 
@@ -174,10 +171,12 @@ class Emulator {
 	private dump(): void {
 		this.terminal.innerText = '' +
 			this.cpu.dumpStatus()  + '\n\n\n\n\n' +
+			'                         Instruction Log\n' +
+			'-------------------------------------------------------------------------\n' +
 			this.getAssemblyDump() + '\n\n\n\n\n' +
 			'                           Memory Dump\n' +
 			'-------------------------------------------------------------------------\n' +
-			this.getMemoryDump()
+			this.getMemoryDump() + '\n\n'
 	}
 
 	private getAssemblyDump(): string {
@@ -186,20 +185,17 @@ class Emulator {
 		const bytes: number  = this.dataSheet.opCodeBytes[opc]
 		const code: number[] = Array.from( this.memory.slice(pc, pc + bytes) )
 		const tokens: DisassemblyToken[] = this.assembler.disassemble(code, pc)
-		const tkn: DisassemblyToken = tokens[0]
 
-		const currentInst = `$${tkn.address}   ${tkn.code.join(' ').padEnd(8, ' ')}   ${tkn.text.padEnd(13, ' ')}  ; ${tkn.description}`
-		this.instructionLog.push(currentInst)
-		this.instructionLog = this.instructionLog.slice(-3)
+		if (tokens.length > 0) {
+			const tkn: DisassemblyToken = tokens[0]
+			const currentInst = `$${tkn.address}   ${tkn.code.join(' ').padEnd(8, ' ')}   ${tkn.text.padEnd(13, ' ')}  ; ${tkn.description}`
+			this.instructionLog.push(currentInst)
+			this.instructionLog = this.instructionLog.slice(-3)
+		}
 
-		const logText = this.instructionLog.map((line, index) =>
-			index === this.instructionLog.length - 1
-				? ' --> ' + line
-				: '     ' + line
-		).join('\n')
-
-		return '                         Instruction Log\n' +
-			'-------------------------------------------------------------------------\n' + logText
+		return this.instructionLog.map((line, index) => (
+				index === this.instructionLog.length - 1 ? ' --> ' : '     ') + line,
+			).join('\n');
 	}
 
 	private getMemoryDump(): string {

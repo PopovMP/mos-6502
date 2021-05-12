@@ -4,7 +4,7 @@ const { strictEqual } = require('assert')
 const { describe, it } = require('@popovmp/mocha-tiny')
 const { Assembler, Cpu } = require('../public/js')
 
-const memory    = new Uint8Array(0xFFFF)
+const memory    = new Uint8Array(0xFFFF + 1)
 const assembler = new Assembler()
 const cpu       = new Cpu(memory)
 
