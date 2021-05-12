@@ -480,29 +480,38 @@ class Assembler {
 			.filter(line => line.length > 0)            // Remove empty lines
 			.reduce((acc: string[], line: string) => {
 				// Move labels on a new line if they are with an instruction
-				const matchLabelWithInstr = /^([a-zA-Z_][a-zA-Z_0-9]+):?[ \t]+(([a-zA-Z]{3})[ \t]*.*)$/m.exec(line)
-				if (matchLabelWithInstr) {
-					const label = matchLabelWithInstr[1]
-					const instr = matchLabelWithInstr[3]
-					if (!this.dataSheet.instructions.includes(label.toUpperCase()) &&
-						this.dataSheet.instructions.includes(instr.toUpperCase())) {
-						acc.push(label.trim().toUpperCase())
-						acc.push(matchLabelWithInstr[2].trim().toUpperCase())
+				const matchLabelInstr = /^([a-zA-Z_][a-zA-Z_0-9]+):?[ \t]+(([a-zA-Z]{3})[ \t]*.*)$/m.exec(line)
+				if (matchLabelInstr) {
+					const labelName = matchLabelInstr[1]
+					const instrPart = matchLabelInstr[2]
+					const instrName = matchLabelInstr[3]
+					if (!this.dataSheet.instructions.includes(labelName.toUpperCase()) &&
+						 this.dataSheet.instructions.includes(instrName.toUpperCase())) {
+						acc.push(labelName.trim().toUpperCase())
+						acc.push(instrPart.trim().toUpperCase())
 						return acc
 					}
 				}
-				acc.push(line.toUpperCase().replace(':', ''))
+				const matchLabelColon = /^([a-zA-Z_][a-zA-Z_0-9]+):$/m.exec(line)
+				if (matchLabelColon) {
+					const labelName = matchLabelColon[1]
+					if (!this.dataSheet.instructions.includes(labelName.toUpperCase())) {
+						acc.push(labelName.trim().toUpperCase())
+						return acc
+					}
+				}
+				acc.push(line.toUpperCase())
 				return acc
 			}, [])
 			.reduce((acc: string[], line: string) => {
 				// Clean spaces within instructions
-				const matchInstrWithOperand = /^([a-zA-Z]{3})[ \t]+(.+$)/m.exec(line)
-				if (matchInstrWithOperand) {
-					const instr = matchInstrWithOperand[1]
-					const other = matchInstrWithOperand[2]
-					if (this.dataSheet.instructions.includes(instr.toUpperCase())) {
+				const matchInstrOperand = /^([a-zA-Z]{3})[ \t]+(.+)$/m.exec(line)
+				if (matchInstrOperand) {
+					const instrName = matchInstrOperand[1]
+					const operand   = matchInstrOperand[2]
+					if (this.dataSheet.instructions.includes(instrName.toUpperCase())) {
 						// The only space is between instr and operand
-						acc.push(instr.trim().toUpperCase() + ' ' + other.replace(/[ \t]*/g, '').toUpperCase())
+						acc.push(instrName.trim().toUpperCase() + ' ' + operand.replace(/[ \t]*/g, '').toUpperCase())
 						return acc
 					}
 				}
