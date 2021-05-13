@@ -6,7 +6,7 @@ class Utils {
 
 	public static wordToHex(val: number): string {
 		const hex = '0123456789ABCDEF'
-		return hex[(val >> 16) & 0xF] + hex[(val >> 8) & 0xF] + hex[(val >> 4) & 0xF] + hex[val & 0xF]
+		return hex[(val >> 12) & 0xF] + hex[(val >> 8) & 0xF] + hex[(val >> 4) & 0xF] + hex[val & 0xF]
 	}
 
 	/**

@@ -46,6 +46,13 @@ button {
     white-space: pre;
 }
 
+#initial-pc {
+    font-size: 22px;
+    max-width: 100px;
+    background-color: #181818;
+    color: #0ba03a;
+}
+
 .btn-secondary {
     background-color: darkcyan;
 }

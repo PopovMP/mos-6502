@@ -74,33 +74,36 @@ class Emulator {
 
 		try {
 			this.assembler.load(sourceCode, this.memory)
+			const initialPC: number = this.setInitialPCinMemory()
 			this.cpu.reset()
+
+			const codePages: CodePages = this.assembler.parse(codeDto)
+			const codeBytes: number[]  = this.assembler.codePagesToBytes(codePages)
+			const disassembly: string  = this.assembler
+				.disassemble(codeBytes, initialPC)
+				.map(tkn => `$${tkn.address}   ${tkn.code.join(' ').padEnd(8, ' ')}   ${tkn.text.padEnd(13, ' ')}  ; ${tkn.description}`)
+				.join('\n')
+
+			this.terminal.innerText = '' +
+				'                       Disassembly\n' +
+				'---------------------------------------------------------\n' +
+				disassembly + '\n\n\n' +
+				'                       Object code\n' +
+				'---------------------------------------------------------\n' +
+				Assembler.hexDump(codePages)
 		}
 		catch (e) {
 			this.terminal.innerText += e.message + '\n'
 		}
-
-		const codePages: CodePages = this.assembler.parse(codeDto)
-		const codeBytes: number[]  = this.assembler.codePagesToBytes(codePages)
-		const disassembly: string  = this.assembler
-			.disassemble(codeBytes, this.cpu.currentPC)
-			.map(tkn => `$${tkn.address}   ${tkn.code.join(' ').padEnd(8, ' ')}   ${tkn.text.padEnd(13, ' ')}  ; ${tkn.description}`)
-			.join('\n')
-
-		this.terminal.innerText = '' +
-			'                       Disassembly\n' +
-			'---------------------------------------------------------\n' +
-			disassembly + '\n\n\n' +
-			'                       Object code\n' +
-			'---------------------------------------------------------\n' +
-			Assembler.hexDump(codePages)
 	}
 
 	private btnReset_click(event: Event): void {
 		event.preventDefault()
 
 		this.isStopRequired = true
+		this.setInitialPCinMemory()
 		this.cpu.reset()
+
 		this.dump()
 	}
 
@@ -243,6 +246,16 @@ class Emulator {
 			"    " +
 			this.codeEditor.value.substring(this.codeEditor.selectionEnd)
 		this.codeEditor.selectionEnd = selectionStart + 4
+	}
+
+	private setInitialPCinMemory(): number {
+		const initialPc: string = (document.getElementById('initial-pc') as HTMLInputElement).value
+		const address: number = parseInt(initialPc, 16)
+
+		this.memory[0xFFFC] = address & 0x00FF
+		this.memory[0xFFFD] = (address >> 8) & 0x00FF
+
+		return address
 	}
 }
 
