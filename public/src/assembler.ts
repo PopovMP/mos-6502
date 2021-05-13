@@ -63,7 +63,7 @@ class Assembler {
 				.join(' ') )
 		}
 
-		return dumpLines.join('\n')
+		return dumpLines.sort().join('\n')
 	}
 
 	private readonly dataSheet: DataSheet
@@ -237,10 +237,10 @@ class Assembler {
 		const pages: CodePages = {}
 
 		// Make pages
-		for(const token of instTokens) {
+		for (const token of instTokens) {
 			for (let b = 0; b < token.bytes.length; b++) {
-				const pageAddress = token.pc + b - (token.pc + b) % 16
-				const pageKey :string = Utils.wordToHex(pageAddress)
+				const pageAddress: number = token.pc + b - (token.pc + b) % 16
+				const pageKey: string     = Utils.wordToHex(pageAddress)
 				if ( !pages.hasOwnProperty(pageKey) ) {
 					pages[pageKey] = new Array(16).fill(null)
 				}
