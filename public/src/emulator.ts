@@ -73,14 +73,12 @@ class Emulator {
 		}
 
 		try {
-			this.assembler.load(sourceCode, this.memory)
-			const initialPC: number = this.setInitialPCinMemory()
+			const codePages: CodePages = this.assembler.load(sourceCode, this.memory)
+			this.setInitialPCinMemory()
 			this.cpu.reset()
 
-			const codePages: CodePages = this.assembler.parse(codeDto)
-			const codeBytes: number[]  = this.assembler.codePagesToBytes(codePages)
 			const disassembly: string  = this.assembler
-				.disassemble(codeBytes, initialPC)
+				.disassembleCodePages(codePages)
 				.map(tkn => `$${tkn.address}   ${tkn.code.join(' ').padEnd(8, ' ')}   ${tkn.text.padEnd(13, ' ')}  ; ${tkn.description}`)
 				.join('\n')
 

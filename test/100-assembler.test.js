@@ -93,6 +93,39 @@ describe('Assembler', () => {
 				'0730: EA CA D0 FB 60  .  .  .  .  .  .  .  .  .  .  .'
 			)
 		})
+
+		it('Assembles multi-part code', () => {
+			const sourceCode =  `
+				        LDY #$00
+				        JMP loop
+				        BRK
+				 
+				       * = $1000
+				
+				loop    TXA
+				        STA base,X
+				        INX
+				        CPX #$00
+				        BEQ finish
+				        JMP loop
+				
+				finish  BRK
+				
+				        * = $2000
+				
+				base    .BYTE $AA, $BB, $CC			
+			`
+
+			const assembler = new Assembler()
+			const codePages = assembler.assemble(sourceCode)
+			const actual    = Assembler.hexDump(codePages)
+
+			strictEqual(actual,
+				'0800: A0 00 4C 00 10 00  .  .  .  .  .  .  .  .  .  .\n' +
+				'1000: 8A 9D 00 20 E8 E0 00 F0 03 4C 00 10 00  .  .  .\n' +
+				'2000: AA BB CC  .  .  .  .  .  .  .  .  .  .  .  .  .'
+			)
+		})
 	})
 
 	describe('Disassemble code', () => {
@@ -102,8 +135,7 @@ describe('Assembler', () => {
 
 			const assembler     = new Assembler()
 			const codePages     = assembler.assemble(sourceCode)
-			const codeBytes     = assembler.codePagesToBytes(codePages)
-			const disAssyTokens = assembler.disassemble(codeBytes, 0x0600)
+			const disAssyTokens = assembler.disassembleCodePages(codePages)
 
 			const output = []
 

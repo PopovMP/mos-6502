@@ -72,7 +72,7 @@ class Assembler {
 		this.dataSheet = new DataSheet()
 	}
 
-	public load(sourcecode: string, memory: Uint8Array): void {
+	public load(sourcecode: string, memory: Uint8Array): CodePages {
 		const codePages: CodePages = this.assemble(sourcecode)
 		let isPcSet = false
 
@@ -92,6 +92,8 @@ class Assembler {
 				}
 			}
 		}
+
+		return codePages
 	}
 
 	public assemble(sourceCode: string): CodePages {
@@ -110,7 +112,7 @@ class Assembler {
 		return this.composeMachineCodePages(instTokens)
 	}
 
-	public disassemble(code: number[], initialPC: number) {
+	public disassemble(code: number[], initialPC: number): DisassemblyToken[] {
 		const output: DisassemblyToken[] = []
 
 		let index = 0
@@ -218,11 +220,26 @@ class Assembler {
 		return output
 	}
 
-	public codePagesToBytes(codePages: CodePages): number[] {
-		const code: number[] = []
+	public disassembleCodePages(codePages: CodePages): DisassemblyToken[] {
+		const output: DisassemblyToken[] = []
+		let code: number[] = []
+		let codePC: number = -1
+		let prevAddress: number = -1
 
-		for (const pageAddressText of Object.keys(codePages)) {
-			const pageData: Array<number | null> = codePages[pageAddressText]
+		for (const pageAddress of Object.keys(codePages).map(key => parseInt(key, 16)).sort()) {
+			if (prevAddress > -1 && pageAddress - prevAddress > 16) {
+				output.push( ... this.disassemble(code, codePC) )
+				code = []
+				codePC = -1
+			}
+
+			if (codePC === -1) {
+				codePC = pageAddress
+			}
+
+			prevAddress = pageAddress
+
+			const pageData: Array<number | null> = codePages[Utils.wordToHex(pageAddress)]
 			for (let index = 0; index < pageData.length; index++){
 				if (typeof pageData[index] === 'number') {
 					code.push( pageData[index] as number)
@@ -230,7 +247,9 @@ class Assembler {
 			}
 		}
 
-		return code
+		output.push( ... this.disassemble(code, codePC) )
+
+		return output
 	}
 
 	private composeMachineCodePages(instTokens: InstructionToken[]): CodePages {
