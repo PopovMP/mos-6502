@@ -2,6 +2,8 @@
 
 Yet another emulator of the great MOS 6502 processor.
 
+![MOS 6502](https://www.masswerk.at/6502/MOS_6502AD_4585.jpg "MOS 6502")
+
 ## Why?
 
 To learn the processor and its Assembly.
