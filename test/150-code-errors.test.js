@@ -4,7 +4,7 @@
 const { strictEqual } = require('assert')
 const { describe, it } = require('@popovmp/mocha-tiny')
 
-const { Assembler } = require('../public/js')
+const { Assembler } = require('../js')
 
 describe('Assembler - errors', () => {
 	describe('Tokenize code', () => {

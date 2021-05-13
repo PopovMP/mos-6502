@@ -1,4 +1,3 @@
 .idea
-public/js
 node_modules
-package-lock.json
+/js/index.tsbuildinfo

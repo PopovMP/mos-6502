@@ -2,7 +2,7 @@
 
 const { strictEqual } = require('assert')
 const { describe, it } = require('@popovmp/mocha-tiny')
-const { Utils } = require('../public/js')
+const { Utils } = require('../js')
 
 describe('Utils', () => {
 	describe('wordToHex', () => {

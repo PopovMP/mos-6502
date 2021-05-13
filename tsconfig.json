@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "outFile": "public/js/index.js",
+    "outFile": "js/index.js",
     "incremental": true,
     "target": "ES2018",
     "strict": true,
@@ -9,7 +9,7 @@
     "sourceMap": true
   },
   "include": [
-    "./public/src/**/*.ts"
+    "./src/**/*.ts"
   ],
   "exclude": [
     "node_modules"
