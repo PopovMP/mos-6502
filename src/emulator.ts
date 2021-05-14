@@ -43,6 +43,9 @@ class Emulator {
 
 		const btnCpuRun: HTMLElement = document.getElementById('btn-cpu-run') as HTMLElement
 		btnCpuRun.addEventListener('click', this.btnRun_click.bind(this))
+
+		const btnForever: HTMLElement = document.getElementById('btn-run-forever') as HTMLElement
+		btnForever.addEventListener('click', this.btnForever_click.bind(this))
 	}
 
 	private btnLoadCode_click(event: Event): void {
@@ -159,6 +162,12 @@ class Emulator {
 		}
 	}
 
+	private btnForever_click(event: Event): void {
+		event.preventDefault()
+
+		this.runForever()
+	}
+
 	private btnPause_click(event: Event): void {
 		event.preventDefault()
 
@@ -198,13 +207,13 @@ class Emulator {
 
 	private getMemoryDump(): string {
 		const lines: string[] = []
-		let previousLineText = ''
 		let isLineSkipped = false
 
 		for (let line = 0; line < this.memory.length / 16; line++) {
 			const currentBytes = []
 			const currentChars = []
-			const lineAddress: string = Utils.wordToHex(line * 16)
+			const lineAddress: number     = line * 16
+			const lineAddressText: string = Utils.wordToHex(line * 16)
 
 			for (let col = 0; col < 16; col++) {
 				const address: number = line * 16 + col
@@ -213,19 +222,14 @@ class Emulator {
 				currentChars.push( value >= 0x20 && value <= 0x7E ? String.fromCharCode(value) : '.' )
 			}
 
-			const currentLineText = currentBytes.join(' ')
-			if (currentLineText !== previousLineText || line === (this.memory.length / 16) - 1) {
-				lines.push(`${lineAddress} | ${currentLineText} | ${currentChars.join('')}`)
-				previousLineText = currentLineText
-				isLineSkipped = false
-			}
-			else {
-				if (!isLineSkipped) {
-					isLineSkipped = true
-					lines.push('*')
-				}
+			if (lineAddress % 0x0100 === 0 && lineAddress > 0 && lines[lines.length - 1] !== '*') {
+				lines.push('*') // Page changed
 			}
 
+			if (currentBytes.some(e => e !== '00')) {
+				lines.push(`${lineAddressText} | ${currentBytes.join(' ')} | ${currentChars.join('')}`)
+				isLineSkipped = false
+			}
 		}
 
 		return lines.join('\n')
@@ -254,6 +258,18 @@ class Emulator {
 		this.memory[0xFFFD] = (address >> 8) & 0x00FF
 
 		return address
+	}
+
+	private runForever(): void {
+		try {
+			this.cpu.run()
+			this.dump()
+		}
+		catch (e) {
+			this.terminal.innerText += e.message + '\n'
+		}
+
+		setTimeout(this.runForever.bind(this), 500)
 	}
 }
 

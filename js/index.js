@@ -630,17 +630,17 @@ class Cpu {
         this.instruction = {
             ADC: (opr) => {
                 this.V = !((this.A ^ opr) & 0x80);
-                const temp = this.A + opr + (this.C ? 1 : 0);
-                this.A = temp & 0xFF;
-                if (temp >= 0x100) {
+                const val = this.A + opr + +this.C;
+                this.A = val & 0xFF;
+                if (val >= 0x100) {
                     this.C = true;
-                    if (this.V && temp >= 0x180) {
+                    if (this.V && val >= 0x180) {
                         this.V = false;
                     }
                 }
                 else {
                     this.C = false;
-                    if (this.V && temp < 0x80) {
+                    if (this.V && val < 0x80) {
                         this.V = false;
                     }
                 }
@@ -1039,6 +1039,7 @@ class Cpu {
     }
     run() {
         this.isStopRequired = false;
+        this.cycles = 7;
         while (!this.isStopRequired && this.cycles < 1000000) {
             this.step();
         }
@@ -1464,6 +1465,8 @@ class Emulator {
         btnCpuStop.addEventListener('click', this.btnPause_click.bind(this));
         const btnCpuRun = document.getElementById('btn-cpu-run');
         btnCpuRun.addEventListener('click', this.btnRun_click.bind(this));
+        const btnForever = document.getElementById('btn-run-forever');
+        btnForever.addEventListener('click', this.btnForever_click.bind(this));
     }
     btnLoadCode_click(event) {
         event.preventDefault();
@@ -1556,6 +1559,10 @@ class Emulator {
             this.terminal.innerText += e.message + '\n';
         }
     }
+    btnForever_click(event) {
+        event.preventDefault();
+        this.runForever();
+    }
     btnPause_click(event) {
         event.preventDefault();
         this.isStopRequired = true;
@@ -1587,29 +1594,24 @@ class Emulator {
     }
     getMemoryDump() {
         const lines = [];
-        let previousLineText = '';
         let isLineSkipped = false;
         for (let line = 0; line < this.memory.length / 16; line++) {
             const currentBytes = [];
             const currentChars = [];
-            const lineAddress = Utils.wordToHex(line * 16);
+            const lineAddress = line * 16;
+            const lineAddressText = Utils.wordToHex(line * 16);
             for (let col = 0; col < 16; col++) {
                 const address = line * 16 + col;
                 const value = this.memory[address];
                 currentBytes.push(Utils.byteToHex(value));
                 currentChars.push(value >= 0x20 && value <= 0x7E ? String.fromCharCode(value) : '.');
             }
-            const currentLineText = currentBytes.join(' ');
-            if (currentLineText !== previousLineText || line === (this.memory.length / 16) - 1) {
-                lines.push(`${lineAddress} | ${currentLineText} | ${currentChars.join('')}`);
-                previousLineText = currentLineText;
-                isLineSkipped = false;
+            if (lineAddress % 0x0100 === 0 && lineAddress > 0 && lines[lines.length - 1] !== '*') {
+                lines.push('*');
             }
-            else {
-                if (!isLineSkipped) {
-                    isLineSkipped = true;
-                    lines.push('*');
-                }
+            if (currentBytes.some(e => e !== '00')) {
+                lines.push(`${lineAddressText} | ${currentBytes.join(' ')} | ${currentChars.join('')}`);
+                isLineSkipped = false;
             }
         }
         return lines.join('\n');
@@ -1632,6 +1634,16 @@ class Emulator {
         this.memory[0xFFFC] = address & 0x00FF;
         this.memory[0xFFFD] = (address >> 8) & 0x00FF;
         return address;
+    }
+    runForever() {
+        try {
+            this.cpu.run();
+            this.dump();
+        }
+        catch (e) {
+            this.terminal.innerText += e.message + '\n';
+        }
+        setTimeout(this.runForever.bind(this), 500);
     }
 }
 module.exports.Emulator = Emulator;

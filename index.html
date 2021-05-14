@@ -14,41 +14,333 @@
   <div class="row center">
       <label for="source-code" style="display: none">Source Code</label>
       <textarea id="source-code" spellcheck="false">
-        ; Fibonacci numbers
+;
+;   ________                                _____  .____    .__  _____
+;  /  _____/_____    _____   ____     _____/ ____\ |    |   |__|/ ____\____
+; /   \  ___\__  \  /     \_/ __ \   /  _ \   __\  |    |   |  \   __\/ __ \
+; \    \_\  \/ __ \|  Y Y  \  ___/  (  <_> )  |    |    |___|  ||  | \  ___/
+;  \______  (____  /__|_|  /\___  >  \____/|__|    |_______ \__||__|  \___  >
+;         \/     \/      \/     \/                         \/             \/
+;
 
-        ; Variables addresses
-        maxCnt   = $00
-        prevFibo = $01
-        currFibo = $02
-        temp     = $03
 
-        ; Initialization
-        LDA #13            ; Numbers to find
-        STA maxCnt
-        LDA #0
-        STA prevFibo
-        LDA #1
-        STA currFibo
-        LDX #1             ; Current numbers count
+; Initialize variables
+ch_live = $2A
+ch_dead = $00
 
-loop
-        CPX maxCnt         ; Compare X with maxCnt
-        BEQ exit           ; Exit if max count reached
+; Program address
+* = $0800
+                JSR reset_maps       ; Reset main and temp maps
+                JSR pre_fill_map     ; Pre-fill main map with life
 
-        LDA currFibo
-        STA temp
-        CLC
-        ADC prevFibo
-        STA currFibo
-        LDA temp
-        STA prevFibo
+game_loop       JSR examine_cells    ; Count each cell neighbours (store in temp map)
+                JSR toggle_cells     ; Toggle cells according to the GoL rules
+                JSR empty_tmp        ; Tidy
+                JSR clear_stack      ; Make dump prettier
+                BRK
 
-        INX
-        JMP loop
+;----------------------------------------;
+; Reset main and temp maps               ;
+;----------------------------------------;
 
-exit
-        LDA currFibo       ; Load final Fibo in A
-        BRK
+reset_maps      LDA #ch_dead
+                JSR fill_map
+                JSR empty_tmp
+                RTS
+
+;----------------------------------------;
+; Pre-fill main map with life            ;
+;----------------------------------------;
+
+pre_fill_map    LDA #ch_live
+
+                LDX #$12
+                STA main_map,X
+                LDX #$13
+                STA main_map,X
+                LDX #$16
+                STA main_map,X
+                LDX #$18
+                STA main_map,X
+                LDX #$19
+                STA main_map,X
+
+                LDX #$21
+                STA main_map,X
+                LDX #$24
+                STA main_map,X
+                LDX #$27
+                STA main_map,X
+                LDX #$28
+                STA main_map,X
+
+                LDX #$32
+                STA main_map,X
+                LDX #$34
+                STA main_map,X
+
+                LDX #$43
+                STA main_map,X
+
+                LDX #$59
+                STA main_map,X
+
+                LDX #$67
+                STA main_map,X
+                LDX #$68
+                STA main_map,X
+                LDX #$69
+                STA main_map,X
+
+                LDX #$76
+                STA main_map,X
+
+                LDX #$87
+                STA main_map,X
+
+                LDX #$98
+                STA main_map,X
+                LDX #$99
+                STA main_map,X
+
+                RTS
+
+;---------------------------------------;
+; Examine cells in main map.            ;
+;---------------------------------------;
+
+; Examines all the cells in the main map
+; by walking through it.
+
+examine_cells   LDA #0
+                STA ec_pos            ; Set position to 0 (start of map)
+
+ec_loop         LDA ec_pos            ; Load current position in A
+                JSR count_nbrs        ; Count neighbours
+                LDX ec_pos            ; Load current position in X
+                STA temp_map,X        ; Store the count of neighbours in temp map
+
+                LDA ec_pos            ; Load current position
+                CMP #$FF              ; Check if it is at the end of the map
+                BEQ ec_end            ; If true, finish
+                INC ec_pos
+                JMP ec_loop
+
+ec_pos          NOP                   ; Current cell's position
+ec_end          RTS
+
+
+;--------------------------------------;
+; Count neighbours of the cell in A    ;
+;--------------------------------------;
+
+; NW N NE
+; W  A  E
+; SW S SE
+
+; NW = A - $11
+; N  = A - $10
+; NE = A - $0F
+; W  = A - $01
+; E  = A + $01
+; SW = A + $0F
+; S  = A + $10
+; SE = A + $11
+
+count_nbrs      STA count_nbrs_cell ; Backup cell position
+                LDA #0
+                STA count_nbrs_res  ; Reset counter
+
+count_nbrs_NW   LDA count_nbrs_cell ; Recover cell position
+                SEC
+                SBC #$11            ; Adjust A
+                TAX                 ; Transfer A to X
+                LDA main_map,X      ; Load target cell in A
+                BEQ count_nbrs_N    ; Branch if A zero ( dead cell )
+                INC count_nbrs_res  ; Increment result if target alive
+
+count_nbrs_N    LDA count_nbrs_cell
+                SEC
+                SBC #$10
+                TAX
+                LDA main_map,X
+                BEQ count_nbrs_NE
+                INC count_nbrs_res
+
+count_nbrs_NE   LDA count_nbrs_cell
+                SEC
+                SBC #$0F
+                TAX
+                LDA main_map,X
+                BEQ count_nbrs_W
+                INC count_nbrs_res
+
+count_nbrs_W    LDA count_nbrs_cell
+                SEC
+                SBC #$01
+                TAX
+                LDA main_map,X
+                BEQ count_nbrs_E
+                INC count_nbrs_res
+
+count_nbrs_E    LDA count_nbrs_cell
+                CLC
+                ADC #$01
+                TAX
+                LDA main_map,X
+                BEQ count_nbrs_SW
+                INC count_nbrs_res
+
+count_nbrs_SW   LDA count_nbrs_cell
+                CLC
+                ADC #$0F
+                TAX
+                LDA main_map,X
+                BEQ count_nbrs_S
+                INC count_nbrs_res
+
+count_nbrs_S    LDA count_nbrs_cell
+                CLC
+                ADC #$10
+                TAX
+                LDA main_map,X
+                BEQ count_nbrs_SE
+                INC count_nbrs_res
+
+count_nbrs_SE   LDA count_nbrs_cell
+                CLC
+                ADC #$11
+                TAX
+                LDA main_map,X
+                BEQ count_nbrs_end
+                INC count_nbrs_res
+
+                JMP count_nbrs_end
+
+count_nbrs_cell NOP                 ; Current cell position
+count_nbrs_res  NOP                 ; Counter for the neighbours
+count_nbrs_end  LDA count_nbrs_res  ; Load result in A
+                RTS                 ; Return
+
+
+;---------------------------------------;
+; Toggle each cell live or dead            ;
+;---------------------------------------;
+
+toggle_cells    LDA #0
+                STA tggl_pos
+
+tgl_loop        LDX tggl_pos        ; Load current position in X
+                LDA temp_map,X      ; Get count of neighbours
+
+; Rule 1 - Any (live) cell with fewer than two live neighbours dies.
+                CMP #2
+                BMI tggl_make_dead  ; A < 2
+
+; Rule 2 - Any (live) cell with more than three live neighbours dies.
+                CMP #4
+                BPL tggl_make_dead    ; A >= 4
+
+; Rule 3 - Any (dead) cell with exactly three live neighbours becomes a live cell
+                CMP #3
+                BEQ tggl_make_live    ; A == 3
+
+tgl_next        LDA tggl_pos        ; Load current position
+                CMP #$FF            ; Check if it is at the end of the map
+                BEQ tggl_end        ; If true, finish
+                INC tggl_pos        ; if not, increment position
+                JMP tgl_loop        ; Loop
+
+; Make cell dead
+tggl_make_dead  LDX tggl_pos
+                LDA #ch_dead
+                STA main_map,X
+                JMP tgl_next
+
+; Make cell dead
+tggl_make_live  LDX tggl_pos
+                LDA #ch_live
+                STA main_map,X
+                JMP tgl_next
+
+tggl_pos        NOP                ; Cell position
+tggl_end        RTS
+
+
+
+;--------------------------------------;
+; Fills all the map with the char in A ;
+;--------------------------------------;
+
+fill_map        LDX #0
+fill_map_loop   STA main_map,X
+                CPX #$FF
+                BEQ fill_map_end
+                INX
+                JMP fill_map_loop
+fill_map_end    RTS
+
+
+;--------------------------------------;
+; Copy temp map to main map            ;
+;--------------------------------------;
+
+copy_map        LDX #0
+copy_map_loop   LDA temp_map,X
+                STA main_map,X
+                CPX #$FF
+                BEQ copy_map_end
+                INX
+                JMP copy_map_loop
+copy_map_end    RTS
+
+
+;--------------------------------------;
+; Empty temp map                       ;
+;--------------------------------------;
+
+empty_tmp       LDX #0
+                LDA #ch_dead
+empty_tmp_loop  STA temp_map,X
+                CPX #$FF
+                BEQ empty_tmp_end
+                INX
+                JMP empty_tmp_loop
+empty_tmp_end   RTS
+
+;--------------------------------------;
+; Clear stack                          ;
+;--------------------------------------;
+
+clear_stack     LDX #0
+                LDA #$00
+clr_stack_loop  STA #$0100,X
+                CPX #$FF
+                BEQ clear_stack_end
+                INX
+                JMP clr_stack_loop
+clear_stack_end LDX #$FF
+                TXS
+                RTS
+
+
+;--------------------------------------;
+
+; Main map location
+* = $0400
+main_map BRK
+
+; Temp map location
+* = $0600
+temp_map BRK
+
+; Break procedure
+* = $F100
+JMP game_loop
+
+* = $FFFE
+.WORD $F100
+
       </textarea>
   </div>
 
@@ -60,6 +352,7 @@ exit
     <button class="btn-primary"   id="btn-cpu-debug">Debug</button>
     <button class="btn-secondary" id="btn-cpu-stop">Pause</button>
     <button class="btn-success"   id="btn-cpu-run" style="margin-left: 10px">Run</button>
+    <button class="btn-secondary" id="btn-run-forever">Forever</button>
   </div>
 
   <div class="row center">
