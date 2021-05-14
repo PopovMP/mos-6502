@@ -5,97 +5,94 @@ class DataSheet {
 	public readonly opCodeName: Record<number, string>  = {}
 
 	public readonly addressingModes: string[] = [
-		'---',
-		'IMM',
-		'ZP',
-		'ZPX',
-		'ZPY',
-		'ABS',
-		'ABSX',
-		'ABSY',
-		'IND',
-		'INDX',
-		'INDY',
-		'IMPL',
-		'REL',
+		'IMM' ,  // Immediate
+		'ZP'  ,  // Zero Page
+		'ZPX' ,  // X-Indexed Zero Page
+		'ZPY' ,  // Y-Indexed Zero Page
+		'ABS' ,  // Absolute
+		'ABSX',  // X-Indexed Absolute
+		'ABSY',  // Y-Indexed Absolute
+		'IND' ,  // Absolute Indirect
+		'XZPI',  // X-Indexed Zero Page Indirect
+		'ZPIY',  // Zero Page Indirect Y-Indexed
+		'IMPL',  // Implied
+		'REL' ,  // Relative
 	]
 
 	public readonly addressingModeBytes: Record<string, number> = {
-		IMM : 2, // Immediate
-		ZP  : 2, // Zero Page
-		ZPX : 2, // X-Indexed Zero Page
-		ZPY : 2, // Y-Indexed Zero Page
-		ABS : 3, // Absolute
-		ABSX: 3, // X-Indexed Absolute
-		ABSY: 3, // Y-Indexed Absolute
-		IND : 3, // Absolute Indirect
-		INDX: 2, // X-Indexed Zero Page Indirect
-		INDY: 2, // Zero Page Indirect Y-Indexed
-		IMPL: 1, // Implied
-		REL : 2, // Relative
+		IMM : 2,
+		ZP  : 2,
+		ZPX : 2,
+		ZPY : 2,
+		ABS : 3,
+		ABSX: 3,
+		ABSY: 3,
+		IND : 3,
+		XZPI: 2,
+		ZPIY: 2,
+		IMPL: 1,
+		REL : 2,
 	}
 
-	public readonly Opcodes = [
-		/* Name, IMM,  ZP,   ZPX,  ZPY,  ABS, ABSX, ABSY,  IND, INDX, INDY, IMPL, REL */
-		['ADC', 0x69, 0x65, 0x75, null, 0x6D, 0x7D, 0x79, null, 0x61, 0x71, null, null],
-		['AND', 0x29, 0x25, 0x35, null, 0x2D, 0x3D, 0x39, null, 0x21, 0x31, null, null],
-		['ASL', null, 0x06, 0x16, null, 0x0E, 0x1E, null, null, null, null, 0x0A, null],
-		['BIT', null, 0x24, null, null, 0x2C, null, null, null, null, null, null, null],
-		['BPL', null, null, null, null, null, null, null, null, null, null, null, 0x10],
-		['BMI', null, null, null, null, null, null, null, null, null, null, null, 0x30],
-		['BVC', null, null, null, null, null, null, null, null, null, null, null, 0x50],
-		['BVS', null, null, null, null, null, null, null, null, null, null, null, 0x70],
-		['BCC', null, null, null, null, null, null, null, null, null, null, null, 0x90],
-		['BCS', null, null, null, null, null, null, null, null, null, null, null, 0xB0],
-		['BNE', null, null, null, null, null, null, null, null, null, null, null, 0xD0],
-		['BEQ', null, null, null, null, null, null, null, null, null, null, null, 0xF0],
-		['BRK', null, null, null, null, null, null, null, null, null, null, 0x00, null],
-		['CMP', 0xC9, 0xC5, 0xD5, null, 0xCD, 0xDD, 0xD9, null, 0xC1, 0xD1, null, null],
-		['CPX', 0xE0, 0xE4, null, null, 0xEC, null, null, null, null, null, null, null],
-		['CPY', 0xC0, 0xC4, null, null, 0xCC, null, null, null, null, null, null, null],
-		['DEC', null, 0xC6, 0xD6, null, 0xCE, 0xDE, null, null, null, null, null, null],
-		['EOR', 0x49, 0x45, 0x55, null, 0x4D, 0x5D, 0x59, null, 0x41, 0x51, null, null],
-		['CLC', null, null, null, null, null, null, null, null, null, null, 0x18, null],
-		['SEC', null, null, null, null, null, null, null, null, null, null, 0x38, null],
-		['CLI', null, null, null, null, null, null, null, null, null, null, 0x58, null],
-		['SEI', null, null, null, null, null, null, null, null, null, null, 0x78, null],
-		['CLV', null, null, null, null, null, null, null, null, null, null, 0xB8, null],
-		['CLD', null, null, null, null, null, null, null, null, null, null, 0xD8, null],
-		['SED', null, null, null, null, null, null, null, null, null, null, 0xF8, null],
-		['INC', null, 0xE6, 0xF6, null, 0xEE, 0xFE, null, null, null, null, null, null],
-		['JMP', null, null, null, null, 0x4C, null, null, 0x6C, null, null, null, null],
-		['JSR', null, null, null, null, 0x20, null, null, null, null, null, null, null],
-		['LDA', 0xA9, 0xA5, 0xB5, null, 0xAD, 0xBD, 0xB9, null, 0xA1, 0xB1, null, null],
-		['LDX', 0xA2, 0xA6, null, 0xB6, 0xAE, null, 0xBE, null, null, null, null, null],
-		['LDY', 0xA0, 0xA4, 0xB4, null, 0xAC, 0xBC, null, null, null, null, null, null],
-		['LSR', null, 0x46, 0x56, null, 0x4E, 0x5E, null, null, null, null, 0x4A, null],
-		['NOP', null, null, null, null, null, null, null, null, null, null, 0xEA, null],
-		['ORA', 0x09, 0x05, 0x15, null, 0x0D, 0x1D, 0x19, null, 0x01, 0x11, null, null],
-		['TAX', null, null, null, null, null, null, null, null, null, null, 0xAA, null],
-		['TXA', null, null, null, null, null, null, null, null, null, null, 0x8A, null],
-		['DEX', null, null, null, null, null, null, null, null, null, null, 0xCA, null],
-		['INX', null, null, null, null, null, null, null, null, null, null, 0xE8, null],
-		['TAY', null, null, null, null, null, null, null, null, null, null, 0xA8, null],
-		['TYA', null, null, null, null, null, null, null, null, null, null, 0x98, null],
-		['DEY', null, null, null, null, null, null, null, null, null, null, 0x88, null],
-		['INY', null, null, null, null, null, null, null, null, null, null, 0xC8, null],
-		['ROR', null, 0x66, 0x76, null, 0x6E, 0x7E, null, null, null, null, 0x6A, null],
-		['ROL', null, 0x26, 0x36, null, 0x2E, 0x3E, null, null, null, null, 0x2A, null],
-		['RTI', null, null, null, null, null, null, null, null, null, null, 0x40, null],
-		['RTS', null, null, null, null, null, null, null, null, null, null, 0x60, null],
-		['SBC', 0xE9, 0xE5, 0xF5, null, 0xED, 0xFD, 0xF9, null, 0xE1, 0xF1, null, null],
-		['STA', null, 0x85, 0x95, null, 0x8D, 0x9D, 0x99, null, 0x81, 0x91, null, null],
-		['TXS', null, null, null, null, null, null, null, null, null, null, 0x9A, null],
-		['TSX', null, null, null, null, null, null, null, null, null, null, 0xBA, null],
-		['PHA', null, null, null, null, null, null, null, null, null, null, 0x48, null],
-		['PLA', null, null, null, null, null, null, null, null, null, null, 0x68, null],
-		['PHP', null, null, null, null, null, null, null, null, null, null, 0x08, null],
-		['PLP', null, null, null, null, null, null, null, null, null, null, 0x28, null],
-		['STX', null, 0x86, null, 0x96, 0x8E, null, null, null, null, null, null, null],
-		['STY', null, 0x84, 0x94, null, 0x8C, null, null, null, null, null, null, null],
-		['WDM', 0x42, 0x42, null, null, null, null, null, null, null, null, null, null],
-		['---', null, null, null, null, null, null, null, null, null, null, null, null],
-	]
+	public readonly Opcodes: Record<string, number[]> = {
+		     /* IMM,   ZP,  ZPX,  ZPY,  ABS, ABSX, ABSY,  IND, XZPI, ZPIY, IMPL,  REL */
+		ADC : [0x69, 0x65, 0x75,  NaN, 0x6D, 0x7D, 0x79,  NaN, 0x61, 0x71,  NaN,  NaN],
+		AND : [0x29, 0x25, 0x35,  NaN, 0x2D, 0x3D, 0x39,  NaN, 0x21, 0x31,  NaN,  NaN],
+		ASL : [ NaN, 0x06, 0x16,  NaN, 0x0E, 0x1E,  NaN,  NaN,  NaN,  NaN, 0x0A,  NaN],
+		BCC : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0x90],
+		BCS : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0xB0],
+		BEQ : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0xF0],
+		BIT : [ NaN, 0x24,  NaN,  NaN, 0x2C,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN],
+		BMI : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0x30],
+		BNE : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0xD0],
+		BPL : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0x10],
+		BRK : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0x00,  NaN],
+		BVC : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0x50],
+		BVS : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0x70],
+		CLC : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0x18,  NaN],
+		CLD : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0xD8,  NaN],
+		CLI : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0x58,  NaN],
+		CLV : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0xB8,  NaN],
+		CMP : [0xC9, 0xC5, 0xD5,  NaN, 0xCD, 0xDD, 0xD9,  NaN, 0xC1, 0xD1,  NaN,  NaN],
+		CPX : [0xE0, 0xE4,  NaN,  NaN, 0xEC,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN],
+		CPY : [0xC0, 0xC4,  NaN,  NaN, 0xCC,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN],
+		DEC : [ NaN, 0xC6, 0xD6,  NaN, 0xCE, 0xDE,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN],
+		DEX : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0xCA,  NaN],
+		DEY : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0x88,  NaN],
+		EOR : [0x49, 0x45, 0x55,  NaN, 0x4D, 0x5D, 0x59,  NaN, 0x41, 0x51,  NaN,  NaN],
+		INC : [ NaN, 0xE6, 0xF6,  NaN, 0xEE, 0xFE,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN],
+		INX : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0xE8,  NaN],
+		INY : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0xC8,  NaN],
+		JMP : [ NaN,  NaN,  NaN,  NaN, 0x4C,  NaN,  NaN, 0x6C,  NaN,  NaN,  NaN,  NaN],
+		JSR : [ NaN,  NaN,  NaN,  NaN, 0x20,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN],
+		LDA : [0xA9, 0xA5, 0xB5,  NaN, 0xAD, 0xBD, 0xB9,  NaN, 0xA1, 0xB1,  NaN,  NaN],
+		LDX : [0xA2, 0xA6,  NaN, 0xB6, 0xAE,  NaN, 0xBE,  NaN,  NaN,  NaN,  NaN,  NaN],
+		LDY : [0xA0, 0xA4, 0xB4,  NaN, 0xAC, 0xBC,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN],
+		LSR : [ NaN, 0x46, 0x56,  NaN, 0x4E, 0x5E,  NaN,  NaN,  NaN,  NaN, 0x4A,  NaN],
+		NOP : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0xEA,  NaN],
+		ORA : [0x09, 0x05, 0x15,  NaN, 0x0D, 0x1D, 0x19,  NaN, 0x01, 0x11,  NaN,  NaN],
+		PHA : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0x48,  NaN],
+		PHP : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0x08,  NaN],
+		PLA : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0x68,  NaN],
+		PLP : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0x28,  NaN],
+		ROL : [ NaN, 0x26, 0x36,  NaN, 0x2E, 0x3E,  NaN,  NaN,  NaN,  NaN, 0x2A,  NaN],
+		ROR : [ NaN, 0x66, 0x76,  NaN, 0x6E, 0x7E,  NaN,  NaN,  NaN,  NaN, 0x6A,  NaN],
+		RTI : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0x40,  NaN],
+		RTS : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0x60,  NaN],
+		SBC : [0xE9, 0xE5, 0xF5,  NaN, 0xED, 0xFD, 0xF9,  NaN, 0xE1, 0xF1,  NaN,  NaN],
+		SEC : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0x38,  NaN],
+		SED : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0xF8,  NaN],
+		SEI : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0x78,  NaN],
+		STA : [ NaN, 0x85, 0x95,  NaN, 0x8D, 0x9D, 0x99,  NaN, 0x81, 0x91,  NaN,  NaN],
+		STX : [ NaN, 0x86,  NaN, 0x96, 0x8E,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN],
+		STY : [ NaN, 0x84, 0x94,  NaN, 0x8C,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN],
+		TAX : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0xAA,  NaN],
+		TAY : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0xA8,  NaN],
+		TSX : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0xBA,  NaN],
+		TXA : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0x8A,  NaN],
+		TXS : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0x9A,  NaN],
+		TYA : [ NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN,  NaN, 0x98,  NaN],
+	}
 
 	public readonly instrDescription: Record<string, string> = {
 		ADC: 'Add with Carry',
@@ -311,30 +308,28 @@ class DataSheet {
 	}
 
 	constructor() {
-		this.Opcodes.forEach(rec => {
-			if (typeof rec[0] === 'string' && rec[0] !== '---') {
-				this.instructions.push(rec[0])
-			}
-			rec.forEach((opc, index) => {
-				this.populateData(rec, opc, index)
+		Object.keys(this.Opcodes).forEach(instr => {
+			this.instructions.push(instr)
+			this.Opcodes[instr].forEach((opc, index) => {
+				this.populateData(instr, opc, index)
 			})
 		})
 	}
 
-	private populateData(rec: any[], opc: string | number | null, index: number): void {
-		if (typeof opc === 'number') {
-			this.opCodeName[opc] = rec[0]
-			const addressingMode = this.addressingModes[index]
-			this.opCodeMode[opc] = addressingMode
-			this.opCodeBytes[opc] = this.addressingModeBytes[addressingMode]
+	private populateData(instr: string, opc: number, index: number): void {
+		if (isNaN(opc)) {
+			return
 		}
+
+		const addressingMode: string = this.addressingModes[index]
+		this.opCodeName[opc]  = instr
+		this.opCodeMode[opc]  = addressingMode
+		this.opCodeBytes[opc] = this.addressingModeBytes[addressingMode]
 	}
 
 	public getOpc(instName: string, mode: string): number {
-		const instIndex  = this.instructions.indexOf(instName)
-		const instRecord = this.Opcodes[instIndex]
-		const modeIndex  = this.addressingModes.indexOf(mode)
-		return instRecord[modeIndex] as number
+		const modeIndex: number = this.addressingModes.indexOf(mode)
+		return this.Opcodes[instName][modeIndex] as number
 	}
 }
 

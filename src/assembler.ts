@@ -168,8 +168,8 @@ class Assembler {
 					token.text += ' #$'
 					break
 				case 'IND':
-				case 'INDX':
-				case 'INDY':
+				case 'XZPI':
+				case 'ZPIY':
 					token.text += ' ($'
 					break
 				default:
@@ -204,10 +204,10 @@ class Assembler {
 				case 'ZPY':
 					token.text += ',Y'
 					break
-				case 'INDX':
+				case 'XZPI':
 					token.text += ',X)'
 					break
-				case 'INDY':
+				case 'ZPIY':
 					token.text += '),Y'
 					break
 			}
@@ -444,7 +444,7 @@ class Assembler {
 			// OPC ($FF,X) ; X-Indexed Zero Page Indirect
 			const matchINDX = /^[A-Z]{3} \(([$%]?[0-9A-Z]+),X\)$/.exec(line)
 			if (matchINDX) {
-				const opc: number   = this.dataSheet.getOpc(name, 'INDX')
+				const opc: number   = this.dataSheet.getOpc(name, 'XZPI')
 				const value: number = this.parseValue(matchINDX[1]) as number
 				instructionTokens.push({pc, opc, name, bytes: [opc, value]})
 				pc += this.dataSheet.opCodeBytes[opc]
@@ -454,7 +454,7 @@ class Assembler {
 			// OPC ($FF),Y ; Zero Page Indirect Y-Indexed
 			const matchINDY = /^[A-Z]{3} \(([$%]?[0-9A-Z]+)\),Y$/.exec(line)
 			if (matchINDY) {
-				const opc: number   = this.dataSheet.getOpc(name, 'INDY')
+				const opc: number   = this.dataSheet.getOpc(name, 'ZPIY')
 				const value: number = this.parseValue(matchINDY[1]) as number
 				instructionTokens.push({pc, opc, name, bytes: [opc, value]})
 				pc += this.dataSheet.opCodeBytes[opc]

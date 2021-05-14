@@ -156,8 +156,8 @@ class Cpu {
 		ABSX: () => this.loadWord(this.PC + 1) + this.X,
 		ABSY: () => this.loadWord(this.PC + 1) + this.Y,
 		IND : () => this.loadWord(this.PC + 1),
-		INDX: () => this.loadWord(this.memory[this.PC + 1] + this.X),
-		INDY: () => this.loadWord(this.memory[this.PC + 1]) + this.Y,
+		XZPI: () => this.loadWord(this.memory[this.PC + 1] + this.X),
+		ZPIY: () => this.loadWord(this.memory[this.PC + 1]) + this.Y,
 		REL : () => this.PC + 1,
 	}
 
