@@ -30,80 +30,38 @@ ch_dead = $00
 
 ; Program address
 * = $0800
-                JSR reset_maps       ; Reset main and temp maps
-                JSR pre_fill_map     ; Pre-fill main map with life
+                JSR init_map         ; Pre-fill main map with life
 
-game_loop       JSR examine_cells    ; Count each cell neighbours (store in temp map)
+game_loop       LDX #$FF
+                TXS
+
+                JSR examine_cells    ; Count each cell neighbours (store in temp map)
                 JSR toggle_cells     ; Toggle cells according to the GoL rules
-                JSR empty_tmp        ; Tidy
-                JSR clear_stack      ; Make dump prettier
                 BRK
 
-;----------------------------------------;
-; Reset main and temp maps               ;
-;----------------------------------------;
-
-reset_maps      LDA #ch_dead
-                JSR fill_map
-                JSR empty_tmp
-                RTS
 
 ;----------------------------------------;
 ; Pre-fill main map with life            ;
 ;----------------------------------------;
 
-pre_fill_map    LDA #ch_live
+init_map        LDX #0
+                LDY spaceship,X
+                LDA #ch_live
 
-                LDX #$12
-                STA main_map,X
-                LDX #$13
-                STA main_map,X
-                LDX #$16
-                STA main_map,X
-                LDX #$18
-                STA main_map,X
-                LDX #$19
-                STA main_map,X
+init_map_loop   STA main_map,Y
 
-                LDX #$21
-                STA main_map,X
-                LDX #$24
-                STA main_map,X
-                LDX #$27
-                STA main_map,X
-                LDX #$28
-                STA main_map,X
+                INX
+                LDY spaceship,X
+                BEQ init_map_end
+                JMP init_map_loop
 
-                LDX #$32
-                STA main_map,X
-                LDX #$34
-                STA main_map,X
+spaceship      .BYTE     $AA,       $AD
+               .BYTE $B9
+               .BYTE $C9,           $CD
+               .BYTE $D9,$DA,$DB,$DC
+               .BYTE $00
 
-                LDX #$43
-                STA main_map,X
-
-                LDX #$59
-                STA main_map,X
-
-                LDX #$67
-                STA main_map,X
-                LDX #$68
-                STA main_map,X
-                LDX #$69
-                STA main_map,X
-
-                LDX #$76
-                STA main_map,X
-
-                LDX #$87
-                STA main_map,X
-
-                LDX #$98
-                STA main_map,X
-                LDX #$99
-                STA main_map,X
-
-                RTS
+init_map_end    RTS
 
 ;---------------------------------------;
 ; Examine cells in main map.            ;
@@ -265,63 +223,6 @@ tggl_make_live  LDX tggl_pos
 
 tggl_pos        NOP                ; Cell position
 tggl_end        RTS
-
-
-
-;--------------------------------------;
-; Fills all the map with the char in A ;
-;--------------------------------------;
-
-fill_map        LDX #0
-fill_map_loop   STA main_map,X
-                CPX #$FF
-                BEQ fill_map_end
-                INX
-                JMP fill_map_loop
-fill_map_end    RTS
-
-
-;--------------------------------------;
-; Copy temp map to main map            ;
-;--------------------------------------;
-
-copy_map        LDX #0
-copy_map_loop   LDA temp_map,X
-                STA main_map,X
-                CPX #$FF
-                BEQ copy_map_end
-                INX
-                JMP copy_map_loop
-copy_map_end    RTS
-
-
-;--------------------------------------;
-; Empty temp map                       ;
-;--------------------------------------;
-
-empty_tmp       LDX #0
-                LDA #ch_dead
-empty_tmp_loop  STA temp_map,X
-                CPX #$FF
-                BEQ empty_tmp_end
-                INX
-                JMP empty_tmp_loop
-empty_tmp_end   RTS
-
-;--------------------------------------;
-; Clear stack                          ;
-;--------------------------------------;
-
-clear_stack     LDX #0
-                LDA #$00
-clr_stack_loop  STA #$0100,X
-                CPX #$FF
-                BEQ clear_stack_end
-                INX
-                JMP clr_stack_loop
-clear_stack_end LDX #$FF
-                TXS
-                RTS
 
 
 ;--------------------------------------;
