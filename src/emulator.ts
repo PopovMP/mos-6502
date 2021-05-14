@@ -222,8 +222,8 @@ class Emulator {
 				currentChars.push( value >= 0x20 && value <= 0x7E ? String.fromCharCode(value) : '.' )
 			}
 
-			if (lineAddress % 0x0100 === 0 && lineAddress > 0 && lines[lines.length - 1] !== '*') {
-				lines.push('*') // Page changed
+			if (lineAddress % 0x0100 === 0 && lines.length > 0 && lines[lines.length - 1] !== '') {
+				lines.push('') // Page changed
 			}
 
 			if (currentBytes.some(e => e !== '00')) {

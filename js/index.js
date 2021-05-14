@@ -1600,8 +1600,8 @@ class Emulator {
                 currentBytes.push(Utils.byteToHex(value));
                 currentChars.push(value >= 0x20 && value <= 0x7E ? String.fromCharCode(value) : '.');
             }
-            if (lineAddress % 0x0100 === 0 && lineAddress > 0 && lines[lines.length - 1] !== '*') {
-                lines.push('*');
+            if (lineAddress % 0x0100 === 0 && lines.length > 0 && lines[lines.length - 1] !== '') {
+                lines.push('');
             }
             if (currentBytes.some(e => e !== '00')) {
                 lines.push(`${lineAddressText} | ${currentBytes.join(' ')} | ${currentChars.join('')}`);
