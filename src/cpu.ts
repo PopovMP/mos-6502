@@ -91,6 +91,7 @@ class Cpu {
 
 	public run(): void {
 		this.isStopRequired = false
+		this.cycles = 7
 
 		while (!this.isStopRequired && this.cycles < 1_000_000) {
 			this.step()
@@ -162,20 +163,21 @@ class Cpu {
 
 	private readonly instruction: Record<string, (opr: number, cycles: number) => boolean> = {
 		ADC: (opr: number) => {
+			// Add Memory to Accumulator with Carry
 			this.V = !((this.A ^ opr) & 0x80)
 
-			const temp: number = this.A + opr + (this.C ? 1 : 0)
-			this.A = temp & 0xFF
+			const val: number = this.A + opr + +this.C
+			this.A = val & 0xFF
 
-			if (temp >= 0x100) {
+			if (val >= 0x100) {
 				this.C = true
-				if (this.V && temp >= 0x180) {
+				if (this.V && val >= 0x180) {
 					this.V = false
 				}
 			}
 			else {
 				this.C = false
-				if (this.V && temp < 0x80) {
+				if (this.V && val < 0x80) {
 					this.V = false
 				}
 			}
