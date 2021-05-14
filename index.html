@@ -30,9 +30,9 @@ ch_dead = $00
 
 ; Program address
 * = $0800
-                JSR init_map         ; Pre-fill main map with life
+                JSR init_map         ; Initialize main map with life
 
-game_loop       LDX #$FF
+game_loop       LDX #$FF             ; Reset stack pointer
                 TXS
 
                 JSR examine_cells    ; Count each cell neighbours (store in temp map)
@@ -41,7 +41,7 @@ game_loop       LDX #$FF
 
 
 ;----------------------------------------;
-; Pre-fill main map with life            ;
+; Initialize main map with life          ;
 ;----------------------------------------;
 
 init_map        LDX #0
@@ -59,7 +59,7 @@ spaceship      .BYTE     $AA,       $AD
                .BYTE $B9
                .BYTE $C9,           $CD
                .BYTE $D9,$DA,$DB,$DC
-               .BYTE $00
+               .BYTE 0
 
 init_map_end    RTS
 
@@ -71,109 +71,51 @@ init_map_end    RTS
 ; by walking through it.
 
 examine_cells   LDA #0
-                STA ec_pos            ; Set position to 0 (start of map)
+                STA examine_pos       ; Set position to 0 (start of map)
 
-ec_loop         LDA ec_pos            ; Load current position in A
+examine_loop    LDA examine_pos       ; Load current position in A
                 JSR count_nbrs        ; Count neighbours
-                LDX ec_pos            ; Load current position in X
-                STA temp_map,X        ; Store the count of neighbours in temp map
+                LDX examine_pos       ; Load current position in X
+                STA helper_map,X      ; Store the count of neighbours in helper map
 
-                LDA ec_pos            ; Load current position
+                LDA examine_pos       ; Load current position
                 CMP #$FF              ; Check if it is at the end of the map
-                BEQ ec_end            ; If true, finish
-                INC ec_pos
-                JMP ec_loop
+                BEQ examine_end       ; If true, finish
+                INC examine_pos
+                JMP examine_loop
 
-ec_pos          NOP                   ; Current cell's position
-ec_end          RTS
+examine_pos     NOP                   ; Current cell's position
+examine_end     RTS
 
 
 ;--------------------------------------;
 ; Count neighbours of the cell in A    ;
 ;--------------------------------------;
 
-; NW N NE
-; W  A  E
-; SW S SE
-
-; NW = A - $11
-; N  = A - $10
-; NE = A - $0F
-; W  = A - $01
-; E  = A + $01
-; SW = A + $0F
-; S  = A + $10
-; SE = A + $11
-
 count_nbrs      STA count_nbrs_cell ; Backup cell position
                 LDA #0
                 STA count_nbrs_res  ; Reset counter
+                LDX #0
+                LDY dir_offset,X
 
-count_nbrs_NW   LDA count_nbrs_cell ; Recover cell position
-                SEC
-                SBC #$11            ; Adjust A
-                TAX                 ; Transfer A to X
-                LDA main_map,X      ; Load target cell in A
-                BEQ count_nbrs_N    ; Branch if A zero ( dead cell )
+
+count_loop      LDA count_nbrs_cell ; Recover cell position
+                CLC
+                ADC dir_offset,X    ; Adjust A
+                TAY                 ; Transfer A to Y
+                LDA main_map,Y      ; Load target cell in A
+                BEQ count_continue  ; Branch if A zero ( dead cell )
                 INC count_nbrs_res  ; Increment result if target alive
 
-count_nbrs_N    LDA count_nbrs_cell
-                SEC
-                SBC #$10
-                TAX
-                LDA main_map,X
-                BEQ count_nbrs_NE
-                INC count_nbrs_res
-
-count_nbrs_NE   LDA count_nbrs_cell
-                SEC
-                SBC #$0F
-                TAX
-                LDA main_map,X
-                BEQ count_nbrs_W
-                INC count_nbrs_res
-
-count_nbrs_W    LDA count_nbrs_cell
-                SEC
-                SBC #$01
-                TAX
-                LDA main_map,X
-                BEQ count_nbrs_E
-                INC count_nbrs_res
-
-count_nbrs_E    LDA count_nbrs_cell
-                CLC
-                ADC #$01
-                TAX
-                LDA main_map,X
-                BEQ count_nbrs_SW
-                INC count_nbrs_res
-
-count_nbrs_SW   LDA count_nbrs_cell
-                CLC
-                ADC #$0F
-                TAX
-                LDA main_map,X
-                BEQ count_nbrs_S
-                INC count_nbrs_res
-
-count_nbrs_S    LDA count_nbrs_cell
-                CLC
-                ADC #$10
-                TAX
-                LDA main_map,X
-                BEQ count_nbrs_SE
-                INC count_nbrs_res
-
-count_nbrs_SE   LDA count_nbrs_cell
-                CLC
-                ADC #$11
-                TAX
-                LDA main_map,X
+count_continue  INX
+                LDY dir_offset,X
                 BEQ count_nbrs_end
-                INC count_nbrs_res
+                JMP count_loop
 
-                JMP count_nbrs_end
+dir_offset      .BYTE $EF, $F0, $F1
+                .BYTE $FF,      $01
+                .BYTE $0F, $10, $11
+                .BYTE 0
 
 count_nbrs_cell NOP                 ; Current cell position
 count_nbrs_res  NOP                 ; Counter for the neighbours
@@ -181,15 +123,15 @@ count_nbrs_end  LDA count_nbrs_res  ; Load result in A
                 RTS                 ; Return
 
 
-;---------------------------------------;
+;------------------------------------------;
 ; Toggle each cell live or dead            ;
-;---------------------------------------;
+;------------------------------------------;
 
 toggle_cells    LDA #0
                 STA tggl_pos
 
 tgl_loop        LDX tggl_pos        ; Load current position in X
-                LDA temp_map,X      ; Get count of neighbours
+                LDA helper_map,X    ; Get count of neighbours
 
 ; Rule 1 - Any (live) cell with fewer than two live neighbours dies.
                 CMP #2
@@ -197,11 +139,11 @@ tgl_loop        LDX tggl_pos        ; Load current position in X
 
 ; Rule 2 - Any (live) cell with more than three live neighbours dies.
                 CMP #4
-                BPL tggl_make_dead    ; A >= 4
+                BPL tggl_make_dead  ; A >= 4
 
 ; Rule 3 - Any (dead) cell with exactly three live neighbours becomes a live cell
                 CMP #3
-                BEQ tggl_make_live    ; A == 3
+                BEQ tggl_make_live  ; A == 3
 
 tgl_next        LDA tggl_pos        ; Load current position
                 CMP #$FF            ; Check if it is at the end of the map
@@ -215,7 +157,7 @@ tggl_make_dead  LDX tggl_pos
                 STA main_map,X
                 JMP tgl_next
 
-; Make cell dead
+; Make cell live
 tggl_make_live  LDX tggl_pos
                 LDA #ch_live
                 STA main_map,X
@@ -225,22 +167,23 @@ tggl_pos        NOP                ; Cell position
 tggl_end        RTS
 
 
-;--------------------------------------;
+;-----------------------------------;
 
 ; Main map location
 * = $0400
-main_map BRK
+main_map        BRK
 
-; Temp map location
+; Helper map location
 * = $0600
-temp_map BRK
+helper_map      BRK
 
-; Break procedure
+; BRK procedure
 * = $F100
-JMP game_loop
+                JMP game_loop
 
+; Set BRK vector
 * = $FFFE
-.WORD $F100
+                .WORD $F100
 
       </textarea>
   </div>
