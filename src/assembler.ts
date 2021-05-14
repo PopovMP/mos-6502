@@ -414,7 +414,7 @@ class Assembler {
 			// OPC $FFFF,Y ; Y-Indexed Absolute
 			const matchABSY = /^[A-Z]{3} ([$%]?[0-9A-Z_]+),Y$/.exec(line)
 			if (matchABSY) {
-				const value: string | number = this.parseValue(matchABSY[1])
+				const value: string | number = this.parseValue(matchABSY[1], codeDtoPassOne.labels)
 
 				// Y-Indexed Zero Page
 				if (typeof value === 'number' && value >= 0x00 && value <= 0xFF) {
