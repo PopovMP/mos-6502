@@ -62,7 +62,7 @@ cpu.reset()
 let steps = 0
 const startTime  = Date.now()
 
-while (!cpu.flagB) {
+while (!cpu.B) {
 	cpu.step()
 	steps++
 }

@@ -9,26 +9,33 @@ class Cpu {
 	private readonly dataSheet: DataSheet
 	private readonly memory: Uint8Array
 
-	private A: number
-	private X: number
-	private Y: number
-	private S: number // Stack Pointer
-	private PC: number
+	public A: number  // Accumulator
+	public X: number  // X index register
+	public Y: number  // Y index register
+	public S: number  // Stack Pointer
+	public PC: number // Program Counter
 
-	private N: boolean // Negative flag
-	private V: boolean // Overflow flag
-	private B: boolean // Break Command
-	private D: boolean // Decimal flag
-	private I: boolean // Interrupt Disabled flag
-	private Z: boolean // Zero flag
-	private C: boolean // Carry flag
+	public N: boolean // Negative flag
+	public V: boolean // Overflow flag
+	public B: boolean // Break Command
+	public D: boolean // Decimal flag
+	public I: boolean // Interrupt Disabled flag
+	public Z: boolean // Zero flag
+	public C: boolean // Carry flag
 
-	private get P(): number {
-		return (+this.N << 7) | (+this.V << 6) | (      1 << 5) | (+this.B << 4) |
-			   (+this.D << 3) | (+this.I << 2) | (+this.Z << 1) | (+this.C << 0)
+	// Processor Status
+	public get P(): number {
+		return  (+this.N << 7) |
+				(+this.V << 6) |
+				(      1 << 5) |
+				(+this.B << 4) |
+				(+this.D << 3) |
+				(+this.I << 2) |
+				(+this.Z << 1) |
+				(+this.C << 0)
 	}
 
-	private set P(val: number) {
+	public set P(val: number) {
 		this.N = !!((val >> 7) & 0x01)
 		this.V = !!((val >> 6) & 0x01)
 		this.B = !!((val >> 4) & 0x01)
@@ -36,14 +43,6 @@ class Cpu {
 		this.I = !!((val >> 2) & 0x01)
 		this.Z = !!((val >> 1) & 0x01)
 		this.C = !!((val >> 0) & 0x01)
-	}
-
-	public get regPC(): number {
-		return this.PC
-	}
-
-	public get flagB(): boolean {
-		return this.B
 	}
 
 	constructor(memory: Uint8Array) {
@@ -66,7 +65,7 @@ class Cpu {
 		this.C = false
 	}
 
-	public reset() {
+	public reset(): void {
 		this.B  = false
 		this.PC = this.loadWord(0xFFFC)
 	}
@@ -87,28 +86,16 @@ class Cpu {
 					: this.memory[this.operandAddress[mode]()]  // Instruction needs the operand value
 
 		this.PC += this.dataSheet.opCodeBytes[opc]
+
 		this.instruction[name](opr)
 	}
 
 	public run(): void {
 		this.B = false
+
 		while (!this.B) {
 			this.step()
 		}
-	}
-
-	public dumpStatus(): string {
-		const getRegText = (val: number): string =>
-			`${Utils.byteToHex(val)}  ${val.toString(10).padStart(3, ' ')}  ${Utils.byteToSInt(val).padStart(4, ' ')}`
-
-		const flagsText = `${+this.N} ${+this.V} 1 ${+this.B} ${+this.D} ${+this.I} ${+this.Z} ${+this.C}`
-
-		return '' +
-			'R  Hex  Dec   +/-    R   Hex   N V - B D I Z C\n' +
-			'-----------------    -------   ---------------\n' +
-			`A   ${getRegText(this.A)}    P    ${Utils.byteToHex(this.P)}   ${flagsText}\n` +
-			`X   ${getRegText(this.X)}    S    ${Utils.byteToHex(this.S)}\n` +
-			`Y   ${getRegText(this.Y)}    PC ${Utils.wordToHex(this.PC)}`
 	}
 
 	private readonly operandAddress: Record<string, () => number> = {
@@ -559,13 +546,12 @@ class Cpu {
 
 	private pull(): number {
 		this.S += 1
-		const val: number = this.memory[0x0100 + this.S]
 
 		if (this.S > 0xFF) {
 			this.S = 0
 		}
 
-		return val
+		return this.memory[0x0100 + this.S]
 	}
 
 	private branch(offset: number): void {

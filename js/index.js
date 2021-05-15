@@ -933,8 +933,14 @@ class Cpu {
         this.C = false;
     }
     get P() {
-        return (+this.N << 7) | (+this.V << 6) | (1 << 5) | (+this.B << 4) |
-            (+this.D << 3) | (+this.I << 2) | (+this.Z << 1) | (+this.C << 0);
+        return (+this.N << 7) |
+            (+this.V << 6) |
+            (1 << 5) |
+            (+this.B << 4) |
+            (+this.D << 3) |
+            (+this.I << 2) |
+            (+this.Z << 1) |
+            (+this.C << 0);
     }
     set P(val) {
         this.N = !!((val >> 7) & 0x01);
@@ -944,12 +950,6 @@ class Cpu {
         this.I = !!((val >> 2) & 0x01);
         this.Z = !!((val >> 1) & 0x01);
         this.C = !!((val >> 0) & 0x01);
-    }
-    get regPC() {
-        return this.PC;
-    }
-    get flagB() {
-        return this.B;
     }
     reset() {
         this.B = false;
@@ -976,16 +976,6 @@ class Cpu {
             this.step();
         }
     }
-    dumpStatus() {
-        const getRegText = (val) => `${Utils.byteToHex(val)}  ${val.toString(10).padStart(3, ' ')}  ${Utils.byteToSInt(val).padStart(4, ' ')}`;
-        const flagsText = `${+this.N} ${+this.V} 1 ${+this.B} ${+this.D} ${+this.I} ${+this.Z} ${+this.C}`;
-        return '' +
-            'R  Hex  Dec   +/-    R   Hex   N V - B D I Z C\n' +
-            '-----------------    -------   ---------------\n' +
-            `A   ${getRegText(this.A)}    P    ${Utils.byteToHex(this.P)}   ${flagsText}\n` +
-            `X   ${getRegText(this.X)}    S    ${Utils.byteToHex(this.S)}\n` +
-            `Y   ${getRegText(this.Y)}    PC ${Utils.wordToHex(this.PC)}`;
-    }
     loadWord(addr) {
         return this.memory[addr] + (this.memory[addr + 1] << 8);
     }
@@ -998,11 +988,10 @@ class Cpu {
     }
     pull() {
         this.S += 1;
-        const val = this.memory[0x0100 + this.S];
         if (this.S > 0xFF) {
             this.S = 0;
         }
-        return val;
+        return this.memory[0x0100 + this.S];
     }
     branch(offset) {
         this.PC += offset < 128 ? offset : offset - 256;
@@ -1283,7 +1272,7 @@ class Emulator {
         try {
             this.cpu.step();
             this.dump();
-            if (this.cpu.flagB) {
+            if (this.cpu.B) {
                 return;
             }
         }
@@ -1314,7 +1303,7 @@ class Emulator {
     }
     dump() {
         this.terminal.innerText = '' +
-            this.cpu.dumpStatus() + '\n\n\n\n\n' +
+            this.getCpuDump() + '\n\n\n\n\n' +
             '                         Instruction Log\n' +
             '-------------------------------------------------------------------------\n' +
             this.getAssemblyDump() + '\n\n\n\n\n' +
@@ -1322,8 +1311,18 @@ class Emulator {
             '-------------------------------------------------------------------------\n' +
             this.getMemoryDump() + '\n\n';
     }
+    getCpuDump() {
+        const getRegText = (val) => `${Utils.byteToHex(val)}  ${val.toString(10).padStart(3, ' ')}  ${Utils.byteToSInt(val).padStart(4, ' ')}`;
+        const flagsText = `${+this.cpu.N} ${+this.cpu.V} 1 ${+this.cpu.B} ${+this.cpu.D} ${+this.cpu.I} ${+this.cpu.Z} ${+this.cpu.C}`;
+        return '' +
+            'R  Hex  Dec   +/-    R   Hex   N V - B D I Z C\n' +
+            '-----------------    -------   ---------------\n' +
+            `A   ${getRegText(this.cpu.A)}    P    ${Utils.byteToHex(this.cpu.P)}   ${flagsText}\n` +
+            `X   ${getRegText(this.cpu.X)}    S    ${Utils.byteToHex(this.cpu.S)}\n` +
+            `Y   ${getRegText(this.cpu.Y)}    PC ${Utils.wordToHex(this.cpu.PC)}`;
+    }
     getAssemblyDump() {
-        const pc = this.cpu.regPC;
+        const pc = this.cpu.PC;
         const opc = this.memory[pc];
         const bytes = this.dataSheet.opCodeBytes[opc];
         const code = Array.from(this.memory.slice(pc, pc + bytes));

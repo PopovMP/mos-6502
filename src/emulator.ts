@@ -137,7 +137,7 @@ class Emulator {
 			this.cpu.step()
 			this.dump()
 
-			if (this.cpu.flagB) {
+			if (this.cpu.B) {
 				return
 			}
 		}
@@ -175,7 +175,7 @@ class Emulator {
 
 	private dump(): void {
 		this.terminal.innerText = '' +
-			this.cpu.dumpStatus()  + '\n\n\n\n\n' +
+			this.getCpuDump()  + '\n\n\n\n\n' +
 			'                         Instruction Log\n' +
 			'-------------------------------------------------------------------------\n' +
 			this.getAssemblyDump() + '\n\n\n\n\n' +
@@ -184,8 +184,24 @@ class Emulator {
 			this.getMemoryDump() + '\n\n'
 	}
 
+
+	private getCpuDump(): string {
+		const getRegText = (val: number): string =>
+			`${Utils.byteToHex(val)}  ${val.toString(10).padStart(3, ' ')}  ${Utils.byteToSInt(val).padStart(4, ' ')}`
+
+		const flagsText = `${+this.cpu.N} ${+this.cpu.V} 1 ${+this.cpu.B} ${+this.cpu.D} ${+this.cpu.I} ${+this.cpu.Z} ${+this.cpu.C}`
+
+		return '' +
+			'R  Hex  Dec   +/-    R   Hex   N V - B D I Z C\n' +
+			'-----------------    -------   ---------------\n' +
+			`A   ${getRegText(this.cpu.A)}    P    ${Utils.byteToHex(this.cpu.P)}   ${flagsText}\n` +
+			`X   ${getRegText(this.cpu.X)}    S    ${Utils.byteToHex(this.cpu.S)}\n` +
+			`Y   ${getRegText(this.cpu.Y)}    PC ${Utils.wordToHex(this.cpu.PC)}`
+	}
+
+
 	private getAssemblyDump(): string {
-		const pc: number     = this.cpu.regPC
+		const pc: number     = this.cpu.PC
 		const opc: number    = this.memory[pc]
 		const bytes: number  = this.dataSheet.opCodeBytes[opc]
 		const code: number[] = Array.from( this.memory.slice(pc, pc + bytes) )
