@@ -612,7 +612,6 @@ class Cpu {
         this.addressInstructions = [
             'ASL', 'DEC', 'INC', 'LSR', 'JMP', 'JSR', 'ROL', 'ROR', 'STA', 'STX', 'STY'
         ];
-        this.isStopRequired = false;
         this.operandAddress = {
             IMPL: () => NaN,
             IMM: () => this.PC + 1,
@@ -645,12 +644,10 @@ class Cpu {
                     }
                 }
                 this.setNZ(this.A);
-                return true;
             },
             AND: (opr) => {
                 this.A &= opr;
                 this.setNZ(this.A);
-                return true;
             },
             ASL: (addr) => {
                 const input = isNaN(addr) ? this.A : this.memory[addr];
@@ -664,165 +661,127 @@ class Cpu {
                     this.memory[addr] = val;
                 }
                 this.setNZ(val);
-                return true;
             },
-            BCC: (opr, cycles) => {
+            BCC: (opr) => {
                 if (!this.C) {
-                    this.branch(opr, cycles);
-                    return false;
+                    this.branch(opr);
                 }
-                return true;
             },
-            BCS: (opr, cycles) => {
+            BCS: (opr) => {
                 if (this.C) {
-                    this.branch(opr, cycles);
-                    return false;
+                    this.branch(opr);
                 }
-                return true;
             },
-            BEQ: (opr, cycles) => {
+            BEQ: (opr) => {
                 if (this.Z) {
-                    this.branch(opr, cycles);
-                    return false;
+                    this.branch(opr);
                 }
-                return true;
             },
             BIT: (opr) => {
                 const val = this.A & opr;
                 this.N = !!(opr >> 7);
                 this.V = !!(opr >> 6);
                 this.Z = !val;
-                return true;
             },
-            BMI: (opr, cycles) => {
+            BMI: (opr) => {
                 if (this.N) {
-                    this.branch(opr, cycles);
-                    return false;
+                    this.branch(opr);
                 }
-                return true;
             },
-            BNE: (opr, cycles) => {
+            BNE: (opr) => {
                 if (!this.Z) {
-                    this.branch(opr, cycles);
-                    return false;
+                    this.branch(opr);
                 }
-                return true;
             },
-            BPL: (opr, cycles) => {
+            BPL: (opr) => {
                 if (!this.N) {
-                    this.branch(opr, cycles);
-                    return false;
+                    this.branch(opr);
                 }
-                return true;
             },
             BRK: () => {
-                const addr = this.PC + 2;
+                const addr = this.PC + 1;
                 this.push(addr & 0xFF);
                 this.push((addr >> 8) & 0xFF);
                 this.B = true;
                 this.push(this.P);
-                this.B = false;
                 this.PC = this.loadWord(0xFFFE);
-                this.cycles += 7;
-                return false;
             },
-            BVC: (opr, cycles) => {
+            BVC: (opr) => {
                 if (!this.V) {
-                    this.branch(opr, cycles);
-                    return false;
+                    this.branch(opr);
                 }
-                return true;
             },
-            BVS: (opr, cycles) => {
+            BVS: (opr) => {
                 if (this.V) {
-                    this.branch(opr, cycles);
-                    return false;
+                    this.branch(opr);
                 }
-                return true;
             },
             CMP: (opr) => {
                 const delta = this.A - opr;
                 this.C = this.A >= opr;
                 this.setNZ(delta);
-                return true;
             },
             CPX: (opr) => {
                 const delta = this.X - opr;
                 this.C = this.X >= opr;
                 this.setNZ(delta);
-                return true;
             },
             CPY: (opr) => {
                 const delta = this.Y - opr;
                 this.C = this.Y >= opr;
                 this.setNZ(delta);
-                return true;
             },
             CLC: () => {
                 this.C = false;
-                return true;
             },
             CLD: () => {
                 this.D = false;
-                return true;
             },
             CLI: () => {
                 this.I = false;
-                return true;
             },
             CLV: () => {
                 this.V = false;
-                return true;
             },
             DEC: (addr) => {
                 const val = this.memory[addr] = this.memory[addr] > 0 ? this.memory[addr] - 1 : 0xFF;
                 this.setNZ(val);
-                return true;
             },
             DEX: () => {
                 this.X = this.X > 0 ? this.X - 1 : 0xFF;
                 this.setNZ(this.X);
-                return true;
             },
             DEY: () => {
                 this.Y = this.Y > 0 ? this.Y - 1 : 0xFF;
                 this.setNZ(this.Y);
-                return true;
             },
             EOR: (opr) => {
                 this.A ^= opr;
                 this.setNZ(this.A);
-                return true;
             },
             INC: (addr) => {
                 const val = this.memory[addr] = this.memory[addr] < 0xFF ? this.memory[addr] + 1 : 0;
                 this.setNZ(val);
-                return true;
             },
             INX: () => {
                 this.X = this.X < 0xFF ? this.X + 1 : 0;
                 this.setNZ(this.X);
-                return true;
             },
             INY: () => {
                 this.Y = this.Y < 0xFF ? this.Y + 1 : 0;
                 this.setNZ(this.Y);
-                return true;
             },
             LDA: (opr) => {
                 this.A = opr;
                 this.setNZ(this.A);
-                return true;
             },
             LDX: (opr) => {
                 this.X = opr;
                 this.setNZ(this.X);
-                return true;
             },
             LDY: (opr) => {
                 this.Y = opr;
                 this.setNZ(this.Y);
-                return true;
             },
             LSR: (addr) => {
                 const input = isNaN(addr) ? this.A : this.memory[addr];
@@ -836,45 +795,34 @@ class Cpu {
                 this.N = false;
                 this.Z = !out;
                 this.C = !!(input & 1);
-                return true;
             },
             NOP: () => {
-                return true;
             },
             ORA: (opr) => {
                 this.A |= opr;
                 this.setNZ(this.A);
-                return true;
             },
             PHA: () => {
                 this.push(this.A);
-                return true;
             },
             PHP: () => {
                 this.push(this.P);
-                return true;
             },
             PLA: () => {
                 this.A = this.pull();
                 this.setNZ(this.A);
-                return true;
             },
             PLP: () => {
                 this.P = this.pull();
-                return true;
             },
-            JMP: (addr, cycles) => {
+            JMP: (addr) => {
                 this.PC = addr;
-                this.cycles += cycles;
-                return false;
             },
-            JSR: (addr, cycles) => {
-                const returnAddress = this.PC + 2;
+            JSR: (addr) => {
+                const returnAddress = this.PC - 1;
                 this.push(returnAddress & 0xFF);
                 this.push((returnAddress >> 8) & 0xFF);
                 this.PC = addr;
-                this.cycles += cycles;
-                return false;
             },
             ROL: (addr) => {
                 const input = isNaN(addr) ? this.A : this.memory[addr];
@@ -888,7 +836,6 @@ class Cpu {
                 this.N = !!((input >> 6) & 1);
                 this.Z = !out;
                 this.C = !!((input >> 7) & 1);
-                return true;
             },
             ROR: (addr) => {
                 const input = isNaN(addr) ? this.A : this.memory[addr];
@@ -902,19 +849,14 @@ class Cpu {
                 this.N = this.C;
                 this.Z = !out;
                 this.C = !!(input & 1);
-                return true;
             },
-            RTI: (opr, cycles) => {
+            RTI: () => {
                 this.P = this.pull();
                 this.PC = (this.pull() << 8) + this.pull();
-                this.cycles += cycles;
-                return false;
             },
-            RTS: (opr, cycles) => {
+            RTS: () => {
                 const address = (this.pull() << 8) + this.pull();
                 this.PC = address + 1;
-                this.cycles += cycles;
-                return false;
             },
             SBC: (opr) => {
                 this.V = !!((this.A ^ opr) & 0x80);
@@ -932,68 +874,55 @@ class Cpu {
                     }
                 }
                 this.A = value & 0xff;
-                return true;
             },
             SEC: () => {
                 this.C = true;
-                return true;
             },
             SED: () => {
                 this.D = true;
-                return true;
             },
             SEI: () => {
                 this.I = true;
-                return true;
             },
             STA: (addr) => {
                 this.memory[addr] = this.A;
-                return true;
             },
             STX: (addr) => {
                 this.memory[addr] = this.X;
-                return true;
             },
             STY: (addr) => {
                 this.memory[addr] = this.Y;
-                return true;
             },
             TAX: () => {
                 this.X = this.A;
                 this.setNZ(this.X);
-                return true;
             },
             TAY: () => {
                 this.Y = this.A;
                 this.setNZ(this.Y);
-                return true;
             },
             TSX: () => {
                 this.X = this.S;
                 this.setNZ(this.X);
-                return true;
             },
             TXA: () => {
                 this.A = this.X;
                 this.setNZ(this.A);
-                return true;
             },
             TXS: () => {
                 this.S = this.X;
-                return true;
             },
             TYA: () => {
                 this.A = this.Y;
                 this.setNZ(this.A);
-                return true;
             },
         };
         this.dataSheet = new DataSheet();
         this.memory = memory;
-        this.A = 0x00;
-        this.X = 0x00;
-        this.Y = 0x00;
-        this.S = 0xFF;
+        this.A = Utils.randomByte();
+        this.X = Utils.randomByte();
+        this.Y = Utils.randomByte();
+        this.S = Utils.randomByte();
         this.PC = 0x0000;
         this.N = false;
         this.V = false;
@@ -1002,7 +931,6 @@ class Cpu {
         this.I = false;
         this.Z = false;
         this.C = false;
-        this.cycles = 0;
     }
     get P() {
         return (+this.N << 7) | (+this.V << 6) | (1 << 5) | (+this.B << 4) |
@@ -1017,54 +945,36 @@ class Cpu {
         this.Z = !!((val >> 1) & 0x01);
         this.C = !!((val >> 0) & 0x01);
     }
-    get currentPC() {
+    get regPC() {
         return this.PC;
     }
+    get flagB() {
+        return this.B;
+    }
     reset() {
-        this.isStopRequired = false;
-        this.A = 0x00;
-        this.X = 0x00;
-        this.Y = 0x00;
-        this.S = 0xFF;
-        this.PC = 0x0000;
-        this.N = false;
-        this.V = false;
         this.B = false;
-        this.D = false;
-        this.I = false;
-        this.Z = false;
-        this.C = false;
-        this.cycles = 7;
         this.PC = this.loadWord(0xFFFC);
     }
-    run() {
-        this.isStopRequired = false;
-        this.cycles = 7;
-        while (!this.isStopRequired && this.cycles < 1000000) {
-            this.step();
-        }
-    }
     step() {
-        this.isStopRequired = false;
         const opc = this.memory[this.PC];
-        if (opc === undefined) {
-            throw new Error(`Invalid instruction: $${Utils.wordToHex(this.PC)}   ${Utils.byteToHex(opc)}`);
-        }
         const name = this.dataSheet.opCodeName[opc];
+        if (name === undefined) {
+            throw new Error(`Invalid instruction '${Utils.byteToHex(opc)}' at: $${Utils.wordToHex(this.PC)}`);
+        }
         const mode = this.dataSheet.opCodeMode[opc];
         const opr = this.addressInstructions.includes(name)
             ? this.operandAddress[mode]()
             : mode === 'IMPL'
                 ? this.A
                 : this.memory[this.operandAddress[mode]()];
-        const cycles = this.dataSheet.opCodeCycles[opc];
-        const isGenericOperation = this.instruction[name](opr, cycles);
-        if (isGenericOperation) {
-            this.PC += this.dataSheet.opCodeBytes[opc];
-            this.cycles += cycles;
+        this.PC += this.dataSheet.opCodeBytes[opc];
+        this.instruction[name](opr);
+    }
+    run() {
+        this.B = false;
+        while (!this.B) {
+            this.step();
         }
-        this.isStopRequired = this.B || this.I || this.memory[this.PC] === 0x00;
-        return this.isStopRequired;
     }
     dumpStatus() {
         const getRegText = (val) => `${Utils.byteToHex(val)}  ${val.toString(10).padStart(3, ' ')}  ${Utils.byteToSInt(val).padStart(4, ' ')}`;
@@ -1074,10 +984,7 @@ class Cpu {
             '-----------------    -------   ---------------\n' +
             `A   ${getRegText(this.A)}    P    ${Utils.byteToHex(this.P)}   ${flagsText}\n` +
             `X   ${getRegText(this.X)}    S    ${Utils.byteToHex(this.S)}\n` +
-            `Y   ${getRegText(this.Y)}    PC ${Utils.wordToHex(this.PC)}   Cycles: ${this.cycles}`;
-    }
-    stop() {
-        this.isStopRequired = true;
+            `Y   ${getRegText(this.Y)}    PC ${Utils.wordToHex(this.PC)}`;
     }
     loadWord(addr) {
         return this.memory[addr] + (this.memory[addr + 1] << 8);
@@ -1097,11 +1004,8 @@ class Cpu {
         }
         return val;
     }
-    branch(offset, cycles) {
-        this.PC = offset > 0x7F
-            ? this.PC + 2 - (0x100 - offset)
-            : this.PC + 2 + offset;
-        this.cycles += cycles + 1;
+    branch(offset) {
+        this.PC += offset < 128 ? offset : offset - 256;
     }
     setNZ(val) {
         this.N = !!(val >> 7);
@@ -1259,159 +1163,6 @@ class DataSheet {
             TXS: 'Transfer X to Stack Pointer',
             TYA: 'Transfer Y to Accumulator',
         };
-        this.opCodeCycles = {
-            0x00: 7,
-            0x01: 6,
-            0x05: 3,
-            0x06: 5,
-            0x08: 3,
-            0x09: 2,
-            0x0A: 2,
-            0x0D: 4,
-            0x0E: 6,
-            0x10: 2,
-            0x11: 5,
-            0x15: 4,
-            0x16: 6,
-            0x18: 2,
-            0x19: 4,
-            0x1D: 4,
-            0x1E: 7,
-            0x20: 6,
-            0x21: 6,
-            0x24: 3,
-            0x25: 3,
-            0x26: 5,
-            0x28: 4,
-            0x29: 2,
-            0x2A: 2,
-            0x2C: 4,
-            0x2D: 4,
-            0x2E: 6,
-            0x30: 2,
-            0x31: 5,
-            0x35: 4,
-            0x36: 6,
-            0x38: 2,
-            0x39: 4,
-            0x3D: 4,
-            0x3E: 7,
-            0x40: 6,
-            0x41: 6,
-            0x45: 3,
-            0x46: 5,
-            0x48: 3,
-            0x49: 2,
-            0x4A: 2,
-            0x4C: 3,
-            0x4D: 4,
-            0x4E: 6,
-            0x50: 2,
-            0x51: 5,
-            0x55: 4,
-            0x56: 6,
-            0x58: 2,
-            0x59: 4,
-            0x5D: 4,
-            0x5E: 7,
-            0x60: 6,
-            0x61: 6,
-            0x65: 3,
-            0x66: 5,
-            0x68: 4,
-            0x69: 2,
-            0x6A: 2,
-            0x6C: 5,
-            0x6D: 4,
-            0x6E: 6,
-            0x70: 2,
-            0x71: 5,
-            0x75: 4,
-            0x76: 6,
-            0x78: 2,
-            0x79: 4,
-            0x7D: 4,
-            0x7E: 7,
-            0x81: 6,
-            0x84: 3,
-            0x85: 3,
-            0x86: 3,
-            0x88: 2,
-            0x8A: 2,
-            0x8C: 4,
-            0x8D: 4,
-            0x8E: 4,
-            0x90: 2,
-            0x91: 6,
-            0x94: 4,
-            0x95: 4,
-            0x96: 4,
-            0x98: 2,
-            0x99: 5,
-            0x9A: 2,
-            0x9D: 5,
-            0xA0: 2,
-            0xA1: 6,
-            0xA2: 2,
-            0xA4: 3,
-            0xA5: 3,
-            0xA6: 3,
-            0xA8: 2,
-            0xA9: 2,
-            0xAA: 2,
-            0xAC: 4,
-            0xAD: 4,
-            0xAE: 4,
-            0xB0: 2,
-            0xB1: 5,
-            0xB4: 4,
-            0xB5: 4,
-            0xB6: 4,
-            0xB8: 2,
-            0xB9: 4,
-            0xBA: 2,
-            0xBC: 4,
-            0xBD: 4,
-            0xBE: 4,
-            0xC0: 2,
-            0xC1: 6,
-            0xC4: 3,
-            0xC5: 3,
-            0xC6: 5,
-            0xC8: 2,
-            0xC9: 2,
-            0xCA: 2,
-            0xCC: 4,
-            0xCD: 4,
-            0xCE: 6,
-            0xD0: 2,
-            0xD1: 5,
-            0xD5: 4,
-            0xD6: 6,
-            0xD8: 2,
-            0xD9: 4,
-            0xDD: 4,
-            0xDE: 7,
-            0xE0: 2,
-            0xE1: 6,
-            0xE4: 3,
-            0xE5: 3,
-            0xE6: 5,
-            0xE8: 2,
-            0xE9: 2,
-            0xEA: 2,
-            0xEC: 4,
-            0xED: 4,
-            0xEE: 6,
-            0xF0: 2,
-            0xF1: 5,
-            0xF5: 4,
-            0xF6: 6,
-            0xF8: 2,
-            0xF9: 4,
-            0xFD: 4,
-            0xFE: 7,
-        };
         Object.keys(this.Opcodes).forEach(instr => {
             this.instructions.push(instr);
             this.Opcodes[instr].forEach((opc, index) => {
@@ -1465,7 +1216,6 @@ class Emulator {
     btnLoadCode_click(event) {
         event.preventDefault();
         const sourceCode = this.codeEditor.value;
-        this.cpu.stop();
         this.memory.fill(0x00);
         this.isStopRequired = true;
         this.terminal.innerText = '';
@@ -1531,9 +1281,9 @@ class Emulator {
             return;
         }
         try {
-            const isReady = this.cpu.step();
+            this.cpu.step();
             this.dump();
-            if (isReady) {
+            if (this.cpu.flagB) {
                 return;
             }
         }
@@ -1555,12 +1305,12 @@ class Emulator {
     }
     btnForever_click(event) {
         event.preventDefault();
+        this.isStopRequired = false;
         this.runForever();
     }
     btnPause_click(event) {
         event.preventDefault();
         this.isStopRequired = true;
-        this.cpu.stop();
     }
     dump() {
         this.terminal.innerText = '' +
@@ -1573,7 +1323,7 @@ class Emulator {
             this.getMemoryDump() + '\n\n';
     }
     getAssemblyDump() {
-        const pc = this.cpu.currentPC;
+        const pc = this.cpu.regPC;
         const opc = this.memory[pc];
         const bytes = this.dataSheet.opCodeBytes[opc];
         const code = Array.from(this.memory.slice(pc, pc + bytes));
@@ -1627,9 +1377,11 @@ class Emulator {
         const address = parseInt(initialPc, 16);
         this.memory[0xFFFC] = address & 0x00FF;
         this.memory[0xFFFD] = (address >> 8) & 0x00FF;
-        return address;
     }
     runForever() {
+        if (this.isStopRequired) {
+            return;
+        }
         try {
             this.cpu.run();
             this.dump();
@@ -1655,6 +1407,12 @@ class Utils {
             return '-' + (((~val) + 1) & 0xFF).toString(10);
         }
         return val.toString(10);
+    }
+    static randomByte() {
+        return Math.floor((0xFF + 1) * Math.random());
+    }
+    static randomBit() {
+        return Math.floor(2 * Math.random());
     }
 }
 module.exports.Utils = Utils;

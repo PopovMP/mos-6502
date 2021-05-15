@@ -21,6 +21,14 @@ class Utils {
 
 		return val.toString(10)
 	}
+
+	public static randomByte(): number {
+		return Math.floor((0xFF + 1) * Math.random())
+	}
+
+	public static randomBit(): number {
+		return Math.floor(2 * Math.random())
+	}
 }
 
 module.exports.Utils = Utils

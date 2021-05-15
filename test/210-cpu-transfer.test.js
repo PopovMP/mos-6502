@@ -20,17 +20,17 @@ describe('CPU - transfer', () => {
 		it('X is correct', () => {
 			strictEqual(cpu.X, cpu.A)
 		})
+
 		it('Z is clear', () => {
 			strictEqual(cpu.Z, false)
 		})
+
 		it('N is set', () => {
 			strictEqual(cpu.N, true)
 		})
+
 		it('PC is advanced', () => {
 			strictEqual(cpu.PC, 0x0801)
-		})
-		it('cycles is advanced', () => {
-			strictEqual(cpu.cycles, 12)
 		})
 	})
 })

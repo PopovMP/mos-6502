@@ -53,7 +53,6 @@ class Emulator {
 
 		const sourceCode = this.codeEditor.value
 
-		this.cpu.stop()
 		this.memory.fill(0x00)
 		this.isStopRequired     = true
 		this.terminal.innerText = ''
@@ -135,10 +134,10 @@ class Emulator {
 		}
 
 		try {
-			const isReady = this.cpu.step()
+			this.cpu.step()
 			this.dump()
 
-			if (isReady) {
+			if (this.cpu.flagB) {
 				return
 			}
 		}
@@ -165,14 +164,13 @@ class Emulator {
 	private btnForever_click(event: Event): void {
 		event.preventDefault()
 
+		this.isStopRequired = false
 		this.runForever()
 	}
 
 	private btnPause_click(event: Event): void {
 		event.preventDefault()
-
 		this.isStopRequired = true
-		this.cpu.stop()
 	}
 
 	private dump(): void {
@@ -187,7 +185,7 @@ class Emulator {
 	}
 
 	private getAssemblyDump(): string {
-		const pc: number     = this.cpu.currentPC
+		const pc: number     = this.cpu.regPC
 		const opc: number    = this.memory[pc]
 		const bytes: number  = this.dataSheet.opCodeBytes[opc]
 		const code: number[] = Array.from( this.memory.slice(pc, pc + bytes) )
@@ -250,17 +248,19 @@ class Emulator {
 		this.codeEditor.selectionEnd = selectionStart + 4
 	}
 
-	private setInitialPCinMemory(): number {
+	private setInitialPCinMemory(): void {
 		const initialPc: string = (document.getElementById('initial-pc') as HTMLInputElement).value
 		const address: number = parseInt(initialPc, 16)
 
 		this.memory[0xFFFC] = address & 0x00FF
 		this.memory[0xFFFD] = (address >> 8) & 0x00FF
-
-		return address
 	}
 
 	private runForever(): void {
+		if (this.isStopRequired) {
+			return
+		}
+
 		try {
 			this.cpu.run()
 			this.dump()

@@ -59,18 +59,20 @@ assembler.load(sourceCode, memory)
 
 cpu.reset()
 
-const startCycle = cpu.cycles
+let steps = 0
 const startTime  = Date.now()
 
-cpu.run()
+while (!cpu.flagB) {
+	cpu.step()
+	steps++
+}
 
 const time   = Date.now() - startTime
-const cycles = cpu.cycles - startCycle
 
-const frq = Math.round( (cycles / (time / 1000)) / 1000 )
+const frq = Math.round( (steps / (time / 1000)) / 1000 )
 
 describe('Benchmark', () => {
-	describe('Run 0xFF loops', () => {
+	describe('Run demo program', () => {
 		it('Makes more than 1000 kHz', () => {
 			console.log( `Frequency: ${frq} kHz`)
 			strictEqual(frq > 1000, true)

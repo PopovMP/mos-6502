@@ -23,9 +23,6 @@ class Cpu {
 	private Z: boolean // Zero flag
 	private C: boolean // Carry flag
 
-	private cycles: number
-	private isStopRequired: boolean = false
-
 	private get P(): number {
 		return (+this.N << 7) | (+this.V << 6) | (      1 << 5) | (+this.B << 4) |
 			   (+this.D << 3) | (+this.I << 2) | (+this.Z << 1) | (+this.C << 0)
@@ -41,18 +38,22 @@ class Cpu {
 		this.C = !!((val >> 0) & 0x01)
 	}
 
-	public get currentPC(): number {
+	public get regPC(): number {
 		return this.PC
+	}
+
+	public get flagB(): boolean {
+		return this.B
 	}
 
 	constructor(memory: Uint8Array) {
 		this.dataSheet = new DataSheet()
 		this.memory = memory
 
-		this.A = 0x00
-		this.X = 0x00
-		this.Y = 0x00
-		this.S = 0xFF
+		this.A = Utils.randomByte()
+		this.X = Utils.randomByte()
+		this.Y = Utils.randomByte()
+		this.S = Utils.randomByte()
 
 		this.PC = 0x0000
 
@@ -63,50 +64,21 @@ class Cpu {
 		this.I = false
 		this.Z = false
 		this.C = false
-
-		this.cycles = 0
 	}
 
 	public reset() {
-		this.isStopRequired = false
-
-		this.A = 0x00
-		this.X = 0x00
-		this.Y = 0x00
-		this.S = 0xFF
-
-		this.PC = 0x0000
-
-		this.N = false
-		this.V = false
-		this.B = false
-		this.D = false
-		this.I = false
-		this.Z = false
-		this.C = false
-
-		this.cycles = 7
+		this.B  = false
 		this.PC = this.loadWord(0xFFFC)
 	}
 
-	public run(): void {
-		this.isStopRequired = false
-		this.cycles = 7
-
-		while (!this.isStopRequired && this.cycles < 1_000_000) {
-			this.step()
-		}
-	}
-
-	public step(): boolean {
-		this.isStopRequired = false
-
+	public step(): void {
 		const opc: number  = this.memory[this.PC]
-		if (opc === undefined) {
-			throw new Error(`Invalid instruction: $${Utils.wordToHex(this.PC)}   ${Utils.byteToHex(opc)}`)
+		const name: string = this.dataSheet.opCodeName[opc]
+
+		if (name === undefined) {
+			throw new Error(`Invalid instruction '${Utils.byteToHex(opc)}' at: $${Utils.wordToHex(this.PC)}`)
 		}
 
-		const name: string = this.dataSheet.opCodeName[opc]
 		const mode: string = this.dataSheet.opCodeMode[opc]
 		const opr: number  = this.addressInstructions.includes(name)
 				? this.operandAddress[mode]()                   // Instruction needs an effective address
@@ -114,18 +86,15 @@ class Cpu {
 					? this.A                                    // However, it may need the A register value
 					: this.memory[this.operandAddress[mode]()]  // Instruction needs the operand value
 
-		const cycles: number = this.dataSheet.opCodeCycles[opc]
+		this.PC += this.dataSheet.opCodeBytes[opc]
+		this.instruction[name](opr)
+	}
 
-		const isGenericOperation = this.instruction[name](opr, cycles)
-
-		if (isGenericOperation) {
-			this.PC     += this.dataSheet.opCodeBytes[opc]
-			this.cycles += cycles
+	public run(): void {
+		this.B = false
+		while (!this.B) {
+			this.step()
 		}
-
-		this.isStopRequired = this.B || this.I || this.memory[this.PC] === 0x00
-
-		return this.isStopRequired
 	}
 
 	public dumpStatus(): string {
@@ -139,11 +108,7 @@ class Cpu {
 			'-----------------    -------   ---------------\n' +
 			`A   ${getRegText(this.A)}    P    ${Utils.byteToHex(this.P)}   ${flagsText}\n` +
 			`X   ${getRegText(this.X)}    S    ${Utils.byteToHex(this.S)}\n` +
-			`Y   ${getRegText(this.Y)}    PC ${Utils.wordToHex(this.PC)}   Cycles: ${this.cycles}`
-	}
-
-	public stop(): void {
-		this.isStopRequired = true
+			`Y   ${getRegText(this.Y)}    PC ${Utils.wordToHex(this.PC)}`
 	}
 
 	private readonly operandAddress: Record<string, () => number> = {
@@ -161,7 +126,7 @@ class Cpu {
 		REL : () => this.PC + 1,
 	}
 
-	private readonly instruction: Record<string, (opr: number, cycles: number) => boolean> = {
+	private readonly instruction: Record<string, (opr: number) => void> = {
 		ADC: (opr: number) => {
 			// Add Memory to Accumulator with Carry
 			this.V = !((this.A ^ opr) & 0x80)
@@ -183,20 +148,18 @@ class Cpu {
 			}
 
 			this.setNZ(this.A)
-			return true
 		},
 
 		AND: (opr: number) => {
 			// "AND" Memory with Accumulator
 			this.A &= opr
 			this.setNZ(this.A)
-			return true
 		},
 
 		ASL: (addr: number) => {
 			// Arithmetic Shift Left
-			const input = isNaN(addr) ? this.A : this.memory[addr]
-			const temp = input << 1
+			const input: number = isNaN(addr) ? this.A : this.memory[addr]
+			const temp: number  = input << 1
 			this.C = (temp >> 8) === 1
 			const val = temp & 0xFF
 
@@ -208,103 +171,81 @@ class Cpu {
 			}
 
 			this.setNZ(val)
-			return true
 		},
 
-		BCC: (opr: number, cycles: number) => {
+		BCC: (opr: number) => {
 			// Branch if Carry Clear
 			if (!this.C) {
-				this.branch(opr, cycles)
-				return false
+				this.branch(opr)
 			}
-			return true
 		},
 
-		BCS: (opr: number, cycles: number) => {
+		BCS: (opr: number) => {
 			// Branch if Carry Set
 			if (this.C) {
-				this.branch(opr, cycles)
-				return false
+				this.branch(opr)
 			}
-			return true
 		},
 
-		BEQ: (opr: number, cycles: number) => {
+		BEQ: (opr: number) => {
 			// Branch if Equal
 			if (this.Z) {
-				this.branch(opr, cycles)
-				return false
+				this.branch(opr)
 			}
-			return true
 		},
 
 		BIT: (opr: number) => {
 			// Test Bits in Memory with Accumulator
-			const val = this.A & opr
+			const val: number = this.A & opr
 
 			this.N = !!(opr >> 7)
 			this.V = !!(opr >> 6)
 			this.Z = !val
-
-			return true
 		},
 
-		BMI: (opr: number, cycles: number) => {
+		BMI: (opr: number) => {
 			// Branch if Minus
 			if (this.N) {
-				this.branch(opr, cycles)
-				return false
+				this.branch(opr)
 			}
-			return true
 		},
 
-		BNE: (opr: number, cycles: number) => {
+		BNE: (opr: number) => {
 			// Branch if Not Equal
 			if (!this.Z) {
-				this.branch(opr, cycles)
-				return false
+				this.branch(opr)
 			}
-			return true
 		},
 
-		BPL: (opr: number, cycles: number) => {
+		BPL: (opr: number) => {
 			// BCS - Branch if Plus
 			if (!this.N) {
-				this.branch(opr, cycles)
-				return false
+				this.branch(opr)
 			}
-			return true
 		},
 
 		BRK: () => {
 			// Break
-			const addr = this.PC + 2
+			const addr: number = this.PC + 1
 			this.push(addr & 0xFF)
 			this.push((addr >> 8) & 0xFF)
 			this.B = true
 			this.push(this.P)
-			this.B = false
 			this.PC = this.loadWord(0xFFFE)
-			this.cycles += 7
-			return false
 		},
 
-		BVC: (opr: number, cycles: number) => {
+		BVC: (opr: number) => {
 			// Branch if Overflow Clear
 			if (!this.V) {
-				this.branch(opr, cycles)
-				return false
+				this.branch(opr)
 			}
-			return true
 		},
 
-		BVS: (opr: number, cycles: number) => {
+		BVS: (opr: number) => {
 			// Branch if Overflow Set
 			if (this.V) {
-				this.branch(opr, cycles)
-				return false
+				this.branch(opr)
 			}
-			return true
 		},
 
 		CMP: (opr: number) => {
@@ -312,7 +253,6 @@ class Cpu {
 			const delta: number = this.A - opr
 			this.C = this.A >= opr
 			this.setNZ(delta)
-			return true
 		},
 
 		CPX: (opr: number) => {
@@ -320,7 +260,6 @@ class Cpu {
 			const delta: number = this.X - opr
 			this.C = this.X >= opr
 			this.setNZ(delta)
-			return true
 		},
 
 		CPY: (opr: number) => {
@@ -328,107 +267,92 @@ class Cpu {
 			const delta: number = this.Y - opr
 			this.C = this.Y >= opr
 			this.setNZ(delta)
-			return true
 		},
 
 		CLC: () => {
 			// CLC - Clear Carry Flag
 			this.C = false
-			return true
 		},
 
 		CLD: () => {
 			// CLD - Clear Decimal Mode
 			this.D = false
-			return true
 		},
 
 		CLI: () => {
 			// CLI - Clear Interrupt Disable
 			this.I = false
-			return true
 		},
 
 		CLV: () => {
 			// Clear Overflow Flag
 			this.V = false
-			return true
 		},
 
 		DEC: (addr: number) => {
 			// Decrement memory By One
-			const val = this.memory[addr] = this.memory[addr] > 0 ? this.memory[addr] - 1 : 0xFF
+			const val: number = this.memory[addr] = this.memory[addr] > 0 ? this.memory[addr] - 1 : 0xFF
 			this.setNZ(val)
-			return true
 		},
 
 		DEX: () => {
 			// Decrement Index Register X By One
 			this.X = this.X > 0 ? this.X - 1 : 0xFF
 			this.setNZ(this.X)
-			return true
 		},
 
 		DEY: () => {
 			// Decrement Index Register Y By One
 			this.Y = this.Y > 0 ? this.Y - 1 : 0xFF
 			this.setNZ(this.Y)
-			return true
 		},
 
 		EOR: (opr: number) => {
 			// Exclusive OR
 			this.A ^= opr
 			this.setNZ(this.A)
-			return true
 		},
 
 		INC: (addr: number) => {
 			// Increment Memory By One
-			const val = this.memory[addr] = this.memory[addr] < 0xFF ? this.memory[addr] + 1 : 0
+			const val: number = this.memory[addr] = this.memory[addr] < 0xFF ? this.memory[addr] + 1 : 0
 			this.setNZ(val)
-			return true
 		},
 
 		INX: () => {
 			// Increment Index Register X By One
 			this.X = this.X < 0xFF ? this.X + 1 : 0
 			this.setNZ(this.X)
-			return true
 		},
 
 		INY: () => {
 			// Increment Index Register Y By One
 			this.Y = this.Y < 0xFF ? this.Y + 1 : 0
 			this.setNZ(this.Y)
-			return true
 		},
 
 		LDA: (opr: number) => {
 			// Load Accumulator with Memory
 			this.A = opr
 			this.setNZ(this.A)
-			return true
 		},
 
 		LDX: (opr: number) => {
 			// Load X Register
 			this.X = opr
 			this.setNZ(this.X)
-			return true
 		},
 
 		LDY: (opr: number) => {
 			// Load Y Register
 			this.Y = opr
 			this.setNZ(this.Y)
-			return true
 		},
 
 		LSR: (addr: number) => {
 			// Logical Shift Right
-			const input = isNaN(addr) ? this.A : this.memory[addr]
-			const out = input >> 1
+			const input: number = isNaN(addr) ? this.A : this.memory[addr]
+			const out: number   = input >> 1
 
 			if (isNaN(addr)) {
 				this.A = out
@@ -440,67 +364,56 @@ class Cpu {
 			this.N = false
 			this.Z = !out
 			this.C = !!(input & 1)
-			return true
 		},
 
 		NOP: () => {
 			// NOP - No Operation
-			return true
 		},
 
 		ORA: (opr: number) => {
 			// Logical OR
 			this.A |= opr
 			this.setNZ(this.A)
-			return true
 		},
 
 		PHA: () => {
 			// Push Accumulator On Stack
 			this.push(this.A)
-			return true
 		},
 
 		PHP: () => {
 			// Push Processor Status On Stack
 			this.push(this.P)
-			return true
 		},
 
 		PLA: () => {
 			// Pull Accumulator From Stack
 			this.A = this.pull()
 			this.setNZ(this.A)
-			return true
 		},
 
 		PLP: () => {
 			// Pull Processor Status From Stack
 			this.P = this.pull()
-			return true
 		},
 
-		JMP: (addr: number, cycles: number) => {
+		JMP: (addr: number) => {
 			// Jump
 			this.PC = addr
-			this.cycles += cycles
-			return false
 		},
 
-		JSR: (addr: number, cycles: number) => {
+		JSR: (addr: number) => {
 			// Jump To Subroutine
-			const returnAddress = this.PC + 2
+			const returnAddress: number = this.PC - 1
 			this.push(returnAddress & 0xFF)
 			this.push((returnAddress >> 8) & 0xFF)
 			this.PC = addr
-			this.cycles += cycles
-			return false
 		},
 
 		ROL: (addr: number) => {
 			// Rotate Left
-			const input = isNaN(addr) ? this.A : this.memory[addr]
-			const out = (input << 1) + +this.C
+			const input: number = isNaN(addr) ? this.A : this.memory[addr]
+			const out: number   = (input << 1) + +this.C
 
 			if (isNaN(addr)) {
 				this.A = out
@@ -512,13 +425,12 @@ class Cpu {
 			this.N = !!((input >> 6) & 1)
 			this.Z = !out
 			this.C = !!((input >> 7) & 1)
-			return true
 		},
 
 		ROR: (addr: number) => {
 			// Rotate Right
-			const input = isNaN(addr) ? this.A : this.memory[addr]
-			const out = ((input >> 1) + (+this.C << 7)) & 0xFF
+			const input: number = isNaN(addr) ? this.A : this.memory[addr]
+			const out: number   = ((input >> 1) + (+this.C << 7)) & 0xFF
 
 			if (isNaN(addr)) {
 				this.A = out
@@ -530,29 +442,24 @@ class Cpu {
 			this.N = this.C
 			this.Z = !out
 			this.C = !!(input & 1)
-			return true
 		},
 
-		RTI: (opr: number, cycles: number) => {
+		RTI: () => {
 			// Return From Subroutine
-			this.P = this.pull()
+			this.P  = this.pull()
 			this.PC = (this.pull() << 8) + this.pull()
-			this.cycles += cycles
-			return false
 		},
 
-		RTS: (opr: number, cycles: number) => {
+		RTS: () => {
 			// Return From Subroutine
-			const address = (this.pull() << 8) + this.pull()
+			const address: number = (this.pull() << 8) + this.pull()
 			this.PC = address + 1
-			this.cycles += cycles
-			return false
 		},
 
 		SBC: (opr: number) => {
 			// Subtract with Cary
 			this.V = !!((this.A ^ opr) & 0x80);
-			const value = 0xff + this.A - opr + (this.C ? 1 : 0)
+			const value: number = 0xff + this.A - opr + (this.C ? 1 : 0)
 
 			if (value < 0x100) {
 				this.C = false
@@ -568,84 +475,71 @@ class Cpu {
 			}
 
 			this.A = value & 0xff
-			return true
 		},
 
 		SEC: () => {
 			// SEC - Set Carry Flag
 			this.C = true
-			return true
 		},
 
 		SED: () => {
 			// SED - Set Decimal Mode
 			this.D = true
-			return true
 		},
 
 		SEI: () => {
 			// SEI - Set Interrupt Disable
 			this.I = true
-			return true
 		},
 
 		STA: (addr: number) => {
 			// Store Accumulator
 			this.memory[addr] = this.A
-			return true
 		},
 
 		STX: (addr: number) => {
 			// Store X Register
 			this.memory[addr] = this.X
-			return true
 		},
 
 		STY: (addr: number) => {
 			// Store Y Register
 			this.memory[addr] = this.Y
-			return true
 		},
 
 		TAX: () => {
 			// TAX  - Transfer Accumulator To Index X
 			this.X = this.A
 			this.setNZ(this.X)
-			return true
 		},
 
 		TAY: () => {
 			// TAY  - Transfer Accumulator To Index Y
 			this.Y = this.A
 			this.setNZ(this.Y)
-			return true
 		},
 
 		TSX: () => {
 			// TSX - Transfer Stack Pointer To Index X
 			this.X = this.S
 			this.setNZ(this.X)
-			return true
 		},
 
 		TXA: () => {
 			// TXA - Transfer Index X To Accumulator
 			this.A = this.X
 			this.setNZ(this.A)
-			return true
 		},
 
 		TXS: () => {
 			// TXS - Transfer Index X To Stack Pointer
 			this.S = this.X
-			return true
 		},
 
 		TYA: () => {
 			// Transfer Index Y To Accumulator
 			this.A = this.Y
 			this.setNZ(this.A)
-			return true
 		},
 	}
 
@@ -665,7 +559,7 @@ class Cpu {
 
 	private pull(): number {
 		this.S += 1
-		const val = this.memory[0x0100 + this.S]
+		const val: number = this.memory[0x0100 + this.S]
 
 		if (this.S > 0xFF) {
 			this.S = 0
@@ -674,12 +568,8 @@ class Cpu {
 		return val
 	}
 
-	private branch(offset: number, cycles: number): void {
-		this.PC = offset > 0x7F
-			? this.PC + 2 - (0x100 - offset)
-			: this.PC + 2 + offset
-
-		this.cycles += cycles + 1
+	private branch(offset: number): void {
+		this.PC += offset < 128 ? offset : offset - 256
 	}
 
 	private setNZ(val: number): void {
