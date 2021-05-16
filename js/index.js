@@ -1201,6 +1201,13 @@ class Emulator {
         btnCpuRun.addEventListener('click', this.btnRun_click.bind(this));
         const btnForever = document.getElementById('btn-run-forever');
         btnForever.addEventListener('click', this.btnForever_click.bind(this));
+        this.loadExample();
+    }
+    loadExample() {
+        this.getRequest('./example/game-of-life.asm', this.getRequest_ready.bind(this));
+    }
+    getRequest_ready(data) {
+        this.codeEditor.value = data;
     }
     btnLoadCode_click(event) {
         event.preventDefault();
@@ -1270,6 +1277,7 @@ class Emulator {
             return;
         }
         try {
+            this.cpu.B = false;
             this.cpu.step();
             this.dump();
             if (this.cpu.B) {
@@ -1389,6 +1397,17 @@ class Emulator {
             this.terminal.innerText += e.message + '\n';
         }
         setTimeout(this.runForever.bind(this), 500);
+    }
+    getRequest(url, callback) {
+        const xmlHttp = new XMLHttpRequest();
+        xmlHttp.onreadystatechange = readyStateChange;
+        xmlHttp.open('GET', url, true);
+        xmlHttp.send();
+        function readyStateChange() {
+            if (xmlHttp.readyState === 4 && xmlHttp.status === 200) {
+                callback(xmlHttp.responseText);
+            }
+        }
     }
 }
 module.exports.Emulator = Emulator;

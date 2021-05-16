@@ -46,6 +46,16 @@ class Emulator {
 
 		const btnForever: HTMLElement = document.getElementById('btn-run-forever') as HTMLElement
 		btnForever.addEventListener('click', this.btnForever_click.bind(this))
+
+		this.loadExample()
+	}
+
+	private loadExample(): void {
+		this.getRequest('./example/game-of-life.asm', this.getRequest_ready.bind(this))
+	}
+
+	private getRequest_ready(data: string): void {
+		this.codeEditor.value = data
 	}
 
 	private btnLoadCode_click(event: Event): void {
@@ -134,6 +144,7 @@ class Emulator {
 		}
 
 		try {
+			this.cpu.B = false
 			this.cpu.step()
 			this.dump()
 
@@ -286,6 +297,19 @@ class Emulator {
 		}
 
 		setTimeout(this.runForever.bind(this), 500)
+	}
+
+	private getRequest(url: string, callback: (res: string) => void): void {
+		const xmlHttp: XMLHttpRequest = new XMLHttpRequest()
+		xmlHttp.onreadystatechange = readyStateChange
+		xmlHttp.open('GET', url, true)
+		xmlHttp.send()
+
+		function readyStateChange(): void {
+			if (xmlHttp.readyState === 4 && xmlHttp.status === 200) {
+				callback(xmlHttp.responseText)
+			}
+		}
 	}
 }
 
