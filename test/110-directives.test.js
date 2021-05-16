@@ -3,10 +3,10 @@
 const { strictEqual  } = require('assert')
 const { describe, it } = require('@popovmp/mocha-tiny')
 const { Assembler    } = require('../js')
+const assembler = new Assembler()
+const memory    = new Uint8Array(0xFFFF + 1)
 
 describe('Assembler - Directives', () => {
-	const assembler = new Assembler()
-	const memory    = new Uint8Array(0xFFFF + 1)
 
 	describe('.BYTE', () => {
 		it('Sets a byte in memory', () => {
@@ -66,6 +66,20 @@ describe('Assembler - Directives', () => {
 			strictEqual(memory[0x0801], 0xAB)
 			strictEqual(memory[0x0802], 0x22)
 			strictEqual(memory[0x0803], 0xCD)
+		})
+
+		it('WORD sets a label', () => {
+			const sourceCode =  `
+				* = $0800
+				label NOP
+				      NOP
+				      NOP
+				.WORD label
+			`
+			memory.fill(0x00)
+			assembler.load(sourceCode, memory)
+			strictEqual(memory[0x0803], 0x00)
+			strictEqual(memory[0x0804], 0x08)
 		})
 	})
 })

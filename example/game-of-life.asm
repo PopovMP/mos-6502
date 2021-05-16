@@ -149,25 +149,24 @@ tggl_pos        NOP                ; Cell position
 tggl_end        RTS
 
 
+;------------------------------------------;
+; Continue after BRK                       ;
+;------------------------------------------;
+
+brk_proc        LDX #$FF             ; Reset stack pointer
+                TXS
+                JMP game_loop        ; Continue Game of Life
+
 ;-----------------------------------;
 
 ; Main map location
 * = $0400
-main_map        BRK
+main_map        NOP
 
 ; Helper map location
 * = $0600
-helper_map      BRK
-
-; BRK procedure
-* = $F100
-
-brk_proc        PLP                 ; Recover stacked info from the BRK
-                PLA
-                PLA
-
-                JMP game_loop       ; Continue Game of Life
+helper_map      NOP
 
 ; Set BRK vector
 * = $FFFE
-                .WORD $F100
+                .WORD brk_proc

@@ -189,16 +189,16 @@ class Assembler {
             }
         }
     }
-    parseInstructions(codeDtoPassOne) {
+    parseInstructions(codeTokenDto) {
         const instructionTokens = [];
         let pc = 0x0800;
-        for (const token of codeDtoPassOne.codeTokens) {
+        for (const token of codeTokenDto.codeTokens) {
             if (token.tokenType === 'set-pc') {
                 pc = token.pcValue;
                 continue;
             }
             if (token.tokenType === 'label') {
-                codeDtoPassOne.labels[token.instrName] = pc;
+                codeTokenDto.labels[token.instrName] = pc;
                 continue;
             }
             if (token.tokenType === 'directive') {
@@ -212,13 +212,13 @@ class Assembler {
                 if (token.instrName === '.WORD' && token.directiveData) {
                     const bytes = token.directiveData
                         .split(/,[ \t]*/)
-                        .map(num => this.parseValue(num))
+                        .map(num => this.parseValue(num, codeTokenDto.labels))
                         .reduce((acc, word) => {
                         acc.push(word & 0xFF);
                         acc.push((word >> 8) & 0xFF);
                         return acc;
                     }, []);
-                    instructionTokens.push({ pc, bytes, name: '.BYTE', opc: -1 });
+                    instructionTokens.push({ pc, bytes, name: '.WORD', opc: -1 });
                     pc += bytes.length;
                 }
                 continue;
@@ -234,7 +234,7 @@ class Assembler {
             if (['BPL', 'BMI', 'BVC', 'BVS', 'BCC', 'BCS', 'BNE', 'BEQ'].includes(name)) {
                 const opc = this.dataSheet.getOpc(name, 'REL');
                 const operandText = line.slice(4);
-                const value = this.parseValue(operandText, codeDtoPassOne.labels);
+                const value = this.parseValue(operandText, codeTokenDto.labels);
                 instructionTokens.push(typeof value === 'number' ? {
                     pc, opc, name,
                     bytes: [opc, value - pc - 2],
@@ -256,7 +256,7 @@ class Assembler {
             }
             const matchABS = /^[A-Z]{3} ([$%]?[0-9A-Z_]+)$/.exec(line);
             if (matchABS) {
-                const value = this.parseValue(matchABS[1], codeDtoPassOne.labels);
+                const value = this.parseValue(matchABS[1], codeTokenDto.labels);
                 if (typeof value === 'number' && value >= 0x00 && value <= 0xFF) {
                     const opc = this.dataSheet.getOpc(name, 'ZP');
                     instructionTokens.push({ pc, opc, name, bytes: [opc, value] });
@@ -270,7 +270,7 @@ class Assembler {
             }
             const matchABSX = /^[A-Z]{3} ([$%]?[0-9A-Z_]+),X$/.exec(line);
             if (matchABSX) {
-                const value = this.parseValue(matchABSX[1], codeDtoPassOne.labels);
+                const value = this.parseValue(matchABSX[1], codeTokenDto.labels);
                 if (typeof value === 'number' && value >= 0x00 && value <= 0xFF) {
                     const opc = this.dataSheet.getOpc(name, 'ZPX');
                     instructionTokens.push({ pc, opc, name, bytes: [opc, value] });
@@ -284,7 +284,7 @@ class Assembler {
             }
             const matchABSY = /^[A-Z]{3} ([$%]?[0-9A-Z_]+),Y$/.exec(line);
             if (matchABSY) {
-                const value = this.parseValue(matchABSY[1], codeDtoPassOne.labels);
+                const value = this.parseValue(matchABSY[1], codeTokenDto.labels);
                 if (typeof value === 'number' && value >= 0x00 && value <= 0xFF) {
                     const opc = this.dataSheet.getOpc(name, 'ZPY');
                     instructionTokens.push({ pc, opc, name, bytes: [opc, value] });
@@ -299,7 +299,7 @@ class Assembler {
             const matchIND = /^[A-Z]{3} \(([$%]?[0-9A-Z_]+)\)$/.exec(line);
             if (matchIND) {
                 const opc = this.dataSheet.getOpc(name, 'IND');
-                const value = this.parseValue(matchIND[1], codeDtoPassOne.labels);
+                const value = this.parseValue(matchIND[1], codeTokenDto.labels);
                 instructionTokens.push(getInstrToken(pc, name, opc, value));
                 pc += this.dataSheet.opCodeBytes[opc];
                 continue;
@@ -356,8 +356,11 @@ class Assembler {
         }
         const value = parseInt(valueText, 10);
         if (isNaN(value)) {
-            if (labels.hasOwnProperty(valueText)) {
-                return valueText;
+            const valuetextUp = valueText.toUpperCase();
+            if (labels.hasOwnProperty(valuetextUp)) {
+                return isNaN(labels[valuetextUp])
+                    ? valuetextUp
+                    : labels[valuetextUp];
             }
             throw new Error(`Cannot find a label: ${valueText}`);
         }
