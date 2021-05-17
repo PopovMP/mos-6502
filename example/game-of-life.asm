@@ -11,8 +11,10 @@
 ; Run it again to show the next life cycle
 
 ; Initialize variables
-ch_live = $2A
-ch_dead = $00
+ch_live    = $2A   ; Character for live cell
+ch_dead    = $00   ; Character for dead cell
+main_map   = $0400 ; Main map location
+helper_map = $0600 ; Helper map location
 
 ; Program address
 * = $0800
@@ -29,6 +31,7 @@ ch_dead = $00
 game_loop       JSR examine_cells    ; Count each cell neighbours (store in temp map)
                 JSR toggle_cells     ; Toggle cells according to the GoL rules
                 BRK                  ; Break after each cycle
+                JMP game_loop        ; Loop game
 
 ;----------------------------------------;
 ; Initialize main map with life          ;
@@ -50,11 +53,8 @@ spaceship      .BYTE $AA,$AD,$B9,$C9,$CD,$D9,$DA,$DB,$DC,0
 init_map_end    RTS
 
 ;---------------------------------------;
-; Examine cells in main map.            ;
+; Examine all cells in main map.        ;
 ;---------------------------------------;
-
-; Examines all the cells in the main map
-; by walking through it.
 
 examine_cells   LDA #0
                 STA examine_pos       ; Set position to 0 (start of map)
@@ -115,15 +115,15 @@ toggle_cells    LDA #0
 tgl_loop        LDX tggl_pos        ; Load current position in X
                 LDA helper_map,X    ; Get count of neighbours
 
-; Rule 1 - Any (live) cell with fewer than two live neighbours dies.
+                ; Rule 1 - Any cell with fewer than two live neighbours dies.
                 CMP #2
                 BMI tggl_make_dead  ; A < 2
 
-; Rule 2 - Any (live) cell with more than three live neighbours dies.
+                ; Rule 2 - Any cell with more than three live neighbours dies.
                 CMP #4
                 BPL tggl_make_dead  ; A >= 4
 
-; Rule 3 - Any (dead) cell with exactly three live neighbours becomes a live cell
+                ; Rule 3 - Any cell with exactly three live neighbours becomes live.
                 CMP #3
                 BEQ tggl_make_live  ; A == 3
 
@@ -133,19 +133,19 @@ tgl_next        LDA tggl_pos        ; Load current position
                 INC tggl_pos        ; if not, increment position
                 JMP tgl_loop        ; Loop
 
-; Make cell dead
+                ; Make cell dead
 tggl_make_dead  LDX tggl_pos
                 LDA #ch_dead
                 STA main_map,X
                 JMP tgl_next
 
-; Make cell live
+                ; Make cell live
 tggl_make_live  LDX tggl_pos
                 LDA #ch_live
                 STA main_map,X
                 JMP tgl_next
 
-tggl_pos        NOP                ; Cell position
+tggl_pos        NOP                 ; Cell position
 tggl_end        RTS
 
 
@@ -157,16 +157,8 @@ brk_proc        LDX #$FF             ; Reset stack pointer
                 TXS
                 JMP game_loop        ; Continue Game of Life
 
+
 ;-----------------------------------;
 
-; Main map location
-* = $0400
-main_map        NOP
-
-; Helper map location
-* = $0600
-helper_map      NOP
-
-; Set BRK vector
-* = $FFFE
+* = $FFFE       ; Set BRK vector
                 .WORD brk_proc
