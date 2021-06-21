@@ -702,9 +702,9 @@ class Cpu {
                 }
             },
             BRK: () => {
-                const addr = this.PC + 1;
-                this.push(addr & 0xFF);
-                this.push((addr >> 8) & 0xFF);
+                this.PC += 1;
+                this.push((this.PC >> 8) & 0xFF);
+                this.push(this.PC & 0xFF);
                 this.B = true;
                 this.push(this.P);
                 this.PC = this.loadWord(0xFFFE);
@@ -718,6 +718,18 @@ class Cpu {
                 if (this.V) {
                     this.branch(opr);
                 }
+            },
+            CLC: () => {
+                this.C = false;
+            },
+            CLD: () => {
+                this.D = false;
+            },
+            CLI: () => {
+                this.I = false;
+            },
+            CLV: () => {
+                this.V = false;
             },
             CMP: (opr) => {
                 const delta = this.A - opr;
@@ -734,28 +746,16 @@ class Cpu {
                 this.C = this.Y >= opr;
                 this.setNZ(delta);
             },
-            CLC: () => {
-                this.C = false;
-            },
-            CLD: () => {
-                this.D = false;
-            },
-            CLI: () => {
-                this.I = false;
-            },
-            CLV: () => {
-                this.V = false;
-            },
             DEC: (addr) => {
-                const val = this.memory[addr] = this.memory[addr] > 0 ? this.memory[addr] - 1 : 0xFF;
+                const val = this.memory[addr] = (this.memory[addr] - 1) & 0xFF;
                 this.setNZ(val);
             },
             DEX: () => {
-                this.X = this.X > 0 ? this.X - 1 : 0xFF;
+                this.X = (this.X - 1) & 0xFF;
                 this.setNZ(this.X);
             },
             DEY: () => {
-                this.Y = this.Y > 0 ? this.Y - 1 : 0xFF;
+                this.Y = (this.Y - 1) & 0xFF;
                 this.setNZ(this.Y);
             },
             EOR: (opr) => {
@@ -763,16 +763,25 @@ class Cpu {
                 this.setNZ(this.A);
             },
             INC: (addr) => {
-                const val = this.memory[addr] = this.memory[addr] < 0xFF ? this.memory[addr] + 1 : 0;
+                const val = this.memory[addr] = (this.memory[addr] + 1) & 0xFF;
                 this.setNZ(val);
             },
             INX: () => {
-                this.X = this.X < 0xFF ? this.X + 1 : 0;
+                this.X = (this.X + 1) & 0xFF;
                 this.setNZ(this.X);
             },
             INY: () => {
-                this.Y = this.Y < 0xFF ? this.Y + 1 : 0;
+                this.Y = (this.Y + 1) & 0xFF;
                 this.setNZ(this.Y);
+            },
+            JMP: (addr) => {
+                this.PC = addr;
+            },
+            JSR: (addr) => {
+                this.PC -= 1;
+                this.push((this.PC >> 8) & 0xFF);
+                this.push(this.PC & 0xFF);
+                this.PC = addr;
             },
             LDA: (opr) => {
                 this.A = opr;
@@ -818,15 +827,6 @@ class Cpu {
             PLP: () => {
                 this.P = this.pull();
             },
-            JMP: (addr) => {
-                this.PC = addr;
-            },
-            JSR: (addr) => {
-                const returnAddress = this.PC - 1;
-                this.push(returnAddress & 0xFF);
-                this.push((returnAddress >> 8) & 0xFF);
-                this.PC = addr;
-            },
             ROL: (addr) => {
                 const input = isNaN(addr) ? this.A : this.memory[addr];
                 const out = (input << 1) + +this.C;
@@ -855,11 +855,10 @@ class Cpu {
             },
             RTI: () => {
                 this.P = this.pull();
-                this.PC = (this.pull() << 8) + this.pull();
+                this.PC = this.pull() + (this.pull() << 8);
             },
             RTS: () => {
-                const address = (this.pull() << 8) + this.pull();
-                this.PC = address + 1;
+                this.PC = this.pull() + (this.pull() << 8) + 1;
             },
             SBC: (opr) => {
                 this.V = !!((this.A ^ opr) & 0x80);

@@ -144,7 +144,7 @@ class Cpu {
 		},
 
 		ASL: (addr: number) => {
-			// Arithmetic Shift Left
+			// Shift Left One Bit (Memory or Accumulator)
 			const input: number = isNaN(addr) ? this.A : this.memory[addr]
 			const temp: number  = input << 1
 			this.C = (temp >> 8) === 1
@@ -161,21 +161,21 @@ class Cpu {
 		},
 
 		BCC: (opr: number) => {
-			// Branch if Carry Clear
+			// Branch on Carry Clear
 			if (!this.C) {
 				this.branch(opr)
 			}
 		},
 
 		BCS: (opr: number) => {
-			// Branch if Carry Set
+			// Branch on Carry Set
 			if (this.C) {
 				this.branch(opr)
 			}
 		},
 
 		BEQ: (opr: number) => {
-			// Branch if Equal
+			// Branch on Result Zero
 			if (this.Z) {
 				this.branch(opr)
 			}
@@ -191,48 +191,68 @@ class Cpu {
 		},
 
 		BMI: (opr: number) => {
-			// Branch if Minus
+			// Branch on Result Minus
 			if (this.N) {
 				this.branch(opr)
 			}
 		},
 
 		BNE: (opr: number) => {
-			// Branch if Not Equal
+			// Branch on Result not Zero
 			if (!this.Z) {
 				this.branch(opr)
 			}
 		},
 
 		BPL: (opr: number) => {
-			// BCS - Branch if Plus
+			// Branch on Result Plus
 			if (!this.N) {
 				this.branch(opr)
 			}
 		},
 
 		BRK: () => {
-			// Break
-			const addr: number = this.PC + 1
-			this.push(addr & 0xFF)
-			this.push((addr >> 8) & 0xFF)
+			// Force Break
+			this.PC += 1
+			this.push((this.PC >> 8) & 0xFF)
+			this.push(this.PC & 0xFF)
 			this.B = true
 			this.push(this.P)
 			this.PC = this.loadWord(0xFFFE)
 		},
 
 		BVC: (opr: number) => {
-			// Branch if Overflow Clear
+			// Branch on Overflow Clear
 			if (!this.V) {
 				this.branch(opr)
 			}
 		},
 
 		BVS: (opr: number) => {
-			// Branch if Overflow Set
+			// Branch on Overflow Set
 			if (this.V) {
 				this.branch(opr)
 			}
+		},
+
+		CLC: () => {
+			// Clear Carry Flag
+			this.C = false
+		},
+
+		CLD: () => {
+			// Clear Decimal Mode
+			this.D = false
+		},
+
+		CLI: () => {
+			// Clear interrupt Disable Bit
+			this.I = false
+		},
+
+		CLV: () => {
+			// Clear Overflow Flag
+			this.V = false
 		},
 
 		CMP: (opr: number) => {
@@ -243,79 +263,72 @@ class Cpu {
 		},
 
 		CPX: (opr: number) => {
-			// Compare Index Register X To Memory
+			// Compare Index X to Memory
 			const delta: number = this.X - opr
 			this.C = this.X >= opr
 			this.setNZ(delta)
 		},
 
 		CPY: (opr: number) => {
-			// Compare Index Register X To Memory
+			// Compare Index X to Memory
 			const delta: number = this.Y - opr
 			this.C = this.Y >= opr
 			this.setNZ(delta)
 		},
 
-		CLC: () => {
-			// CLC - Clear Carry Flag
-			this.C = false
-		},
-
-		CLD: () => {
-			// CLD - Clear Decimal Mode
-			this.D = false
-		},
-
-		CLI: () => {
-			// CLI - Clear Interrupt Disable
-			this.I = false
-		},
-
-		CLV: () => {
-			// Clear Overflow Flag
-			this.V = false
-		},
-
 		DEC: (addr: number) => {
-			// Decrement memory By One
-			const val: number = this.memory[addr] = this.memory[addr] > 0 ? this.memory[addr] - 1 : 0xFF
+			// Decrement memory by One
+			const val: number = this.memory[addr] = (this.memory[addr] - 1) & 0xFF
 			this.setNZ(val)
 		},
 
 		DEX: () => {
-			// Decrement Index Register X By One
-			this.X = this.X > 0 ? this.X - 1 : 0xFF
+			// Decrement Index X by One
+			this.X = (this.X - 1) & 0xFF
 			this.setNZ(this.X)
 		},
 
 		DEY: () => {
-			// Decrement Index Register Y By One
-			this.Y = this.Y > 0 ? this.Y - 1 : 0xFF
+			// Decrement Index Y by One
+			this.Y = (this.Y - 1) & 0xFF
 			this.setNZ(this.Y)
 		},
 
 		EOR: (opr: number) => {
-			// Exclusive OR
+			// "Exclusive-Or" Memory with Accumulator
 			this.A ^= opr
 			this.setNZ(this.A)
 		},
 
 		INC: (addr: number) => {
-			// Increment Memory By One
-			const val: number = this.memory[addr] = this.memory[addr] < 0xFF ? this.memory[addr] + 1 : 0
+			// Increment Memory by One
+			const val: number = this.memory[addr] = (this.memory[addr] + 1) & 0xFF
 			this.setNZ(val)
 		},
 
 		INX: () => {
-			// Increment Index Register X By One
-			this.X = this.X < 0xFF ? this.X + 1 : 0
+			// Increment Index X by One
+			this.X = (this.X + 1) & 0xFF
 			this.setNZ(this.X)
 		},
 
 		INY: () => {
-			// Increment Index Register Y By One
-			this.Y = this.Y < 0xFF ? this.Y + 1 : 0
+			// Increment Index y By One
+			this.Y = (this.Y + 1) & 0xFF
 			this.setNZ(this.Y)
+		},
+
+		JMP: (addr: number) => {
+			// Jump to New Location
+			this.PC = addr
+		},
+
+		JSR: (addr: number) => {
+			// Jump to New Location Saving Return Address
+			this.PC -= 1
+			this.push((this.PC >> 8) & 0xFF)
+			this.push(this.PC & 0xFF)
+			this.PC = addr
 		},
 
 		LDA: (opr: number) => {
@@ -354,11 +367,11 @@ class Cpu {
 		},
 
 		NOP: () => {
-			// NOP - No Operation
+			// No Operation
 		},
 
 		ORA: (opr: number) => {
-			// Logical OR
+			// "OR" Memory with Accumulator
 			this.A |= opr
 			this.setNZ(this.A)
 		},
@@ -382,19 +395,6 @@ class Cpu {
 		PLP: () => {
 			// Pull Processor Status From Stack
 			this.P = this.pull()
-		},
-
-		JMP: (addr: number) => {
-			// Jump
-			this.PC = addr
-		},
-
-		JSR: (addr: number) => {
-			// Jump To Subroutine
-			const returnAddress: number = this.PC - 1
-			this.push(returnAddress & 0xFF)
-			this.push((returnAddress >> 8) & 0xFF)
-			this.PC = addr
 		},
 
 		ROL: (addr: number) => {
@@ -432,19 +432,18 @@ class Cpu {
 		},
 
 		RTI: () => {
-			// Return From Subroutine
+			// Return from Interrupt
 			this.P  = this.pull()
-			this.PC = (this.pull() << 8) + this.pull()
+			this.PC = this.pull() + (this.pull() << 8)
 		},
 
 		RTS: () => {
-			// Return From Subroutine
-			const address: number = (this.pull() << 8) + this.pull()
-			this.PC = address + 1
+			// Return from Subroutine
+			this.PC = this.pull() + (this.pull() << 8) + 1
 		},
 
 		SBC: (opr: number) => {
-			// Subtract with Cary
+			// Subtract Memory from Accumulator with Borrow
 			this.V = !!((this.A ^ opr) & 0x80);
 			const value: number = 0xff + this.A - opr + (this.C ? 1 : 0)
 
@@ -465,66 +464,66 @@ class Cpu {
 		},
 
 		SEC: () => {
-			// SEC - Set Carry Flag
+			// Set Carry Flag
 			this.C = true
 		},
 
 		SED: () => {
-			// SED - Set Decimal Mode
+			// Set Decimal Mode
 			this.D = true
 		},
 
 		SEI: () => {
-			// SEI - Set Interrupt Disable
+			// Set Interrupt Disable Status
 			this.I = true
 		},
 
 		STA: (addr: number) => {
-			// Store Accumulator
+			// Store Accumulator in Memory
 			this.memory[addr] = this.A
 		},
 
 		STX: (addr: number) => {
-			// Store X Register
+			// Store Index X in Memory
 			this.memory[addr] = this.X
 		},
 
 		STY: (addr: number) => {
-			// Store Y Register
+			// Store Index Y in Memory
 			this.memory[addr] = this.Y
 		},
 
 		TAX: () => {
-			// TAX  - Transfer Accumulator To Index X
+			// Transfer Accumulator to Index X
 			this.X = this.A
 			this.setNZ(this.X)
 		},
 
 		TAY: () => {
-			// TAY  - Transfer Accumulator To Index Y
+			// Transfer Accumulator to Index Y
 			this.Y = this.A
 			this.setNZ(this.Y)
 		},
 
 		TSX: () => {
-			// TSX - Transfer Stack Pointer To Index X
+			// Transfer Stack Pointer to Index X
 			this.X = this.S
 			this.setNZ(this.X)
 		},
 
 		TXA: () => {
-			// TXA - Transfer Index X To Accumulator
+			// Transfer Index X to Accumulator
 			this.A = this.X
 			this.setNZ(this.A)
 		},
 
 		TXS: () => {
-			// TXS - Transfer Index X To Stack Pointer
+			// Transfer Index X to Stack Pointer
 			this.S = this.X
 		},
 
 		TYA: () => {
-			// Transfer Index Y To Accumulator
+			// Transfer Index Y to Accumulator
 			this.A = this.Y
 			this.setNZ(this.A)
 		},
