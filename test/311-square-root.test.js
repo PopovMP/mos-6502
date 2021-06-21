@@ -94,7 +94,9 @@ Next
 	describe('Square root', () => {
 		assembler.load(sourceCode, memory)
 		cpu.reset()
-		cpu.run()
+		while (!cpu.B) {
+			cpu.step()
+		}
 		it('SQRT of 256 = 16', () => {
 			strictEqual(cpu.A, 0x10)
 		})

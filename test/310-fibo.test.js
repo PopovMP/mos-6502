@@ -52,7 +52,9 @@ describe('Fibonacci', () => {
 		assembler.load(sourceCode, memory)
 
 		cpu.reset()
-		cpu.run()
+		while (!cpu.B) {
+			cpu.step()
+		}
 		it('Fibo 13 = 233', () => {
 			strictEqual(cpu.A, 233)
 		})

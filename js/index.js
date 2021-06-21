@@ -972,12 +972,6 @@ class Cpu {
         this.PC += this.dataSheet.opCodeBytes[opc];
         this.instruction[name](opr);
     }
-    run() {
-        this.B = false;
-        while (!this.B) {
-            this.step();
-        }
-    }
     loadWord(addr) {
         return this.memory[addr] + (this.memory[addr + 1] << 8);
     }
@@ -1262,6 +1256,7 @@ class Emulator {
         event.preventDefault();
         this.isStopRequired = false;
         try {
+            this.cpu.B = false;
             this.cpu.step();
             this.dump();
         }
@@ -1291,12 +1286,18 @@ class Emulator {
         }
         setTimeout(this.debugLoop.bind(this), 700);
     }
+    cpuRun() {
+        this.cpu.B = false;
+        while (!this.cpu.B) {
+            this.cpu.step();
+        }
+        this.dump();
+    }
     btnRun_click(event) {
         event.preventDefault();
         this.isStopRequired = false;
         try {
-            this.cpu.run();
-            this.dump();
+            this.cpuRun();
         }
         catch (e) {
             this.terminal.innerText += e.message + '\n';
@@ -1392,8 +1393,7 @@ class Emulator {
             return;
         }
         try {
-            this.cpu.run();
-            this.dump();
+            this.cpuRun();
         }
         catch (e) {
             this.terminal.innerText += e.message + '\n';

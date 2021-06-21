@@ -90,14 +90,6 @@ class Cpu {
 		this.instruction[name](opr)
 	}
 
-	public run(): void {
-		this.B = false
-
-		while (!this.B) {
-			this.step()
-		}
-	}
-
 	private readonly operandAddress: Record<string, () => number> = {
 		IMPL: () => NaN, // Implied and Accumulator modes don't need address
 		IMM : () => this.PC + 1,

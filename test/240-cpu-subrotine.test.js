@@ -33,7 +33,9 @@ describe('Subroutine', () => {
 		`
 		assembler.load(sourceCode, memory)
 		cpu.reset()
-		cpu.run()
+		while (!cpu.B) {
+			cpu.step()
+		}
 
 		it('X = 5', () => {
 			strictEqual(cpu.X, 5)
@@ -73,7 +75,9 @@ describe('Subroutine', () => {
 		`
 		assembler.load(sourceCode, memory)
 		cpu.reset()
-		cpu.run()
+		while (!cpu.B) {
+			cpu.step()
+		}
 
 		it('Answer = 48', () => {
 			strictEqual(cpu.A, 48)
@@ -117,7 +121,9 @@ describe('Subroutine', () => {
 		assembler.load(sourceCode, memory)
 
 		cpu.reset()
-		cpu.run()
+		while (!cpu.B) {
+			cpu.step()
+		}
 
 		it('Answer = 55', () => {
 			strictEqual(cpu.A, 55)

@@ -28,7 +28,9 @@ describe('CPU - addressing modes', () => {
 		`
 		assembler.load(sourceCode, memory)
 		cpu.reset()
-		cpu.run()
+		while (!cpu.B) {
+			cpu.step()
+		}
 
 		it('Gets correct value', () => {
 			strictEqual(cpu.A, 0x0A)
@@ -55,7 +57,9 @@ describe('CPU - addressing modes', () => {
 		`
 		assembler.load(sourceCode, memory)
 		cpu.reset()
-		cpu.run()
+		while (!cpu.B) {
+			cpu.step()
+		}
 
 		it('Gets correct value', () => {
 			strictEqual(cpu.A, 0x0A)
@@ -81,7 +85,9 @@ describe('CPU - addressing modes', () => {
 		`
 		assembler.load(sourceCode, memory)
 		cpu.reset()
-		cpu.run()
+		while (!cpu.B) {
+			cpu.step()
+		}
 
 		it('Gets correct value', () => {
 			strictEqual(cpu.A, 0x0A)

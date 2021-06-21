@@ -123,6 +123,7 @@ class Emulator {
 		this.isStopRequired = false
 
 		try {
+			this.cpu.B = false
 			this.cpu.step()
 			this.dump()
 		}
@@ -138,7 +139,7 @@ class Emulator {
 		setTimeout(this.debugLoop.bind(this), 0)
 	}
 
-	private debugLoop() {
+	private debugLoop(): void {
 		if (this.isStopRequired) {
 			return
 		}
@@ -159,13 +160,22 @@ class Emulator {
 		setTimeout(this.debugLoop.bind(this), 700)
 	}
 
+	private cpuRun(): void {
+		this.cpu.B = false
+
+		while (!this.cpu.B) {
+			this.cpu.step()
+		}
+
+		this.dump()
+	}
+
 	private btnRun_click(event: Event): void {
 		event.preventDefault()
 		this.isStopRequired = false
 
 		try {
-			this.cpu.run()
-			this.dump()
+			this.cpuRun()
 		}
 		catch (e) {
 			this.terminal.innerText += e.message + '\n'
@@ -289,8 +299,7 @@ class Emulator {
 		}
 
 		try {
-			this.cpu.run()
-			this.dump()
+			this.cpuRun()
 		}
 		catch (e) {
 			this.terminal.innerText += e.message + '\n'

@@ -22,7 +22,9 @@ describe('CPU Stack', () => {
 
 			assembler.load(sourceCode, memory)
 			cpu.reset()
-			cpu.run()
+			while (!cpu.B) {
+				cpu.step()
+			}
 			strictEqual(cpu.A, 42)
 		})
 
@@ -43,7 +45,9 @@ describe('CPU Stack', () => {
 
 			assembler.load(sourceCode, memory)
 			cpu.reset()
-			cpu.run()
+			while (!cpu.B) {
+				cpu.step()
+			}
 			strictEqual(cpu.X, 13)
 			strictEqual(cpu.Y, 42)
 		})
@@ -77,7 +81,9 @@ describe('CPU Stack', () => {
 
 			assembler.load(sourceCode, memory)
 			cpu.reset()
-			cpu.run()
+			while (!cpu.B) {
+				cpu.step()
+			}
 			strictEqual(cpu.X, 0x10)
 			strictEqual(cpu.Y, 0x20)
 		})
