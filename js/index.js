@@ -705,8 +705,6 @@ class Cpu {
                 this.PC += 1;
                 this.push((this.PC >> 8) & 0xFF);
                 this.push(this.PC & 0xFF);
-                this.B = true;
-                this.push(this.P);
                 this.PC = this.loadWord(0xFFFE);
             },
             BVC: (opr) => {
@@ -856,6 +854,7 @@ class Cpu {
             RTI: () => {
                 this.P = this.pull();
                 this.PC = this.pull() + (this.pull() << 8);
+                this.I = false;
             },
             RTS: () => {
                 this.PC = this.pull() + (this.pull() << 8) + 1;
@@ -925,20 +924,20 @@ class Cpu {
         this.X = Utils.randomByte();
         this.Y = Utils.randomByte();
         this.S = Utils.randomByte();
-        this.PC = 0x0000;
         this.N = false;
         this.V = false;
-        this.B = false;
         this.D = false;
-        this.I = false;
+        this.I = true;
         this.Z = false;
         this.C = false;
+        this.PC = this.loadWord(0xFFFC);
     }
+    get B() { return true; }
     get P() {
         return (+this.N << 7) |
             (+this.V << 6) |
             (1 << 5) |
-            (+this.B << 4) |
+            (1 << 4) |
             (+this.D << 3) |
             (+this.I << 2) |
             (+this.Z << 1) |
@@ -947,14 +946,22 @@ class Cpu {
     set P(val) {
         this.N = !!((val >> 7) & 0x01);
         this.V = !!((val >> 6) & 0x01);
-        this.B = !!((val >> 4) & 0x01);
         this.D = !!((val >> 3) & 0x01);
         this.I = !!((val >> 2) & 0x01);
         this.Z = !!((val >> 1) & 0x01);
         this.C = !!((val >> 0) & 0x01);
     }
     reset() {
-        this.B = false;
+        this.A = Utils.randomByte();
+        this.X = Utils.randomByte();
+        this.Y = Utils.randomByte();
+        this.S = Utils.randomByte();
+        this.N = false;
+        this.V = false;
+        this.D = false;
+        this.I = true;
+        this.Z = false;
+        this.C = false;
         this.PC = this.loadWord(0xFFFC);
     }
     step() {
@@ -971,6 +978,21 @@ class Cpu {
                 : this.memory[this.operandAddress[mode]()];
         this.PC += this.dataSheet.opCodeBytes[opc];
         this.instruction[name](opr);
+    }
+    irq() {
+        if (this.I) {
+            return;
+        }
+        this.push((this.PC >> 8) & 0xFF);
+        this.push(this.PC & 0xFF);
+        this.push((this.P | 0x02) & ~(1 << 0x04));
+        this.PC = this.loadWord(0xFFFE);
+    }
+    nmi() {
+        this.push((this.PC >> 8) & 0xFF);
+        this.push(this.PC & 0xFF);
+        this.push((this.P | 0x02) & ~(1 << 0x04));
+        this.PC = this.loadWord(0xFFFA);
     }
     loadWord(addr) {
         return this.memory[addr] + (this.memory[addr + 1] << 8);
@@ -1256,7 +1278,6 @@ class Emulator {
         event.preventDefault();
         this.isStopRequired = false;
         try {
-            this.cpu.B = false;
             this.cpu.step();
             this.dump();
         }
@@ -1274,10 +1295,9 @@ class Emulator {
             return;
         }
         try {
-            this.cpu.B = false;
             this.cpu.step();
             this.dump();
-            if (this.cpu.B) {
+            if (this.memory[this.cpu.PC] === 0x00) {
                 return;
             }
         }
@@ -1287,8 +1307,9 @@ class Emulator {
         setTimeout(this.debugLoop.bind(this), 700);
     }
     cpuRun() {
-        this.cpu.B = false;
-        while (!this.cpu.B) {
+        let isFirstStep = true;
+        while (isFirstStep || this.memory[this.cpu.PC] !== 0x00) {
+            isFirstStep = false;
             this.cpu.step();
         }
         this.dump();

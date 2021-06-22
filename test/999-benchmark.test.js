@@ -62,7 +62,7 @@ cpu.reset()
 let steps = 0
 const startTime  = Date.now()
 
-while (!cpu.B) {
+while (memory[cpu.PC] !== 0x00) {
 	cpu.step()
 	steps++
 }

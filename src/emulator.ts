@@ -123,7 +123,6 @@ class Emulator {
 		this.isStopRequired = false
 
 		try {
-			this.cpu.B = false
 			this.cpu.step()
 			this.dump()
 		}
@@ -145,11 +144,10 @@ class Emulator {
 		}
 
 		try {
-			this.cpu.B = false
 			this.cpu.step()
 			this.dump()
 
-			if (this.cpu.B) {
+			if (this.memory[this.cpu.PC] === 0x00) {
 				return
 			}
 		}
@@ -160,10 +158,15 @@ class Emulator {
 		setTimeout(this.debugLoop.bind(this), 700)
 	}
 
+	/**
+	 * Runs CPU step by step until it reaches BRK (except at the first step)
+	 * @private
+	 */
 	private cpuRun(): void {
-		this.cpu.B = false
 
-		while (!this.cpu.B) {
+		let isFirstStep = true
+		while (isFirstStep || this.memory[this.cpu.PC] !== 0x00) {
+			isFirstStep = false
 			this.cpu.step()
 		}
 

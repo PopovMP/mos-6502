@@ -24,6 +24,7 @@ helper_map = $0600 ; Helper map location
                 LDA #0               ; Reset A
                 LDX #0               ; Reset X
                 LDY #0               ; Reset Y
+                CLI                  ; Clear Interrupt disable flag
 
                 JSR init_map         ; Initialize main map with life
                 BRK                  ; Break to show the initial map

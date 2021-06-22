@@ -12,23 +12,18 @@ describe('CPU - addressing modes', () => {
 	describe('($nn,X)', () => {
 		const sourceCode = `
 			* = $0800
-			
 			LDX #$01
-			
 			LDA #$05
 			STA $01
-			
 			LDA #$07
 			STA $02
-			
 			LDY #$0A
 			STY $0705
-			
 			LDA ($00,X)
 		`
 		assembler.load(sourceCode, memory)
 		cpu.reset()
-		while (!cpu.B) {
+		while (memory[cpu.PC] !== 0x00) {
 			cpu.step()
 		}
 
@@ -41,23 +36,18 @@ describe('CPU - addressing modes', () => {
 		const sourceCode = `
 			* = $0800
 			var = $00
-			
 			LDX #$01
-			
 			LDA #$05
 			STA $01
-			
 			LDA #$07
 			STA $02
-			
 			LDY #$0A
 			STY $0705
-			
 			LDA (var,X)
 		`
 		assembler.load(sourceCode, memory)
 		cpu.reset()
-		while (!cpu.B) {
+		while (memory[cpu.PC] !== 0x00) {
 			cpu.step()
 		}
 
@@ -69,23 +59,18 @@ describe('CPU - addressing modes', () => {
 	describe('($nn),Y', () => {
 		const sourceCode = `
 			* = $0800
-			
 			LDY #$01
-			
 			LDA #$03
 			STA $01
-			
 			LDA #$07
 			STA $02
-			
 			LDX #$0A
 			STX $0704
-			
 			LDA ($01),Y
 		`
 		assembler.load(sourceCode, memory)
 		cpu.reset()
-		while (!cpu.B) {
+		while (memory[cpu.PC] !== 0x00) {
 			cpu.step()
 		}
 

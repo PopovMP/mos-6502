@@ -34,7 +34,7 @@ MULT10  ASL         ;multiply by 2
 	describe('Multiply 10', () => {
 		assembler.load(sourceCode, memory)
 		cpu.reset()
-		while (!cpu.B) {
+		while (memory[cpu.PC] !== 0x00) {
 			cpu.step()
 		}
 		it('16 * 10 = 160', () => {

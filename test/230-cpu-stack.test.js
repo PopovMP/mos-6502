@@ -22,7 +22,7 @@ describe('CPU Stack', () => {
 
 			assembler.load(sourceCode, memory)
 			cpu.reset()
-			while (!cpu.B) {
+			while (memory[cpu.PC] !== 0x00) {
 				cpu.step()
 			}
 			strictEqual(cpu.A, 42)
@@ -45,7 +45,7 @@ describe('CPU Stack', () => {
 
 			assembler.load(sourceCode, memory)
 			cpu.reset()
-			while (!cpu.B) {
+			while (memory[cpu.PC] !== 0x00) {
 				cpu.step()
 			}
 			strictEqual(cpu.X, 13)
@@ -55,33 +55,32 @@ describe('CPU Stack', () => {
 
 		it('Loops', () => {
 			const sourceCode = `
-				  * = $0600
+				* = $0600
+					LDX #$00
+				    LDY #$00
 				
-				  LDX #$00
-				  LDY #$00
+				firstLoop:
+					TXA
+					STA $0200,Y
+					PHA
+					INX
+					INY
+					CPY #$10
+					BNE firstLoop ; loop until Y is $10
 				
-				firstloop:
-				  TXA
-				  STA $0200,Y
-				  PHA
-				  INX
-				  INY
-				  CPY #$10
-				  BNE firstloop ; loop until Y is $10
-				
-				secondloop:
-				  PLA
-				  STA $0200,Y
-				  INY
-				  CPY #$20      ; loop until Y is $20
-				  BNE secondloop
-				  
-				  BRK
+				secondLoop:
+					PLA
+					STA $0200,Y
+					INY
+					CPY #$20      ; loop until Y is $20
+					BNE secondLoop
+					
+					BRK
 			`
 
 			assembler.load(sourceCode, memory)
 			cpu.reset()
-			while (!cpu.B) {
+			while (memory[cpu.PC] !== 0x00) {
 				cpu.step()
 			}
 			strictEqual(cpu.X, 0x10)

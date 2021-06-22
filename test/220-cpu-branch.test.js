@@ -25,10 +25,9 @@ describe('CPU Branching', () => {
 
 		assembler.load(sourceCode, memory)
 		cpu.reset()
-		while (!cpu.B) {
+		while (memory[cpu.PC] !== 0x00) {
 			cpu.step()
 		}
-
 
 		it('Correct location', () => {
 			strictEqual(cpu.A, 1)
@@ -51,7 +50,7 @@ describe('CPU Branching', () => {
 
 		assembler.load(sourceCode, memory)
 		cpu.reset()
-		while (!cpu.B) {
+		while (memory[cpu.PC] !== 0x00) {
 			cpu.step()
 		}
 
@@ -79,7 +78,7 @@ describe('CPU Branching', () => {
 
 		assembler.load(sourceCode, memory)
 		cpu.reset()
-		while (!cpu.B) {
+		while (memory[cpu.PC] !== 0x00) {
 			cpu.step()
 		}
 
@@ -107,14 +106,12 @@ describe('CPU Branching', () => {
 
 		assembler.load(sourceCode, memory)
 		cpu.reset()
-		while (!cpu.B) {
+		while (memory[cpu.PC] !== 0x00) {
 			cpu.step()
 		}
-
 
 		it('Correct location', () => {
 			strictEqual(cpu.A, 2)
 		})
 	})
-
 })

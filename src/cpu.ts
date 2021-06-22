@@ -17,9 +17,9 @@ class Cpu {
 
 	public N: boolean // Negative flag
 	public V: boolean // Overflow flag
-	public B: boolean // Break Command
+	public get B(): boolean { return true } // Break flag (always true)
 	public D: boolean // Decimal flag
-	public I: boolean // Interrupt Disabled flag
+	public I: boolean // Interrupt disabled flag
 	public Z: boolean // Zero flag
 	public C: boolean // Carry flag
 
@@ -28,7 +28,7 @@ class Cpu {
 		return  (+this.N << 7) |
 				(+this.V << 6) |
 				(      1 << 5) |
-				(+this.B << 4) |
+				(      1 << 4) |
 				(+this.D << 3) |
 				(+this.I << 2) |
 				(+this.Z << 1) |
@@ -38,7 +38,6 @@ class Cpu {
 	public set P(val: number) {
 		this.N = !!((val >> 7) & 0x01)
 		this.V = !!((val >> 6) & 0x01)
-		this.B = !!((val >> 4) & 0x01)
 		this.D = !!((val >> 3) & 0x01)
 		this.I = !!((val >> 2) & 0x01)
 		this.Z = !!((val >> 1) & 0x01)
@@ -54,19 +53,29 @@ class Cpu {
 		this.Y = Utils.randomByte()
 		this.S = Utils.randomByte()
 
-		this.PC = 0x0000
-
 		this.N = false
 		this.V = false
-		this.B = false
 		this.D = false
-		this.I = false
+		this.I = true
 		this.Z = false
 		this.C = false
+
+		this.PC = this.loadWord(0xFFFC)
 	}
 
 	public reset(): void {
-		this.B  = false
+		this.A = Utils.randomByte()
+		this.X = Utils.randomByte()
+		this.Y = Utils.randomByte()
+		this.S = Utils.randomByte()
+
+		this.N = false
+		this.V = false
+		this.D = false
+		this.I = true
+		this.Z = false
+		this.C = false
+
 		this.PC = this.loadWord(0xFFFC)
 	}
 
@@ -88,6 +97,24 @@ class Cpu {
 		this.PC += this.dataSheet.opCodeBytes[opc]
 
 		this.instruction[name](opr)
+	}
+
+	public irq(): void {
+		if (this.I) {
+			return
+		}
+
+		this.push((this.PC >> 8) & 0xFF)
+		this.push(this.PC & 0xFF)
+		this.push( (this.P | 0x02) & ~(1 << 0x04)) // Set I, reset B
+		this.PC = this.loadWord(0xFFFE)
+	}
+
+	public nmi(): void {
+		this.push((this.PC >> 8) & 0xFF)
+		this.push(this.PC & 0xFF)
+		this.push( (this.P | 0x02) & ~(1 << 0x04)) // Set I, reset B
+		this.PC = this.loadWord(0xFFFA)
 	}
 
 	private readonly operandAddress: Record<string, () => number> = {
@@ -208,8 +235,6 @@ class Cpu {
 			this.PC += 1
 			this.push((this.PC >> 8) & 0xFF)
 			this.push(this.PC & 0xFF)
-			this.B = true
-			this.push(this.P)
 			this.PC = this.loadWord(0xFFFE)
 		},
 
@@ -427,6 +452,7 @@ class Cpu {
 			// Return from Interrupt
 			this.P  = this.pull()
 			this.PC = this.pull() + (this.pull() << 8)
+			this.I  = false
 		},
 
 		RTS: () => {

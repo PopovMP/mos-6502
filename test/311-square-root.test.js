@@ -94,7 +94,7 @@ Next
 	describe('Square root', () => {
 		assembler.load(sourceCode, memory)
 		cpu.reset()
-		while (!cpu.B) {
+		while (memory[cpu.PC] !== 0x00) {
 			cpu.step()
 		}
 		it('SQRT of 256 = 16', () => {
