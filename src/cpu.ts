@@ -99,6 +99,7 @@ class Cpu {
 		this.instruction[name](opr)
 	}
 
+	// noinspection JSUnusedGlobalSymbols
 	public irq(): void {
 		if (this.I) {
 			return
@@ -106,14 +107,15 @@ class Cpu {
 
 		this.push((this.PC >> 8) & 0xFF)
 		this.push(this.PC & 0xFF)
-		this.push( (this.P | 0x02) & ~(1 << 0x04)) // Set I, reset B
+		this.push((this.P | 0x02) & ~(1 << 0x04)) // Set I, reset B
 		this.PC = this.loadWord(0xFFFE)
 	}
 
+	// noinspection JSUnusedGlobalSymbols
 	public nmi(): void {
 		this.push((this.PC >> 8) & 0xFF)
 		this.push(this.PC & 0xFF)
-		this.push( (this.P | 0x02) & ~(1 << 0x04)) // Set I, reset B
+		this.push((this.P | 0x02) & ~(1 << 0x04)) // Set I, reset B
 		this.PC = this.loadWord(0xFFFA)
 	}
 
