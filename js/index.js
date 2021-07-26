@@ -285,7 +285,7 @@ class Assembler {
             const matchABSY = /^[A-Z]{3} ([$%]?[0-9A-Z_]+),Y$/.exec(line);
             if (matchABSY) {
                 const value = this.parseValue(matchABSY[1], codeTokenDto.labels);
-                if (typeof value === 'number' && value >= 0x00 && value <= 0xFF) {
+                if (typeof value === 'number' && value >= 0x00 && value <= 0xFF && name !== 'LDA') {
                     const opc = this.dataSheet.getOpc(name, 'ZPY');
                     instructionTokens.push({ pc, opc, name, bytes: [opc, value] });
                     pc += this.dataSheet.opCodeBytes[opc];
