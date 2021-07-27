@@ -8,7 +8,7 @@ const { describe, it } = require('@popovmp/mocha-tiny')
 const { Assembler } = require('../js')
 
 describe('KIM-1', () => {
-	it('Assembles a game', () => {
+	it('ROM 002', () => {
 		const sourcePath =  (__dirname).endsWith('test') ? __dirname + '/kim-1-6530-002.asm' :  __dirname + '/test/kim-1-6530-002.asm'
 		const sourceCode = fs.readFileSync( sourcePath, 'utf8')
 
@@ -83,6 +83,4 @@ describe('KIM-1', () => {
 1FF0: FF EF F7 FC B9 DE F9 F1  .  . 1C 1C 22 1C 1F 1C`
 		)
 	})
-
-
 })

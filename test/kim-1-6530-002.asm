@@ -104,10 +104,10 @@ DET3    CLC             ; this loop counts start BIT time
     	BCC     DET2    ; no ->
     	INC     CNTH30
 DET2    LDY     SAD     ; check for end of start BIT
-	BPL     DET3    ; no ->
-	STA     CNTL30
-	LDX     #8
-	JSR     GET5    ; get rest of char, test char
+		BPL     DET3    ; no ->
+		STA     CNTL30
+		LDX     #8
+		JSR     GET5    ; get rest of char, test char
 ;
 ; Make TTY/KB selection
 START   JSR     INIT1
@@ -183,7 +183,7 @@ DATA2   DEX             ; 4 times = complete nibble?
 ;
 ; Switch to address mode
 ADDRM   LDA     #1
-	BNE     DATAM1  ; -> always
+		BNE     DATAM1  ; -> always
 ;
 ; Switch to data mode
 DATAM   LDA     #0
