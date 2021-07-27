@@ -313,14 +313,14 @@ class Assembler {
 				if (token.instrName === '.BYTE' && token.directiveData) {
 					const bytes: number[] = token.directiveData
 						.split(/,[ \t]*/)
-						.map(num => this.parseValue(num as string) as number)
+						.map(num => this.parseValue(num as string, codeTokenDto.labels, codeTokenDto.variables) as number)
 					instructionTokens.push({pc, bytes, name: '.BYTE', opc: -1})
 					pc += bytes.length
 				}
 				if (token.instrName === '.WORD' && token.directiveData) {
 					const bytes: number[] = token.directiveData
 						.split(/,[ \t]*/)
-						.map(num => this.parseValue(num as string, codeTokenDto.labels) as number)
+						.map(num => this.parseValue(num as string, codeTokenDto.labels, codeTokenDto.variables) as number)
 						.reduce( (acc: number[], word: number) => {
 							acc.push( word & 0xFF )
 							acc.push( (word >> 8) & 0xFF )
@@ -483,7 +483,7 @@ class Assembler {
 		}
 	}
 
-	private parseValue(valueText: string, labels: Record<string, number> = {}): number | string {
+	private parseValue(valueText: string, labels: Record<string, number> = {}, variables: Record<string, string> = {}): number | string {
 		// Parse a hex number
 		if ( valueText.startsWith('$') ) {
 			const value = parseInt(valueText.slice(1), 16)
@@ -512,6 +512,8 @@ class Assembler {
 				return isNaN(labels[valuetextUp])
 					? valuetextUp
 					: labels[valuetextUp]
+			} else if ( variables.hasOwnProperty(valuetextUp) ) {
+				return this.parseValue(variables[valuetextUp])
 			}
 
 			throw new Error(`Cannot find a label: ${valueText}`)

@@ -41,6 +41,17 @@ describe('Assembler - Directives', () => {
 			assembler.load(sourceCode, memory)
 			strictEqual(memory[0x0803], 0xAB)
 		})
+
+		it('BYTE with variable', () => {
+			const sourceCode =  `
+				* = $0800
+				VARA = $F4
+				.BYTE VARA
+			`
+			memory.fill(0x00)
+			assembler.load(sourceCode, memory)
+			strictEqual(memory[0x0800], 0xF4)
+		})
 	})
 
 	describe('.WORD', () => {
@@ -81,5 +92,18 @@ describe('Assembler - Directives', () => {
 			strictEqual(memory[0x0803], 0x00)
 			strictEqual(memory[0x0804], 0x08)
 		})
+
+		it('WORD with variable', () => {
+			const sourceCode =  `
+				* = $0800
+				VARA = $ABCD
+				.WORD VARA
+			`
+			memory.fill(0x00)
+			assembler.load(sourceCode, memory)
+			strictEqual(memory[0x0800], 0xCD)
+			strictEqual(memory[0x0801], 0xAB)
+		})
+
 	})
 })
