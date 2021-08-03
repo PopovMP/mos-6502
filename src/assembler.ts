@@ -270,7 +270,7 @@ class Assembler {
 		return pages
 	}
 
-	private resolveUnsetLabels(codeDto: CodeTokenDto, instTokens: InstructionToken[]): void {
+	public resolveUnsetLabels(codeDto: CodeTokenDto, instTokens: InstructionToken[]): void {
 		for (const token of instTokens) {
 			if (token.labelRequired) {
 				const labelValue: number = codeDto.labels[token.labelRequired]
@@ -291,7 +291,7 @@ class Assembler {
 		}
 	}
 
-	private parseInstructions(codeTokenDto: CodeTokenDto): InstructionToken[] {
+	public parseInstructions(codeTokenDto: CodeTokenDto): InstructionToken[] {
 		const instructionTokens: InstructionToken[] = []
 
 		let pc = 0x0800 // Default PC

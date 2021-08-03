@@ -1258,13 +1258,22 @@ class Emulator {
                 .disassembleCodePages(codePages)
                 .map(tkn => `$${tkn.address}   ${tkn.code.join(' ').padEnd(8, ' ')}   ${tkn.text.padEnd(13, ' ')}  ; ${tkn.description}`)
                 .join('\n');
+            const instTokens = this.assembler.parseInstructions(codeDto);
+            this.assembler.resolveUnsetLabels(codeDto, instTokens);
+            const labelsText = Object
+                .keys(codeDto.labels)
+                .map(key => `${key.toUpperCase().padEnd(8, ' ')} ${codeDto.labels[key].toString(16).toUpperCase()}`)
+                .join('\n');
             this.terminal.innerText = '' +
                 '                       Disassembly\n' +
                 '---------------------------------------------------------\n' +
                 disassembly + '\n\n\n' +
                 '                       Object code\n' +
                 '---------------------------------------------------------\n' +
-                Assembler.hexDump(codePages);
+                Assembler.hexDump(codePages) + '\n\n\n' +
+                '                       Labels\n' +
+                '---------------------------------------------------------\n' +
+                labelsText;
         }
         catch (e) {
             this.terminal.innerText += e.message + '\n';
