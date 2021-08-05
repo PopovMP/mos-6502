@@ -14,7 +14,7 @@ const codePages = assembler.assemble(sourceCode)
 
 const romSize  =  2 * 1024
 const buffSize = 32 * 1024
-const buffer   = new Buffer(buffSize)
+const buffer   = Buffer.alloc(buffSize)
 
 for (let offset = 0; offset < romSize; offset++) {
 	buffer.writeUInt8(0x00, offset)
@@ -43,19 +43,10 @@ const filePath = sourceDir + '/bin/rom-32k.bin'
 
 fs.writeFileSync(filePath, buffer, 'binary')
 
-// it('Print label', () => {
-// 	const sourcePath = (__dirname).endsWith('test') ? __dirname + '/kim-1-6530-002.asm' : __dirname + '/test/kim-1-6530-002.asm'
-// 	const sourceCode = fs.readFileSync(sourcePath, 'utf8')
-//
-// 	const assembler = new Assembler()
-//
-//
-// 	const codeDto = assembler.tokenize(sourceCode)
-// 	const instTokens = assembler.parseInstructions(codeDto)
-// 	assembler.resolveUnsetLabels(codeDto, instTokens)
-//
-// 	Object.keys(codeDto.labels).forEach( key =>  {
-// 		console.log( `${key.toUpperCase().padEnd(8, ' ')} ${codeDto.labels[key].toString(16).toUpperCase()}`)
-// 	})
-// })
+const codeDto = assembler.tokenize(sourceCode)
+const instTokens = assembler.parseInstructions(codeDto)
+assembler.resolveUnsetLabels(codeDto, instTokens)
 
+Object.keys(codeDto.labels).forEach( key =>  {
+	console.log( `${key.toUpperCase().padEnd(8, ' ')} ${codeDto.labels[key].toString(16).toUpperCase()}`)
+})

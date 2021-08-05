@@ -1,43 +1,39 @@
 ;
 ; KIM-1 Source Code
 ;
-        PCL     = $EF           ; program counter low
-        PCH     = $F0           ; program counter high
-        PREG    = $F1           ; status register
-        SPUSER  = $F2           ; stack pointer
-        ACC     = $F3
-        YREG    = $F4
-        XREG    = $F5
-        INL     = $F8           ; input buffer low
-        INH     = $F9           ; input buffer high
-        POINTL  = $FA           ; address L on display
-        POINTH  = $FB           ; address H on display
-        TEMP    = $FC
-        TMPX    = $FD
-        MODE    = $FF
-;
-        SAD     = $1741        ; I/O A register
-        PADD    = $1743	       ; I/O A direction
-        SBD     = $1740        ; I/O B register
-        PBDD    = $1742        ; I/O B direction
+        PCL    = $EF   ; program counter low
+        PCH    = $F0   ; program counter high
+        PREG   = $F1   ; status register
+        SPUSER = $F2   ; stack pointer
+        ACC    = $F3
+        YREG   = $F4
+        XREG   = $F5
+        INL    = $F8   ; input buffer low
+        INH    = $F9   ; input buffer high
+        POINTL = $FA   ; address L on display
+        POINTH = $FB   ; address H on display
+        TEMP   = $FC  
+        TMPX   = $FD  
+        MODE   = $FF  
+;                     
+        SBD    = $1740 ; I/O B register
+        SAD    = $1741 ; I/O A register
+        PBDD   = $1742 ; I/O B direction
+        PADD   = $1743 ; I/O A direction
 
 *=$1C00
-;
 ;
 ; KIM-entry via NMI or IRQ
 SAVE    STA     ACC
         PLA
         STA     PREG
-;
-; KIM-entry via JSR
-SAVEA   PLA
+        PLA
         STA     PCL
         STA     POINTL
         PLA
         STA     PCH
         STA     POINTH
-;
-SAVEB   STY     YREG
+        STY     YREG
         STX     XREG
         TSX
         STX     SPUSER
@@ -45,22 +41,21 @@ SAVEB   STY     YREG
         JMP     START
 ;
 ; The KIM starts here after a reset
-RESET   LDX     #$FF    ; ($1C22)
+RESET   LDX     #$FF
         TXS             ; set stack
         STX     SPUSER
         JSR     INITS
         JMP     START
 ;
-; Initialization 6530   $1E88
-INITS   LDX     #1
-        STX     MODE    ; set display to address mode
-        LDX     #0
+; Initialization 6520
+INITS   LDX     #$01
+        STX     MODE    ; Set display to address mode
+        LDX     #$00
         STX     PADD    ; PA0..PA7 = input
         LDX     #$3F
         STX     PBDD    ; PB0..PB5 = output
-                        ; PB6, PB7 = input
-        LDX     #7      ; enable 74145 output 3 to
-        STX     SBD     ;  check KB/TTY-mode
+        LDX     #$07    ; Enable data in
+        STX     SBD     ; Output
         CLD
         SEI
         RTS
@@ -72,8 +67,7 @@ START1  JSR     SCAND   ; Wait for key...
         BEQ     START1  ; no key ->
         JSR     SCAND   ; debounce key
         BEQ     START1  ; no key ->
-;
-GETK    JSR     GETKEY
+        JSR     GETKEY
         CMP     #$15    ; >= $15 = illegal - no kew pressed
         BPL     START   ; yes ->
         CMP     #$10
@@ -85,14 +79,14 @@ GETK    JSR     GETKEY
         CMP     #$12
         BEQ     STEP    ; "+" - step
         CMP     #$13
-        BEQ     GOEXEC  ; "GO" - execute program
-; one of the hexidecimal buttons has been pushed
-DATA    ASL             ; move LSB key number to MSB
+        BEQ     GOV     ; "GO" - execute program
+; One of the hexidecimal buttons has been pushed
+        ASL             ; move LSB key number to MSB
         ASL
         ASL
         ASL
         STA     TEMP    ; store for datamode
-        LDX     #4
+        LDX     #$04
 DATA1   LDY     MODE    ; part of address?
         BNE     ADDR    ; yes ->
         LDA     (POINTL),Y ; get data
@@ -108,12 +102,13 @@ DATA2   DEX             ; 4 times = complete nibble?
         JMP     START
 ;
 ; "AD" - Switch to address mode
-ADDRM   LDA     #1
-        BNE     DATAM1  ; -> always
+ADDRM   LDA     #$01
+        STA     MODE
+        JMP     START
 ;
 ; "DA" -  Switch to data mode
-DATAM   LDA     #0
-DATAM1  STA     MODE
+DATAM   LDA     #$00
+        STA     MODE
         JMP     START
 ;
 ; "PC" - Display PC by moving it to POINT
@@ -132,7 +127,7 @@ STEP1   JMP     START
 ;
 ; "GO" - Start a program at displayed address.
 ; RTI is used as a comfortable way to define all flags in one move.
-GOEXEC  LDX     SPUSER  ; user user defined stack
+GOV     LDX     SPUSER  ; user user defined stack
         TXS
         LDA     POINTH  ; program runs from
         PHA             ;  displayed address
@@ -146,42 +141,39 @@ GOEXEC  LDX     SPUSER  ; user user defined stack
         RTI             ; start program
 ;
 ; Output to 7-segment-display
-SCAND   LDY     #0      ; POINTL/POINTH = address on display
+SCAND   LDY     #$00    ; POINTL/POINTH = address on display
         LDA     (POINTL),Y ; get data from this address
         STA     INH     ; store in INH =
-SCANDS  LDA     #$7F    ; PA0..PA6 := output
+        LDA     #$7F    ; PA0..PA6 := output
         STA     PADD
-        LDX     #9      ; Start with display at output 4
-        LDY     #3      ; 3 bytes to be shown
-;
-SCAND1  LDA     INL,y   ; get byte
+        LDX     #$09    ; Start with display at output 4
+        LDY     #$03    ; 3 bytes to be shown
+SCAND1  LDA     INL,Y   ; get byte
         LSR             ; get MSD by shifting A
         LSR
         LSR
         LSR
         JSR     CONVD
-        LDA     INL,y   ; get byte again
+        LDA     INL,Y   ; get byte again
         AND     #$0F    ; get LSD
         JSR     CONVD
         DEY             ; all ?
         BNE     SCAND1  ; no ->
-        STY     SBD     ; all digits off
-        LDA     #0
+        STX     SBD     ; all digits off
+        LDA     #$00    ; Change segment 
         STA     PADD    ; PA0..PA7 := input
 ; Determine if key is depressed: NO -> A=0, YES -> A>0
-        LDY     #3      ; 3 rows
-        LDX     #1      ; select 74145 output 0
+        LDY     #$03    ; 3 rows
+        LDX     #$01    ; select 74145 output 0
 ONEKEY  LDA     #$FF    ; initial value
-;
-AKA     STX     SBD     ; enable output = select row
+AK1     STX     SBD     ; enable output = select row
         INX
         INX             ; prepare for next row
         AND     SAD     ; A := A && (PA0..PA7)
         DEY             ; all rows?
-        BNE     AKA     ; no ->
-        LDY     #7
+        BNE     AK1     ; no ->
+        LDY     #$07
         STY     SBD     ; select 74145 output 3 (not used)
-;
         ORA     #$80    ; mask bit 7 of A
         EOR     #$FF    ; if A still is $FF -> A := 0
         RTS
@@ -190,30 +182,27 @@ AKA     STX     SBD     ; enable output = select row
 CONVD   STY     TEMP
         TAY
         LDA     TABLE,Y
-        LDY     #0
+        LDY     #$00
         STY     SAD     ; turn off segments
         STX     SBD     ; select 7-s-display
         STA     SAD     ; output code on display
-
-        LDY     #1		; #$7F    ; delay ~500 cycles
+        LDY     #$49    ; #$7F delay ~500 cycles
 CONVD1  DEY
         BNE     CONVD1
-
-        INX             ; next display
-        INX
-        LDY     TEMP
+        INX             ; Get next digit number
+        INX             ; Add 2
+        LDY     TEMP    ; Restore Y
         RTS
 ;
 ; Get key from keyboard in A
-GETKEY  LDX     #$21    ; row 0 / disable input TTY
-GETKE5  LDY     #1      ; only one row in the time
+GETKEY  LDX     #$21    ; row 0
+GETKE5  LDY     #$01    ; only one row in the time
         JSR     ONEKEY  ; key?
         BNE     KEYIN   ; yes ->
         CPX     #$27    ; last row?
         BNE     GETKE5  ; no, next one ->
         LDA     #$15    ; 15 = no key
         RTS
-;
 KEYIN   LDY     #$FF    ; Y := key number
 KEYIN1  ASL             ; shift A until
         BCS     KEYIN2  ;  bit = 1 ->
@@ -231,7 +220,7 @@ KEYIN2  TXA
 ;
 ; Add 7 to A for every row above 0 to get actual key number
 KEYIN3  CLC
-        ADC     #7      ; add (X-1) times 7 to A
+        ADC     #$07    ; add (X-1) times 7 to A
 KEYIN4  DEX             ; countdown to 0
         BNE     KEYIN3
         RTS             ; A is always < 21 eg. < $15
@@ -240,8 +229,8 @@ KEYIN4  DEX             ; countdown to 0
 *=$1FE7
 ;               0    1    2    3    4    5    6    7
 TABLE   .BYTE   $BF, $86, $DB, $CF, $E6, $ED, $FD, $87
-;               8    9    A    B    C    D    E    F
         .BYTE   $FF, $EF, $F7, $FC, $B9, $DE, $F9, $F1
+;               8    9    A    B    C    D    E    F
 ;
 ; Entry vectors
 *=$1FFA
