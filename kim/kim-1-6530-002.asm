@@ -50,7 +50,7 @@ RESET   LDX     #$FF
 ; Initialization 6520
 INITS   LDX     #$01
         STX     MODE    ; Set display to address mode
-        LDX     #$00
+INIT1   LDX     #$00
         STX     PADD    ; PA0..PA7 = input
         LDX     #$3F
         STX     PBDD    ; PB0..PB5 = output
@@ -61,7 +61,8 @@ INITS   LDX     #$01
         RTS
 ;
 ; Main routine for keyboard and display
-START   JSR     SCAND   ; wait until NO key pressed
+START   JSR     INIT1
+        JSR     SCAND   ; wait until NO key pressed
         BNE     START   ; if pressed, wait again ->
 START1  JSR     SCAND   ; Wait for key...
         BEQ     START1  ; no key ->
@@ -94,6 +95,7 @@ DATA1   LDY     MODE    ; part of address?
         ROL             ; MSB-TEMP = MSB-key -> A
         STA     (POINTL),Y ; store new data
         JMP     DATA2
+;
 ADDR    ASL             ; TEMP not needed here
         ROL     POINTL  ; MSB-key -> POINTL
         ROL     POINTH  ; POINTL -> POINTH
@@ -140,6 +142,22 @@ GOV     LDX     SPUSER  ; user user defined stack
         LDA     ACC
         RTI             ; start program
 ;
+; Determine if key is depressed: NO -> A=0, YES -> A>0
+AK      LDY     #$03    ; 3 rows
+        LDX     #$01    ; select 74145 output 0
+ONEKEY  LDA     #$FF    ; initial value
+AK1     STX     SBD     ; enable output = select row
+        INX
+        INX             ; prepare for next row
+        AND     SAD     ; A := A && (PA0..PA7)
+        DEY             ; all rows?
+        BNE     AK1     ; not yet, Y > 0 ->
+        LDY     #$07
+        STY     SBD     ; select 74145 output 3 (not used)
+        ORA     #$80    ; mask bit 7 of A
+        EOR     #$FF    ; if A still is $FF -> A := 0
+        RTS
+;
 ; Output to 7-segment-display
 SCAND   LDY     #$00    ; POINTL/POINTH = address on display
         LDA     (POINTL),Y ; get data from this address
@@ -162,21 +180,7 @@ SCAND1  LDA     INL,Y   ; get byte
         STX     SBD     ; all digits off
         LDA     #$00    ; Change segment 
         STA     PADD    ; PA0..PA7 := input
-; Determine if key is depressed: NO -> A=0, YES -> A>0
-        LDY     #$03    ; 3 rows
-        LDX     #$01    ; select 74145 output 0
-ONEKEY  LDA     #$FF    ; initial value
-AK1     STX     SBD     ; enable output = select row
-        INX
-        INX             ; prepare for next row
-        AND     SAD     ; A := A && (PA0..PA7)
-        DEY             ; all rows?
-        BNE     AK1     ; no ->
-        LDY     #$07
-        STY     SBD     ; select 74145 output 3 (not used)
-        ORA     #$80    ; mask bit 7 of A
-        EOR     #$FF    ; if A still is $FF -> A := 0
-        RTS
+        JMP     AK      ; GET ANY KEY
 ;
 ; Convert digit into 7-segment-value
 CONVD   STY     TEMP
