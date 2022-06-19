@@ -2,7 +2,7 @@
 
 const { strictEqual  } = require('assert')
 const { describe, it } = require('@popovmp/mocha-tiny')
-const { Assembler    } = require('../js')
+const { Assembler    } = require('../js/index.js')
 const assembler = new Assembler()
 const memory    = new Uint8Array(0xFFFF + 1)
 

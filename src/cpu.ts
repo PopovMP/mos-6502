@@ -1,18 +1,19 @@
 // noinspection DuplicatedCode
 
-class Cpu {
+class Cpu
+{
 	// The following instructions need the address
 	// designated by the operand instead of its value
 	private readonly addressInstructions = [
 		'ASL', 'DEC', 'INC', 'LSR', 'JMP', 'JSR', 'ROL', 'ROR', 'STA', 'STX', 'STY'
 	]
 	private readonly dataSheet: DataSheet
-	private readonly memory: Uint8Array
+	private readonly memory   : Uint8Array
 
-	public A: number  // Accumulator
-	public X: number  // X index register
-	public Y: number  // Y index register
-	public S: number  // Stack Pointer
+	public A : number // Accumulator
+	public X : number // X index register
+	public Y : number // Y index register
+	public S : number // Stack Pointer
 	public PC: number // Program Counter
 
 	public N: boolean // Negative flag
@@ -24,7 +25,8 @@ class Cpu {
 	public C: boolean // Carry flag
 
 	// Processor Status
-	public get P(): number {
+	public get P(): number
+	{
 		return  (+this.N << 7) |
 				(+this.V << 6) |
 				(      1 << 5) |
@@ -35,7 +37,8 @@ class Cpu {
 				(+this.C << 0)
 	}
 
-	public set P(val: number) {
+	public set P(val: number)
+	{
 		this.N = !!((val >> 7) & 0x01)
 		this.V = !!((val >> 6) & 0x01)
 		this.D = !!((val >> 3) & 0x01)
@@ -44,9 +47,10 @@ class Cpu {
 		this.C = !!((val >> 0) & 0x01)
 	}
 
-	constructor(memory: Uint8Array) {
+	constructor(memory: Uint8Array)
+	{
 		this.dataSheet = new DataSheet()
-		this.memory = memory
+		this.memory    = memory
 
 		this.A = Utils.randomByte()
 		this.X = Utils.randomByte()
@@ -63,7 +67,8 @@ class Cpu {
 		this.PC = this.loadWord(0xFFFC)
 	}
 
-	public reset(): void {
+	public reset(): void
+	{
 		this.A = Utils.randomByte()
 		this.X = Utils.randomByte()
 		this.Y = Utils.randomByte()
@@ -79,16 +84,16 @@ class Cpu {
 		this.PC = this.loadWord(0xFFFC)
 	}
 
-	public step(): void {
-		const opc: number  = this.memory[this.PC]
+	public step(): void
+	{
+		const opc : number = this.memory[this.PC]
 		const name: string = this.dataSheet.opCodeName[opc]
 
-		if (name === undefined) {
+		if (name === undefined)
 			throw new Error(`Invalid instruction '${Utils.byteToHex(opc)}' at: $${Utils.wordToHex(this.PC)}`)
-		}
 
 		const mode: string = this.dataSheet.opCodeMode[opc]
-		const opr: number  = this.addressInstructions.includes(name)
+		const opr : number = this.addressInstructions.includes(name)
 				? this.operandAddress[mode]()                   // Instruction needs an effective address
 				: mode === 'IMPL'                               // Implied addressing mode doesn't require address
 					? this.A                                    // However, it may need the A register value
@@ -100,10 +105,9 @@ class Cpu {
 	}
 
 	// noinspection JSUnusedGlobalSymbols
-	public irq(): void {
-		if (this.I) {
-			return
-		}
+	public irq(): void
+	{
+		if (this.I) return
 
 		this.push((this.PC >> 8) & 0xFF)
 		this.push(this.PC & 0xFF)
@@ -112,7 +116,8 @@ class Cpu {
 	}
 
 	// noinspection JSUnusedGlobalSymbols
-	public nmi(): void {
+	public nmi(): void
+	{
 		this.push((this.PC >> 8) & 0xFF)
 		this.push(this.PC & 0xFF)
 		this.push((this.P | 0x02) & ~(1 << 0x04)) // Set I, reset B
@@ -120,7 +125,7 @@ class Cpu {
 	}
 
 	private readonly operandAddress: Record<string, () => number> = {
-		IMPL: () => NaN, // Implied and Accumulator modes don't need address
+		IMPL: () => NaN, // Implied and Accumulator modes don't need an address
 		IMM : () => this.PC + 1,
 		ZP  : () => this.memory[this.PC + 1],
 		ZPX : () => this.memory[this.PC + 1] + this.X,
@@ -144,15 +149,13 @@ class Cpu {
 
 			if (val >= 0x100) {
 				this.C = true
-				if (this.V && val >= 0x180) {
+				if (this.V && val >= 0x180)
 					this.V = false
-				}
 			}
 			else {
 				this.C = false
-				if (this.V && val < 0x80) {
+				if (this.V && val < 0x80)
 					this.V = false
-				}
 			}
 
 			this.setNZ(this.A)
@@ -167,39 +170,34 @@ class Cpu {
 		ASL: (addr: number) => {
 			// Shift Left One Bit (Memory or Accumulator)
 			const input: number = isNaN(addr) ? this.A : this.memory[addr]
-			const temp: number  = input << 1
+			const temp : number = input << 1
 			this.C = (temp >> 8) === 1
 			const val = temp & 0xFF
 
-			if (isNaN(addr)) {
+			if ( isNaN(addr) )
 				this.A = val
-			}
-			else {
+			else
 				this.memory[addr] = val
-			}
 
 			this.setNZ(val)
 		},
 
 		BCC: (opr: number) => {
 			// Branch on Carry Clear
-			if (!this.C) {
+			if (!this.C)
 				this.branch(opr)
-			}
 		},
 
 		BCS: (opr: number) => {
 			// Branch on Carry Set
-			if (this.C) {
+			if (this.C)
 				this.branch(opr)
-			}
 		},
 
 		BEQ: (opr: number) => {
 			// Branch on Result Zero
-			if (this.Z) {
+			if (this.Z)
 				this.branch(opr)
-			}
 		},
 
 		BIT: (opr: number) => {
@@ -213,23 +211,20 @@ class Cpu {
 
 		BMI: (opr: number) => {
 			// Branch on Result Minus
-			if (this.N) {
+			if (this.N)
 				this.branch(opr)
-			}
 		},
 
 		BNE: (opr: number) => {
 			// Branch on Result not Zero
-			if (!this.Z) {
+			if (!this.Z)
 				this.branch(opr)
-			}
 		},
 
 		BPL: (opr: number) => {
 			// Branch on Result Plus
-			if (!this.N) {
+			if (!this.N)
 				this.branch(opr)
-			}
 		},
 
 		BRK: () => {
@@ -242,16 +237,14 @@ class Cpu {
 
 		BVC: (opr: number) => {
 			// Branch on Overflow Clear
-			if (!this.V) {
+			if (!this.V)
 				this.branch(opr)
-			}
 		},
 
 		BVS: (opr: number) => {
 			// Branch on Overflow Set
-			if (this.V) {
+			if (this.V)
 				this.branch(opr)
-			}
 		},
 
 		CLC: () => {
@@ -371,14 +364,12 @@ class Cpu {
 		LSR: (addr: number) => {
 			// Logical Shift Right
 			const input: number = isNaN(addr) ? this.A : this.memory[addr]
-			const out: number   = input >> 1
+			const out  : number = input >> 1
 
-			if (isNaN(addr)) {
+			if (isNaN(addr))
 				this.A = out
-			}
-			else {
+			else
 				this.memory[addr] = out
-			}
 
 			this.N = false
 			this.Z = !out
@@ -419,14 +410,12 @@ class Cpu {
 		ROL: (addr: number) => {
 			// Rotate Left
 			const input: number = isNaN(addr) ? this.A : this.memory[addr]
-			const out: number   = (input << 1) + +this.C
+			const out  : number = (input << 1) + +this.C
 
-			if (isNaN(addr)) {
+			if (isNaN(addr))
 				this.A = out
-			}
-			else {
+			else
 				this.memory[addr] = out
-			}
 
 			this.N = !!((input >> 6) & 1)
 			this.Z = !out
@@ -436,14 +425,12 @@ class Cpu {
 		ROR: (addr: number) => {
 			// Rotate Right
 			const input: number = isNaN(addr) ? this.A : this.memory[addr]
-			const out: number   = ((input >> 1) + (+this.C << 7)) & 0xFF
+			const out  : number = ((input >> 1) + (+this.C << 7)) & 0xFF
 
-			if (isNaN(addr)) {
+			if (isNaN(addr))
 				this.A = out
-			}
-			else {
+			else
 				this.memory[addr] = out
-			}
 
 			this.N = this.C
 			this.Z = !out
@@ -469,15 +456,13 @@ class Cpu {
 
 			if (value < 0x100) {
 				this.C = false
-				if (this.V && value < 0x80) {
+				if (this.V && value < 0x80)
 					this.V = false
-				}
 			}
 			else {
 				this.C = true
-				if (this.V && value >= 0x180) {
+				if (this.V && value >= 0x180)
 					this.V = false
-				}
 			}
 
 			this.A = value & 0xff
@@ -549,35 +534,38 @@ class Cpu {
 		},
 	}
 
-	private loadWord(addr: number): number {
+	private loadWord(addr: number): number
+	{
 		return this.memory[addr] + (this.memory[addr + 1] << 8)
 	}
 
-	private push(val: number): void {
+	private push(val: number): void
+	{
 		this.memory[0x0100 + this.S] = val
 
 		this.S -= 1
 
-		if (this.S < 0) {
+		if (this.S < 0)
 			this.S = 0xFF
-		}
 	}
 
-	private pull(): number {
+	private pull(): number
+	{
 		this.S += 1
 
-		if (this.S > 0xFF) {
+		if (this.S > 0xFF)
 			this.S = 0
-		}
 
 		return this.memory[0x0100 + this.S]
 	}
 
-	private branch(offset: number): void {
+	private branch(offset: number): void
+	{
 		this.PC += offset < 128 ? offset : offset - 256
 	}
 
-	private setNZ(val: number): void {
+	private setNZ(val: number): void
+	{
 		this.N = !!(val >> 7)
 		this.Z = !val
 	}

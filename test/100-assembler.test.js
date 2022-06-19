@@ -5,7 +5,7 @@ const fs = require('fs')
 const { strictEqual } = require('assert')
 const { describe, it } = require('@popovmp/mocha-tiny')
 
-const { Assembler } = require('../js')
+const { Assembler } = require('../js/index.js')
 
 describe('Assembler', () => {
 	const sourceCode =  `
@@ -315,6 +315,5 @@ $0734   60         RTS            ; Return from Subroutine
 			)
 		})
 	})
-
 })
 

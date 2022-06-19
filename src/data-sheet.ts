@@ -1,8 +1,9 @@
-class DataSheet {
+class DataSheet
+{
 	public readonly instructions: string[] = []
-	public readonly opCodeBytes: Record<number, number> = {}
-	public readonly opCodeMode: Record<number, string>  = {}
-	public readonly opCodeName: Record<number, string>  = {}
+	public readonly opCodeBytes : Record<number, number> = {}
+	public readonly opCodeMode  : Record<number, string> = {}
+	public readonly opCodeName  : Record<number, string> = {}
 
 	public readonly addressingModes: string[] = [
 		'IMM' ,  // Immediate
@@ -153,7 +154,8 @@ class DataSheet {
 		TYA: 'Transfer Y to Accumulator',
 	}
 
-	constructor() {
+	constructor()
+	{
 		Object.keys(this.Opcodes).forEach(instr => {
 			this.instructions.push(instr)
 			this.Opcodes[instr].forEach((opc, index) => {
@@ -162,10 +164,9 @@ class DataSheet {
 		})
 	}
 
-	private populateData(instr: string, opc: number, index: number): void {
-		if (isNaN(opc)) {
-			return
-		}
+	private populateData(instr: string, opc: number, index: number): void
+	{
+		if (isNaN(opc)) return
 
 		const addressingMode: string = this.addressingModes[index]
 		this.opCodeName[opc]  = instr
@@ -173,7 +174,8 @@ class DataSheet {
 		this.opCodeBytes[opc] = this.addressingModeBytes[addressingMode]
 	}
 
-	public getOpc(instName: string, mode: string): number {
+	public getOpc(instName: string, mode: string): number
+	{
 		const modeIndex: number = this.addressingModes.indexOf(mode)
 		return this.Opcodes[instName][modeIndex] as number
 	}

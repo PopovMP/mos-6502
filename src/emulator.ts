@@ -1,4 +1,5 @@
-class Emulator {
+class Emulator
+{
 	private readonly dataSheet: DataSheet
 	private readonly assembler: Assembler
 	private readonly memory: Uint8Array
@@ -12,7 +13,8 @@ class Emulator {
 	private isStopRequired: boolean = false
 	private instructionLog: string[] = []
 
-	constructor() {
+	constructor()
+	{
 		this.dataSheet = new DataSheet()
 		this.assembler = new Assembler()
 		this.memory    = new Uint8Array(0xFFFF + 1)
@@ -20,7 +22,8 @@ class Emulator {
 	}
 
 	// noinspection JSUnusedGlobalSymbols
-	public initialize() {
+	public initialize()
+	{
 		this.codeEditor = document.getElementById('source-code') as HTMLTextAreaElement
 		this.terminal   = document.getElementById('terminal') as HTMLElement
 
@@ -50,15 +53,18 @@ class Emulator {
 		this.loadExample()
 	}
 
-	private loadExample(): void {
+	private loadExample(): void
+	{
 		this.getRequest('./example/game-of-life.asm', this.getRequest_ready.bind(this))
 	}
 
-	private getRequest_ready(data: string): void {
+	private getRequest_ready(data: string): void
+	{
 		this.codeEditor.value = data
 	}
 
-	private btnLoadCode_click(event: Event): void {
+	private btnLoadCode_click(event: Event): void
+	{
 		event.preventDefault()
 
 		const sourceCode = this.codeEditor.value
@@ -113,12 +119,13 @@ class Emulator {
 				'---------------------------------------------------------\n' +
 				labelsText
 		}
-		catch (e) {
+		catch (e: any) {
 			this.terminal.innerText += e.message + '\n'
 		}
 	}
 
-	private btnReset_click(event: Event): void {
+	private btnReset_click(event: Event): void
+	{
 		event.preventDefault()
 
 		this.isStopRequired = true
@@ -128,7 +135,8 @@ class Emulator {
 		this.dump()
 	}
 
-	private btnCpuStep_click(event: Event): void {
+	private btnCpuStep_click(event: Event): void
+	{
 		event.preventDefault()
 
 		this.isStopRequired = false
@@ -137,32 +145,32 @@ class Emulator {
 			this.cpu.step()
 			this.dump()
 		}
-		catch (e) {
+		catch (e: any) {
 			this.terminal.innerText += e.message + '\n'
 		}
 	}
 
-	private btnDebug_click(event: Event): void {
+	private btnDebug_click(event: Event): void
+	{
 		event.preventDefault()
 		this.isStopRequired = false
 
 		setTimeout(this.debugLoop.bind(this), 0)
 	}
 
-	private debugLoop(): void {
-		if (this.isStopRequired) {
+	private debugLoop(): void
+	{
+		if (this.isStopRequired)
 			return
-		}
 
 		try {
 			this.cpu.step()
 			this.dump()
 
-			if (this.memory[this.cpu.PC] === 0x00) {
+			if (this.memory[this.cpu.PC] === 0x00)
 				return
-			}
 		}
-		catch (e) {
+		catch (e: any) {
 			this.terminal.innerText += e.message + '\n'
 		}
 
@@ -173,7 +181,8 @@ class Emulator {
 	 * Runs CPU step by step until it reaches BRK (except at the first step)
 	 * @private
 	 */
-	private cpuRun(): void {
+	private cpuRun(): void
+	{
 
 		let isFirstStep = true
 		while (isFirstStep || this.memory[this.cpu.PC] !== 0x00) {
@@ -184,31 +193,35 @@ class Emulator {
 		this.dump()
 	}
 
-	private btnRun_click(event: Event): void {
+	private btnRun_click(event: Event): void
+	{
 		event.preventDefault()
 		this.isStopRequired = false
 
 		try {
 			this.cpuRun()
 		}
-		catch (e) {
+		catch (e: any) {
 			this.terminal.innerText += e.message + '\n'
 		}
 	}
 
-	private btnForever_click(event: Event): void {
+	private btnForever_click(event: Event): void
+	{
 		event.preventDefault()
 
 		this.isStopRequired = false
 		this.runForever()
 	}
 
-	private btnPause_click(event: Event): void {
+	private btnPause_click(event: Event): void
+	{
 		event.preventDefault()
 		this.isStopRequired = true
 	}
 
-	private dump(): void {
+	private dump(): void
+	{
 		this.terminal.innerText = '' +
 			this.getCpuDump()  + '\n\n\n\n\n' +
 			'                         Instruction Log\n' +
@@ -220,7 +233,8 @@ class Emulator {
 	}
 
 
-	private getCpuDump(): string {
+	private getCpuDump(): string
+	{
 		const getRegText = (val: number): string =>
 			`${Utils.byteToHex(val)}  ${val.toString(10).padStart(3, ' ')}  ${Utils.byteToSInt(val).padStart(4, ' ')}`
 
@@ -235,11 +249,12 @@ class Emulator {
 	}
 
 
-	private getAssemblyDump(): string {
-		const pc: number     = this.cpu.PC
-		const opc: number    = this.memory[pc]
-		const bytes: number  = this.dataSheet.opCodeBytes[opc]
-		const code: number[] = Array.from( this.memory.slice(pc, pc + bytes) )
+	private getAssemblyDump(): string
+	{
+		const pc   : number   = this.cpu.PC
+		const opc  : number   = this.memory[pc]
+		const bytes: number   = this.dataSheet.opCodeBytes[opc]
+		const code : number[] = Array.from( this.memory.slice(pc, pc + bytes) )
 		const tokens: DisassemblyToken[] = this.assembler.disassemble(code, pc)
 
 		if (tokens.length > 0) {
@@ -254,14 +269,15 @@ class Emulator {
 			).join('\n');
 	}
 
-	private getMemoryDump(): string {
+	private getMemoryDump(): string
+	{
 		const lines: string[] = []
 		let isLineSkipped = false
 
 		for (let line = 0; line < this.memory.length / 16; line++) {
 			const currentBytes = []
 			const currentChars = []
-			const lineAddress: number     = line * 16
+			const lineAddress    : number = line * 16
 			const lineAddressText: string = Utils.wordToHex(line * 16)
 
 			for (let col = 0; col < 16; col++) {
@@ -271,9 +287,8 @@ class Emulator {
 				currentChars.push( value >= 0x20 && value <= 0x7E ? String.fromCharCode(value) : '.' )
 			}
 
-			if (lineAddress % 0x0100 === 0 && lines.length > 0 && lines[lines.length - 1] !== '') {
+			if (lineAddress % 0x0100 === 0 && lines.length > 0 && lines[lines.length - 1] !== '')
 				lines.push('') // Page changed
-			}
 
 			if (currentBytes.some(e => e !== '00')) {
 				lines.push(`${lineAddressText} | ${currentBytes.join(' ')} | ${currentChars.join('')}`)
@@ -284,22 +299,23 @@ class Emulator {
 		return lines.join('\n')
 	}
 
-	private codeEditor_keyDown(event: KeyboardEvent): void {
-		if (event.key !== 'Tab') {
+	private codeEditor_keyDown(event: KeyboardEvent): void
+	{
+		if (event.key !== 'Tab')
 			return
-		}
 
 		event.preventDefault();
 
 		const selectionStart = this.codeEditor.selectionStart
 		this.codeEditor.value =
 			this.codeEditor.value.substring(0, this.codeEditor.selectionStart) +
-			"    " +
+			'    ' +
 			this.codeEditor.value.substring(this.codeEditor.selectionEnd)
 		this.codeEditor.selectionEnd = selectionStart + 4
 	}
 
-	private setInitialPCinMemory(): void {
+	private setInitialPCinMemory(): void
+	{
 		const initialPc: string = (document.getElementById('initial-pc') as HTMLInputElement).value
 		const address: number = parseInt(initialPc, 16)
 
@@ -307,31 +323,32 @@ class Emulator {
 		this.memory[0xFFFD] = (address >> 8) & 0x00FF
 	}
 
-	private runForever(): void {
-		if (this.isStopRequired) {
+	private runForever(): void
+	{
+		if (this.isStopRequired)
 			return
-		}
 
 		try {
 			this.cpuRun()
 		}
-		catch (e) {
+		catch (e: any) {
 			this.terminal.innerText += e.message + '\n'
 		}
 
 		setTimeout(this.runForever.bind(this), 500)
 	}
 
-	private getRequest(url: string, callback: (res: string) => void): void {
+	private getRequest(url: string, callback: (res: string) => void): void
+	{
 		const xmlHttp: XMLHttpRequest = new XMLHttpRequest()
 		xmlHttp.onreadystatechange = readyStateChange
 		xmlHttp.open('GET', url, true)
 		xmlHttp.send()
 
-		function readyStateChange(): void {
-			if (xmlHttp.readyState === 4 && xmlHttp.status === 200) {
+		function readyStateChange(): void
+		{
+			if (xmlHttp.readyState === 4 && xmlHttp.status === 200)
 				callback(xmlHttp.responseText)
-			}
 		}
 	}
 }

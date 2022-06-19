@@ -144,9 +144,8 @@ class Assembler {
                 code = [];
                 codePC = -1;
             }
-            if (codePC === -1) {
+            if (codePC === -1)
                 codePC = pageAddress;
-            }
             prevAddress = pageAddress;
             const pageData = codePages[Utils.wordToHex(pageAddress)];
             for (let index = 0; index < pageData.length; index++) {
@@ -176,15 +175,12 @@ class Assembler {
         for (const token of instTokens) {
             if (token.labelRequired) {
                 const labelValue = codeDto.labels[token.labelRequired];
-                if (isNaN(labelValue)) {
+                if (isNaN(labelValue))
                     throw new Error(`Label "${token.labelRequired}" has no value: ${token.name}`);
-                }
-                if (this.dataSheet.opCodeMode[token.opc] === 'REL') {
+                if (this.dataSheet.opCodeMode[token.opc] === 'REL')
                     token.bytes = [token.opc, labelValue - token.pc - 2];
-                }
-                else {
+                else
                     token.bytes = [token.opc, labelValue & 0xFF, (labelValue >> 8) & 0xFF];
-                }
                 delete token.labelRequired;
             }
         }
@@ -246,7 +242,7 @@ class Assembler {
                 pc += this.dataSheet.opCodeBytes[opc];
                 continue;
             }
-            const matchIMM = /^[A-Z]{3} #([$%]?[0-9A-Z]+)$/.exec(line);
+            const matchIMM = /^[A-Z]{3} #([$%]?[\dA-Z]+)$/.exec(line);
             if (matchIMM) {
                 const opc = this.dataSheet.getOpc(name, 'IMM');
                 const value = this.parseValue(matchIMM[1]);
@@ -254,7 +250,7 @@ class Assembler {
                 pc += this.dataSheet.opCodeBytes[opc];
                 continue;
             }
-            const matchABS = /^[A-Z]{3} ([$%]?[0-9A-Z_]+)$/.exec(line);
+            const matchABS = /^[A-Z]{3} ([$%]?[\dA-Z_]+)$/.exec(line);
             if (matchABS) {
                 const value = this.parseValue(matchABS[1], codeTokenDto.labels);
                 if (typeof value === 'number' && value >= 0x00 && value <= 0xFF) {
@@ -268,7 +264,7 @@ class Assembler {
                 pc += this.dataSheet.opCodeBytes[opc];
                 continue;
             }
-            const matchABSX = /^[A-Z]{3} ([$%]?[0-9A-Z_]+),X$/.exec(line);
+            const matchABSX = /^[A-Z]{3} ([$%]?[\dA-Z_]+),X$/.exec(line);
             if (matchABSX) {
                 const value = this.parseValue(matchABSX[1], codeTokenDto.labels);
                 if (typeof value === 'number' && value >= 0x00 && value <= 0xFF) {
@@ -282,7 +278,7 @@ class Assembler {
                 pc += this.dataSheet.opCodeBytes[opc];
                 continue;
             }
-            const matchABSY = /^[A-Z]{3} ([$%]?[0-9A-Z_]+),Y$/.exec(line);
+            const matchABSY = /^[A-Z]{3} ([$%]?[\dA-Z_]+),Y$/.exec(line);
             if (matchABSY) {
                 const value = this.parseValue(matchABSY[1], codeTokenDto.labels);
                 if (typeof value === 'number' && value >= 0x00 && value <= 0xFF && name !== 'LDA') {
@@ -296,7 +292,7 @@ class Assembler {
                 pc += this.dataSheet.opCodeBytes[opc];
                 continue;
             }
-            const matchIND = /^[A-Z]{3} \(([$%]?[0-9A-Z_]+)\)$/.exec(line);
+            const matchIND = /^[A-Z]{3} \(([$%]?[\dA-Z_]+)\)$/.exec(line);
             if (matchIND) {
                 const opc = this.dataSheet.getOpc(name, 'IND');
                 const value = this.parseValue(matchIND[1], codeTokenDto.labels);
@@ -304,7 +300,7 @@ class Assembler {
                 pc += this.dataSheet.opCodeBytes[opc];
                 continue;
             }
-            const matchINDX = /^[A-Z]{3} \(([$%]?[0-9A-Z]+),X\)$/.exec(line);
+            const matchINDX = /^[A-Z]{3} \(([$%]?[\dA-Z]+),X\)$/.exec(line);
             if (matchINDX) {
                 const opc = this.dataSheet.getOpc(name, 'XZPI');
                 const value = this.parseValue(matchINDX[1]);
@@ -312,7 +308,7 @@ class Assembler {
                 pc += this.dataSheet.opCodeBytes[opc];
                 continue;
             }
-            const matchINDY = /^[A-Z]{3} \(([$%]?[0-9A-Z]+)\),Y$/.exec(line);
+            const matchINDY = /^[A-Z]{3} \(([$%]?[\dA-Z]+)\),Y$/.exec(line);
             if (matchINDY) {
                 const opc = this.dataSheet.getOpc(name, 'ZPIY');
                 const value = this.parseValue(matchINDY[1]);
@@ -342,16 +338,14 @@ class Assembler {
     parseValue(valueText, labels = {}, variables = {}) {
         if (valueText.startsWith('$')) {
             const value = parseInt(valueText.slice(1), 16);
-            if (isNaN(value)) {
+            if (isNaN(value))
                 throw new Error(`Cannot parse a hex number: ${valueText}`);
-            }
             return value;
         }
         if (valueText.startsWith('%')) {
             const value = parseInt(valueText.slice(1), 2);
-            if (isNaN(value)) {
+            if (isNaN(value))
                 throw new Error(`Cannot parse a bin number: ${valueText}`);
-            }
             return value;
         }
         const value = parseInt(valueText, 10);
@@ -375,7 +369,7 @@ class Assembler {
             .map(line => line.trim())
             .filter(line => line.length > 0)
             .reduce((acc, line) => {
-            const matchLabelInstr = /^([a-zA-Z_][a-zA-Z_0-9]+):?[ \t]+(([a-zA-Z]{3})[ \t]*.*)$/m.exec(line);
+            const matchLabelInstr = /^([a-zA-Z_]\w+):?[ \t]+(([a-zA-Z]{3})[ \t]*.*)$/m.exec(line);
             if (matchLabelInstr) {
                 const labelName = matchLabelInstr[1];
                 const instrPart = matchLabelInstr[2];
@@ -387,7 +381,7 @@ class Assembler {
                     return acc;
                 }
             }
-            const matchLabelDirective = /^([a-zA-Z_][a-zA-Z_0-9]+):?[ \t]+(\.[a-zA-Z]+)[ \t]+(.+)$/m.exec(line);
+            const matchLabelDirective = /^([a-zA-Z_]\w+):?[ \t]+(\.[a-zA-Z]+)[ \t]+(.+)$/m.exec(line);
             if (matchLabelDirective) {
                 const labelName = matchLabelDirective[1];
                 const directive = matchLabelDirective[2];
@@ -398,7 +392,7 @@ class Assembler {
                     return acc;
                 }
             }
-            const matchLabelColon = /^([a-zA-Z_][a-zA-Z_0-9]+):$/m.exec(line);
+            const matchLabelColon = /^([a-zA-Z_]\w+):$/m.exec(line);
             if (matchLabelColon) {
                 const labelName = matchLabelColon[1];
                 if (!this.dataSheet.instructions.includes(labelName.toUpperCase())) {
@@ -502,7 +496,7 @@ class Assembler {
                 });
                 return tokens;
             }
-            const matchInstWithVarOrLabel = /^([A-Z]{3}) [#(]?([A-Z0-9_]+)/m.exec(line);
+            const matchInstWithVarOrLabel = /^([A-Z]{3}) [#(]?([A-Z\d_]+)/m.exec(line);
             if (matchInstWithVarOrLabel) {
                 const instrName = matchInstWithVarOrLabel[1];
                 const varLabelName = matchInstWithVarOrLabel[2];
@@ -555,7 +549,7 @@ class Assembler {
         };
     }
     matchCodePC(codeLine) {
-        const matchInitialPC = /\*=\$([A-H0-9]{4})/.exec(codeLine);
+        const matchInitialPC = /\*=\$([A-H\d]{4})/.exec(codeLine);
         if (matchInitialPC) {
             const valueText = matchInitialPC[1];
             const pcValue = parseInt(valueText, 16);
@@ -570,7 +564,7 @@ class Assembler {
         return { isPC: false };
     }
     matchVariableInitialization(codeLine, variables) {
-        const matchVarInit = /([A-Z0-9_]+)=([$%]?[A-H0-9]+)/.exec(codeLine);
+        const matchVarInit = /([A-Z\d_]+)=([$%]?[A-H\d]+)/.exec(codeLine);
         if (matchVarInit) {
             const variable = matchVarInit[1];
             if (this.dataSheet.instructions.includes(variable)) {
@@ -593,12 +587,11 @@ class Assembler {
         return { isVariable: false };
     }
     matchLabelDeclaration(codeLine, labels) {
-        const matchLabel = /^([A-Z0-9_]+)$/m.exec(codeLine);
+        const matchLabel = /^([A-Z\d_]+)$/m.exec(codeLine);
         if (matchLabel) {
             const label = matchLabel[1];
-            if (this.dataSheet.instructions.includes(label)) {
+            if (this.dataSheet.instructions.includes(label))
                 return { isLabel: false };
-            }
             if (labels.hasOwnProperty(label)) {
                 return {
                     isLabel: true,
@@ -639,15 +632,13 @@ class Cpu {
                 this.A = val & 0xFF;
                 if (val >= 0x100) {
                     this.C = true;
-                    if (this.V && val >= 0x180) {
+                    if (this.V && val >= 0x180)
                         this.V = false;
-                    }
                 }
                 else {
                     this.C = false;
-                    if (this.V && val < 0x80) {
+                    if (this.V && val < 0x80)
                         this.V = false;
-                    }
                 }
                 this.setNZ(this.A);
             },
@@ -660,28 +651,23 @@ class Cpu {
                 const temp = input << 1;
                 this.C = (temp >> 8) === 1;
                 const val = temp & 0xFF;
-                if (isNaN(addr)) {
+                if (isNaN(addr))
                     this.A = val;
-                }
-                else {
+                else
                     this.memory[addr] = val;
-                }
                 this.setNZ(val);
             },
             BCC: (opr) => {
-                if (!this.C) {
+                if (!this.C)
                     this.branch(opr);
-                }
             },
             BCS: (opr) => {
-                if (this.C) {
+                if (this.C)
                     this.branch(opr);
-                }
             },
             BEQ: (opr) => {
-                if (this.Z) {
+                if (this.Z)
                     this.branch(opr);
-                }
             },
             BIT: (opr) => {
                 const val = this.A & opr;
@@ -690,19 +676,16 @@ class Cpu {
                 this.Z = !val;
             },
             BMI: (opr) => {
-                if (this.N) {
+                if (this.N)
                     this.branch(opr);
-                }
             },
             BNE: (opr) => {
-                if (!this.Z) {
+                if (!this.Z)
                     this.branch(opr);
-                }
             },
             BPL: (opr) => {
-                if (!this.N) {
+                if (!this.N)
                     this.branch(opr);
-                }
             },
             BRK: () => {
                 this.PC += 1;
@@ -711,14 +694,12 @@ class Cpu {
                 this.PC = this.loadWord(0xFFFE);
             },
             BVC: (opr) => {
-                if (!this.V) {
+                if (!this.V)
                     this.branch(opr);
-                }
             },
             BVS: (opr) => {
-                if (this.V) {
+                if (this.V)
                     this.branch(opr);
-                }
             },
             CLC: () => {
                 this.C = false;
@@ -799,12 +780,10 @@ class Cpu {
             LSR: (addr) => {
                 const input = isNaN(addr) ? this.A : this.memory[addr];
                 const out = input >> 1;
-                if (isNaN(addr)) {
+                if (isNaN(addr))
                     this.A = out;
-                }
-                else {
+                else
                     this.memory[addr] = out;
-                }
                 this.N = false;
                 this.Z = !out;
                 this.C = !!(input & 1);
@@ -831,12 +810,10 @@ class Cpu {
             ROL: (addr) => {
                 const input = isNaN(addr) ? this.A : this.memory[addr];
                 const out = (input << 1) + +this.C;
-                if (isNaN(addr)) {
+                if (isNaN(addr))
                     this.A = out;
-                }
-                else {
+                else
                     this.memory[addr] = out;
-                }
                 this.N = !!((input >> 6) & 1);
                 this.Z = !out;
                 this.C = !!((input >> 7) & 1);
@@ -844,12 +821,10 @@ class Cpu {
             ROR: (addr) => {
                 const input = isNaN(addr) ? this.A : this.memory[addr];
                 const out = ((input >> 1) + (+this.C << 7)) & 0xFF;
-                if (isNaN(addr)) {
+                if (isNaN(addr))
                     this.A = out;
-                }
-                else {
+                else
                     this.memory[addr] = out;
-                }
                 this.N = this.C;
                 this.Z = !out;
                 this.C = !!(input & 1);
@@ -867,15 +842,13 @@ class Cpu {
                 const value = 0xff + this.A - opr + (this.C ? 1 : 0);
                 if (value < 0x100) {
                     this.C = false;
-                    if (this.V && value < 0x80) {
+                    if (this.V && value < 0x80)
                         this.V = false;
-                    }
                 }
                 else {
                     this.C = true;
-                    if (this.V && value >= 0x180) {
+                    if (this.V && value >= 0x180)
                         this.V = false;
-                    }
                 }
                 this.A = value & 0xff;
             },
@@ -970,9 +943,8 @@ class Cpu {
     step() {
         const opc = this.memory[this.PC];
         const name = this.dataSheet.opCodeName[opc];
-        if (name === undefined) {
+        if (name === undefined)
             throw new Error(`Invalid instruction '${Utils.byteToHex(opc)}' at: $${Utils.wordToHex(this.PC)}`);
-        }
         const mode = this.dataSheet.opCodeMode[opc];
         const opr = this.addressInstructions.includes(name)
             ? this.operandAddress[mode]()
@@ -983,9 +955,8 @@ class Cpu {
         this.instruction[name](opr);
     }
     irq() {
-        if (this.I) {
+        if (this.I)
             return;
-        }
         this.push((this.PC >> 8) & 0xFF);
         this.push(this.PC & 0xFF);
         this.push((this.P | 0x02) & ~(1 << 0x04));
@@ -1003,15 +974,13 @@ class Cpu {
     push(val) {
         this.memory[0x0100 + this.S] = val;
         this.S -= 1;
-        if (this.S < 0) {
+        if (this.S < 0)
             this.S = 0xFF;
-        }
     }
     pull() {
         this.S += 1;
-        if (this.S > 0xFF) {
+        if (this.S > 0xFF)
             this.S = 0;
-        }
         return this.memory[0x0100 + this.S];
     }
     branch(offset) {
@@ -1181,9 +1150,8 @@ class DataSheet {
         });
     }
     populateData(instr, opc, index) {
-        if (isNaN(opc)) {
+        if (isNaN(opc))
             return;
-        }
         const addressingMode = this.addressingModes[index];
         this.opCodeName[opc] = instr;
         this.opCodeMode[opc] = addressingMode;
@@ -1303,15 +1271,13 @@ class Emulator {
         setTimeout(this.debugLoop.bind(this), 0);
     }
     debugLoop() {
-        if (this.isStopRequired) {
+        if (this.isStopRequired)
             return;
-        }
         try {
             this.cpu.step();
             this.dump();
-            if (this.memory[this.cpu.PC] === 0x00) {
+            if (this.memory[this.cpu.PC] === 0x00)
                 return;
-            }
         }
         catch (e) {
             this.terminal.innerText += e.message + '\n';
@@ -1393,9 +1359,8 @@ class Emulator {
                 currentBytes.push(Utils.byteToHex(value));
                 currentChars.push(value >= 0x20 && value <= 0x7E ? String.fromCharCode(value) : '.');
             }
-            if (lineAddress % 0x0100 === 0 && lines.length > 0 && lines[lines.length - 1] !== '') {
+            if (lineAddress % 0x0100 === 0 && lines.length > 0 && lines[lines.length - 1] !== '')
                 lines.push('');
-            }
             if (currentBytes.some(e => e !== '00')) {
                 lines.push(`${lineAddressText} | ${currentBytes.join(' ')} | ${currentChars.join('')}`);
                 isLineSkipped = false;
@@ -1404,14 +1369,13 @@ class Emulator {
         return lines.join('\n');
     }
     codeEditor_keyDown(event) {
-        if (event.key !== 'Tab') {
+        if (event.key !== 'Tab')
             return;
-        }
         event.preventDefault();
         const selectionStart = this.codeEditor.selectionStart;
         this.codeEditor.value =
             this.codeEditor.value.substring(0, this.codeEditor.selectionStart) +
-                "    " +
+                '    ' +
                 this.codeEditor.value.substring(this.codeEditor.selectionEnd);
         this.codeEditor.selectionEnd = selectionStart + 4;
     }
@@ -1422,9 +1386,8 @@ class Emulator {
         this.memory[0xFFFD] = (address >> 8) & 0x00FF;
     }
     runForever() {
-        if (this.isStopRequired) {
+        if (this.isStopRequired)
             return;
-        }
         try {
             this.cpuRun();
         }
@@ -1439,26 +1402,26 @@ class Emulator {
         xmlHttp.open('GET', url, true);
         xmlHttp.send();
         function readyStateChange() {
-            if (xmlHttp.readyState === 4 && xmlHttp.status === 200) {
+            if (xmlHttp.readyState === 4 && xmlHttp.status === 200)
                 callback(xmlHttp.responseText);
-            }
         }
     }
 }
 module.exports.Emulator = Emulator;
 class Utils {
     static byteToHex(val) {
-        const hex = '0123456789ABCDEF';
-        return hex[(val >> 4) & 0xF] + hex[val & 0xF];
+        return Utils.hex[(val >> 4) & 0xF] +
+            Utils.hex[val & 0xF];
     }
     static wordToHex(val) {
-        const hex = '0123456789ABCDEF';
-        return hex[(val >> 12) & 0xF] + hex[(val >> 8) & 0xF] + hex[(val >> 4) & 0xF] + hex[val & 0xF];
+        return Utils.hex[(val >> 12) & 0xF] +
+            Utils.hex[(val >> 8) & 0xF] +
+            Utils.hex[(val >> 4) & 0xF] +
+            Utils.hex[val & 0xF];
     }
     static byteToSInt(val) {
-        if (val > 0x7F) {
+        if (val > 0x7F)
             return '-' + (((~val) + 1) & 0xFF).toString(10);
-        }
         return val.toString(10);
     }
     static randomByte() {
@@ -1468,5 +1431,6 @@ class Utils {
         return Math.floor(2 * Math.random());
     }
 }
+Utils.hex = '0123456789ABCDEF';
 module.exports.Utils = Utils;
 //# sourceMappingURL=index.js.map

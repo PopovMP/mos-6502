@@ -2,7 +2,7 @@
 
 const { strictEqual } = require('assert')
 const { describe, it } = require('@popovmp/mocha-tiny')
-const { Assembler, Cpu, DataSheet, Emulator, Utils } = require('../js')
+const { Assembler, Cpu, DataSheet, Emulator, Utils } = require('../js/index.js')
 
 describe('Initialization', () => {
 	describe('Assembler', () => {

@@ -16,24 +16,20 @@
         POINTH  = $FB   ; MSB of address on display
         TEMP    = $FC
         TMPX    = $FD
-        MODE    = $FF   ; Keboard mode: 0 = data, 1 = addres,
+        MODE    = $FF   ; Keyboard mode: 0 = data, 1 = address,
 ;
-        SBD     = $1740 ; I/O B register
-        SAD     = $174F ; I/O A register
-        PBDD    = $1742 ; I/O B direction
-        PADD    = $1743 ; I/O A direction
-; Interrupt vectors
-        NMIV    = $17FA ; STOP VECTOR (STOP=1C00)
-        RSTV    = $17FC ; RST VECTOR
-        IRQV    = $17FE ; IRQ VECTOR (BRK=1C00)
+        SBD     = $8040 ; I/O B register
+        SAD     = $804F ; I/O A register
+        PBDD    = $8042 ; I/O B direction
+        PADD    = $8043 ; I/O A direction
 ;
-*=$1C00
+*=$C000
 ;
 ; KIM-entry via NMI or IRQ
-SAVE    STA     ACC     ;                               1C00
+SAVE    STA     ACC
         PLA
         STA     PREG
-        PLA             ; KIM entry via JSR (A lost)    1C05
+        PLA             ; KIM entry via JSR (A lost)
         STA     PCL
         STA     POINTL
         PLA
@@ -46,26 +42,18 @@ SAVE    STA     ACC     ;                               1C00
         JSR     INITS
         JMP     START
 ;
-NMIT    JMP     (NMIV)  ; Non-maskable interrupt trap   1C1C
-IRQT    JMP     (IRQV)  ; Interrupt trap                1C1F
 ; The KIM starts here after a reset
-RST     LDX     #$FF    ;                               1C22
+RST     LDX     #$FF
         TXS             ; set stack
         STX     SPUSER
         JSR     INITS
         JMP     START
-*=$1C4F
-; Make TTY / KB selection (currently only KB)
-START   JSR     INIT1   ;                               1C4F
-        JMP     TTYKB
-*=$1C77
+;
 ; Main routine for keyboard and display
-TTYKB   JSR     SCAND   ; Wait until NO key pressed     1C77
+START   JSR     INIT1
+TTYKB   JSR     SCAND   ; Wait until NO key pressed
         BNE     START   ; if pressed, wait again ->
-TTYKB1  LDA     #$01    ; check KB/TTY mode
-        BIT     SAD     ; TTY?
-		BEQ     START   ; yes ->
-        JSR     SCAND   ; Wait for key...
+TTYKB1  JSR     SCAND   ; Wait for key...
         BEQ     TTYKB1  ; no key ->
         JSR     SCAND   ; debounce key
         BEQ     TTYKB1  ; no key ->
@@ -75,7 +63,7 @@ GETK    JSR     GETKEY
         CMP     #$14
         BEQ     PCCMD   ; "PC" - display Program Counter
         CMP     #$10
-        BEQ     ADDRM   ; "AD" - addres mode
+        BEQ     ADDRM   ; "AD" - address mode
         CMP     #$11
         BEQ     DATAM   ; "DA" - data mode
         CMP     #$12
@@ -125,7 +113,6 @@ PCCMD   LDA     PCL
         LDA     PCH
         STA     POINTH
         JMP     START
-*=$1DC8
 ;
 ; RTI is used as a comfortable way to define all flags in one move.
 GOEXEC  LDX     SPUSER  ; user user defined stack
@@ -140,22 +127,18 @@ GOEXEC  LDX     SPUSER  ; user user defined stack
         LDY     YREG
         LDA     ACC
         RTI             ; start program
-*=$1E88
-; Initialization 6520
-INITS   LDX     #$01    ;                                        1E88
+; Initialization VIA 6522 for KIM Display / Keyboard
+INITS   LDX     #$01
         STX     MODE    ; Set display to address mode
 INIT1   LDX     #$00    ; 0000 0000
         STX     PADD    ; PA0..PA7 = input
-        LDX     #$3F    ; 0011 1111
-        STX     PBDD    ; PB0..PB5 = output. (currently used PB1..PB4)
-        LDX     #$07    ; 0000 0111
-        STX     SBD     ; U24 (74LS145) outputs 3 to check the KBD/TTY mode
+        LDX     #$1E    ; 0001 1110
+        STX     PBDD    ; PB1..PB4 = output
         CLD
         SEI
         RTS
-*=$1EFE
 ; Determine if key is depressed: NO -> A=0, YES -> A>0
-AK      LDY     #$03    ; 3 rows                                1EFE
+AK      LDY     #$03    ; 3 rows
         LDX     #$01    ; select 74145 output 0
 ONEKEY  LDA     #$FF    ; initial value
 AK1     STX     SBD     ; enable output = select row
@@ -164,14 +147,12 @@ AK1     STX     SBD     ; enable output = select row
         AND     SAD     ; A := A && (PA0..PA7)
         DEY             ; all rows?
         BNE     AK1     ; not yet, Y > 0 ->
-        LDY     #$07
-        STY     SBD     ; select 74145 output 3 (not used)
         ORA     #$80    ; mask bit 7 of A
         EOR     #$FF    ; if A still is $FF -> A := 0
         RTS
 ;
 ; Output to 7-segment-display
-SCAND   LDY     #$00    ; POINTL/POINTH = address on display    1F19
+SCAND   LDY     #$00    ; POINTL/POINTH = address on display
         LDA     (POINTL),Y ; get data from this address
         STA     INH     ; store in INH =
 SCANDS  LDA     #$7F    ; PA0..PA6 := output
@@ -198,10 +179,10 @@ CONVD   STY     TEMP
         TAY
         LDA     TABLE,Y
         LDY     #$00
-        STY     SAD     ; turn off segments
-        STX     SBD     ; select 7-s-display
-        STA     SAD     ; output code on display
-        LDY     #$3F    ; #$7F delay ~500 cycles
+        STY     SAD     ; Turn off segments
+        STX     SBD     ; Select 7-s-display
+        STA     SAD     ; Output code on display
+        LDY     #$7F    ; Delay ~500 cycles
 CONVD1  DEY
         BNE     CONVD1
         INX             ; Get next digit number
@@ -211,11 +192,10 @@ CONVD1  DEY
 ; Increment POINT = address on display
 INCPT   INC     POINTL
 		BNE     INCPT2
-
 		INC     POINTH
 INCPT2  RTS
 ; Get key from keyboard in A
-GETKEY  LDX     #$21    ; row 0                                1F6A
+GETKEY  LDX     #$21    ; row 0
 GETKE5  LDY     #$01    ; only one row in the time
         JSR     ONEKEY  ; key?
         BNE     KEYIN   ; yes ->
@@ -241,14 +221,13 @@ KEYIN4  DEX             ; countdown to 0
         RTS             ; A is always < 21 eg. < $15
 ;
 ; Hex -> 7-segment
-*=$1FE7
 ;               0    1    2    3    4    5    6    7
 TABLE   .BYTE   $BF, $86, $DB, $CF, $E6, $ED, $FD, $87
         .BYTE   $FF, $EF, $F7, $FC, $B9, $DE, $F9, $F1
 ;               8    9    A    B    C    D    E    F
 ;
 ; Entry vectors
-*=$1FFA
-        .WORD   NMIT    ; NMI
+*=$FFFA
+        .WORD   SAVE    ; NMI
         .WORD   RST     ; Reset
-        .WORD   IRQT    ; IRQ
+        .WORD   SAVE    ; IRQ
