@@ -1,14 +1,14 @@
-'use strict'
+"use strict";
 
-const fs = require('fs')
+const fs = require("fs");
 
-const { strictEqual } = require('assert')
-const { describe, it } = require('@popovmp/mocha-tiny')
+const {strictEqual}  = require("assert");
+const {describe, it} = require("@popovmp/mocha-tiny");
 
-const { Assembler } = require('../js/index.js')
+const {Assembler} = require("../js/index.js");
 
-describe('Assembler', () => {
-	const sourceCode =  `
+describe("Assembler", () => {
+    const sourceCode = `
 			* = $ 0800
 			index    = \t \t $0200
 				start LDX #   $ 00
@@ -28,74 +28,74 @@ describe('Assembler', () => {
 				CPY # $20      ;loop until Y is $20
 				BNE     \t  secondLoop
 				finish
-			`
+			`;
 
-	describe('Clean code', () => {
-		it('can be instantiated', () => {
+    describe("Clean code", () => {
+        it("can be instantiated", () => {
 
-			const assembler = new Assembler()
-			const cleaned = assembler.cleanSourceCode(sourceCode).join(';')
-			strictEqual(cleaned, '*=$0800;INDEX=$0200;START;LDX #$00;LDY #$00;FIRST_LOOP;TXA;STA INDEX,Y;PHA;INX;LDY $FF;LSR A;CPY #$10;BNE FIRST_LOOP;SECONDLOOP;PLA;STA INDEX,Y;INY;CPY #$20;BNE SECONDLOOP;FINISH')
-		})
-	})
+            const assembler = new Assembler();
+            const cleaned   = assembler.cleanSourceCode(sourceCode).join(";");
+            strictEqual(cleaned, "*=$0800;INDEX=$0200;START;LDX #$00;LDY #$00;FIRST_LOOP;TXA;STA INDEX,Y;PHA;INX;LDY $FF;LSR A;CPY #$10;BNE FIRST_LOOP;SECONDLOOP;PLA;STA INDEX,Y;INY;CPY #$20;BNE SECONDLOOP;FINISH");
+        });
+    });
 
-	describe('Tokenize code', () => {
-		it('can be tokenized', () => {
+    describe("Tokenize code", () => {
+        it("can be tokenized", () => {
 
-			const assembler = new Assembler()
-			const cleaned = assembler.cleanSourceCode(sourceCode)
-			const codeDto = assembler.tokenizeSourceCode(cleaned)
+            const assembler = new Assembler();
+            const cleaned   = assembler.cleanSourceCode(sourceCode);
+            const codeDto   = assembler.tokenizeSourceCode(cleaned);
 
-			strictEqual(codeDto.codeTokens.length, 20)
-		})
-	})
+            strictEqual(codeDto.codeTokens.length, 20);
+        });
+    });
 
-	describe('Assemble code', () => {
-		it('returns a dump', () => {
+    describe("Assemble code", () => {
+        it("returns a dump", () => {
 
-			const assembler = new Assembler()
-			const codePages = assembler.assemble(sourceCode)
-			const actual    = Assembler.hexDump(codePages)
+            const assembler = new Assembler();
+            const codePages = assembler.assemble(sourceCode);
+            const actual    = Assembler.hexDump(codePages);
 
-			strictEqual(actual,
-				'0800: A2 00 A0 00 8A 99 00 02 48 E8 A4 FF 4A C0 10 D0' + '\n' +
-				'0810: F3 68 99 00 02 C8 C0 20 D0 F7  .  .  .  .  .  .')
-		})
+            strictEqual(actual,
+                "0800: A2 00 A0 00 8A 99 00 02 48 E8 A4 FF 4A C0 10 D0" + "\n" +
+                "0810: F3 68 99 00 02 C8 C0 20 D0 F7  .  .  .  .  .  .");
+        });
 
-		it('Assembles a game', () => {
-			const sourcePath =  (__dirname).endsWith('test') ? __dirname + '/game.asm' :  __dirname + '/test/game.asm'
-			const sourceCode = fs.readFileSync( sourcePath, 'utf8')
+        it("Assembles a game", () => {
+            const sourcePath = (__dirname).endsWith("test") ? __dirname + "/game.asm" : __dirname + "/test/game.asm";
+            const sourceCode = fs.readFileSync(sourcePath, "utf8");
 
-			const assembler = new Assembler()
-			const codePages = assembler.assemble(sourceCode)
-			const actual    = Assembler.hexDump(codePages)
+            const assembler = new Assembler();
+            const codePages = assembler.assemble(sourceCode);
+            const actual    = Assembler.hexDump(codePages);
 
-			strictEqual(actual,
-				'0600: 20 06 06 20 38 06 20 0D 06 20 2A 06 60 A9 02 85\n' +
-				'0610: 02 A9 04 85 03 A9 11 85 10 A9 10 85 12 A9 0F 85\n' +
-				'0620: 14 A9 04 85 11 85 13 85 15 60 A5 FE 85 00 A5 FE\n' +
-				'0630: 29 03 18 69 02 85 01 60 20 4D 06 20 8D 06 20 C3\n' +
-				'0640: 06 20 19 07 20 20 07 20 2D 07 4C 38 06 A5 FF C9\n' +
-				'0650: 77 F0 0D C9 64 F0 14 C9 73 F0 1B C9 61 F0 22 60\n' +
-				'0660: A9 04 24 02 D0 26 A9 01 85 02 60 A9 08 24 02 D0\n' +
-				'0670: 1B A9 02 85 02 60 A9 01 24 02 D0 10 A9 04 85 02\n' +
-				'0680: 60 A9 02 24 02 D0 05 A9 08 85 02 60 60 20 94 06\n' +
-				'0690: 20 A8 06 60 A5 00 C5 10 D0 0D A5 01 C5 11 D0 07\n' +
-				'06A0: E6 03 E6 03 20 2A 06 60 A2 02 B5 10 C5 10 D0 06\n' +
-				'06B0: B5 11 C5 11 F0 09 E8 E8 E4 03 F0 06 4C AA 06 4C\n' +
-				'06C0: 35 07 60 A6 03 CA 8A B5 10 95 12 CA 10 F9 A5 02\n' +
-				'06D0: 4A B0 09 4A B0 19 4A B0 1F 4A B0 2F A5 10 38 E9\n' +
-				'06E0: 20 85 10 90 01 60 C6 11 A9 01 C5 11 F0 28 60 E6\n' +
-				'06F0: 10 A9 1F 24 10 F0 1F 60 A5 10 18 69 20 85 10 B0\n' +
-				'0700: 01 60 E6 11 A9 06 C5 11 F0 0C 60 C6 10 A5 10 29\n' +
-				'0710: 1F C9 1F F0 01 60 4C 35 07 A0 00 A5 FE 91 00 60\n' +
-				'0720: A6 03 A9 00 81 10 A2 00 A9 01 81 10 60 A2 00 EA\n' +
-				'0730: EA CA D0 FB 60  .  .  .  .  .  .  .  .  .  .  .'
-			)
-		})
+            strictEqual(actual,
+                "0600: 20 06 06 20 38 06 20 0D 06 20 2A 06 60 A9 02 85\n" +
+                "0610: 02 A9 04 85 03 A9 11 85 10 A9 10 85 12 A9 0F 85\n" +
+                "0620: 14 A9 04 85 11 85 13 85 15 60 A5 FE 85 00 A5 FE\n" +
+                "0630: 29 03 18 69 02 85 01 60 20 4D 06 20 8D 06 20 C3\n" +
+                "0640: 06 20 19 07 20 20 07 20 2D 07 4C 38 06 A5 FF C9\n" +
+                "0650: 77 F0 0D C9 64 F0 14 C9 73 F0 1B C9 61 F0 22 60\n" +
+                "0660: A9 04 24 02 D0 26 A9 01 85 02 60 A9 08 24 02 D0\n" +
+                "0670: 1B A9 02 85 02 60 A9 01 24 02 D0 10 A9 04 85 02\n" +
+                "0680: 60 A9 02 24 02 D0 05 A9 08 85 02 60 60 20 94 06\n" +
+                "0690: 20 A8 06 60 A5 00 C5 10 D0 0D A5 01 C5 11 D0 07\n" +
+                "06A0: E6 03 E6 03 20 2A 06 60 A2 02 B5 10 C5 10 D0 06\n" +
+                "06B0: B5 11 C5 11 F0 09 E8 E8 E4 03 F0 06 4C AA 06 4C\n" +
+                "06C0: 35 07 60 A6 03 CA 8A B5 10 95 12 CA 10 F9 A5 02\n" +
+                "06D0: 4A B0 09 4A B0 19 4A B0 1F 4A B0 2F A5 10 38 E9\n" +
+                "06E0: 20 85 10 90 01 60 C6 11 A9 01 C5 11 F0 28 60 E6\n" +
+                "06F0: 10 A9 1F 24 10 F0 1F 60 A5 10 18 69 20 85 10 B0\n" +
+                "0700: 01 60 E6 11 A9 06 C5 11 F0 0C 60 C6 10 A5 10 29\n" +
+                "0710: 1F C9 1F F0 01 60 4C 35 07 A0 00 A5 FE 91 00 60\n" +
+                "0720: A6 03 A9 00 81 10 A2 00 A9 01 81 10 60 A2 00 EA\n" +
+                "0730: EA CA D0 FB 60  .  .  .  .  .  .  .  .  .  .  .",
+            );
+        });
 
-		it('Assembles multi-part code', () => {
-			const sourceCode =  `
+        it("Assembles multi-part code", () => {
+            const sourceCode = `
 				        LDY #$00
 				        JMP loop
 				        BRK
@@ -114,39 +114,39 @@ describe('Assembler', () => {
 				        * = $2000
 				
 				base    .BYTE $AA, $BB, $CC			
-			`
+			`;
 
-			const assembler = new Assembler()
-			const codePages = assembler.assemble(sourceCode)
-			const actual    = Assembler.hexDump(codePages)
+            const assembler = new Assembler();
+            const codePages = assembler.assemble(sourceCode);
+            const actual    = Assembler.hexDump(codePages);
 
-			strictEqual(actual,
-				'0800: A0 00 4C 00 10 00  .  .  .  .  .  .  .  .  .  .\n' +
-				'1000: 8A 9D 00 20 E8 E0 00 F0 03 4C 00 10 00  .  .  .\n' +
-				'2000: AA BB CC  .  .  .  .  .  .  .  .  .  .  .  .  .'
-			)
-		})
-	})
+            strictEqual(actual,
+                "0800: A0 00 4C 00 10 00  .  .  .  .  .  .  .  .  .  .\n" +
+                "1000: 8A 9D 00 20 E8 E0 00 F0 03 4C 00 10 00  .  .  .\n" +
+                "2000: AA BB CC  .  .  .  .  .  .  .  .  .  .  .  .  .",
+            );
+        });
+    });
 
-	describe('Disassemble code', () => {
-		it('Disassemble a game', () => {
-			const sourcePath =  (__dirname).endsWith('test') ? __dirname + '/game.asm' :  __dirname + '/test/game.asm'
-			const sourceCode = fs.readFileSync( sourcePath, 'utf8')
+    describe("Disassemble code", () => {
+        it("Disassemble a game", () => {
+            const sourcePath = (__dirname).endsWith("test") ? __dirname + "/game.asm" : __dirname + "/test/game.asm";
+            const sourceCode = fs.readFileSync(sourcePath, "utf8");
 
-			const assembler     = new Assembler()
-			const codePages     = assembler.assemble(sourceCode)
-			const disAssyTokens = assembler.disassembleCodePages(codePages)
+            const assembler     = new Assembler();
+            const codePages     = assembler.assemble(sourceCode);
+            const disAssyTokens = assembler.disassembleCodePages(codePages);
 
-			const output = []
+            const output = [];
 
-			for (const tkn of disAssyTokens) {
-				// noinspection JSUnresolvedVariable
-				output.push(`$${tkn.address}   ${tkn.code.join(' ').padEnd(8, ' ')}   ${tkn.text.padEnd(13, ' ')}  ; ${tkn.description}`)
-			}
+            for (const tkn of disAssyTokens) {
+                // noinspection JSUnresolvedVariable
+                output.push(`$${tkn.address}   ${tkn.code.join(" ").padEnd(8, " ")}   ${tkn.text.padEnd(13, " ")}  ; ${tkn.description}`);
+            }
 
-			const actual = '\n' + output.join('\n') + '\n'
+            const actual = "\n" + output.join("\n") + "\n";
 
-			strictEqual(actual,`
+            strictEqual(actual, `
 $0600   20 06 06   JSR $0606      ; Jump to Subroutine
 $0603   20 38 06   JSR $0638      ; Jump to Subroutine
 $0606   20 0D 06   JSR $060D      ; Jump to Subroutine
@@ -311,9 +311,9 @@ $0730   EA         NOP            ; No Operation
 $0731   CA         DEX            ; Decrement X Register
 $0732   D0 FB      BNE $072F      ; Branch if Not Equal
 $0734   60         RTS            ; Return from Subroutine
-`
-			)
-		})
-	})
-})
+`,
+            );
+        });
+    });
+});
 

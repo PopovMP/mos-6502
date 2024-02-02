@@ -1,17 +1,16 @@
+"use strict";
 
-'use strict'
+const {strictEqual}    = require("assert");
+const {describe, it}   = require("@popovmp/mocha-tiny");
+const {Cpu, Assembler} = require("../js/index.js");
 
-const { strictEqual } = require('assert')
-const { describe, it } = require('@popovmp/mocha-tiny')
-const { Cpu, Assembler } = require('../js/index.js')
+const memory    = new Uint8Array(0xFFFF + 1);
+const cpu       = new Cpu(memory);
+const assembler = new Assembler();
 
-const memory    = new Uint8Array(0xFFFF + 1)
-const cpu       = new Cpu(memory)
-const assembler = new Assembler()
+describe("Square root", () => {
 
-describe('Square root', () => {
-
-	const sourceCode = `
+    const sourceCode = `
     * = $0800           ; can be anywhere, ROM or RAM
     
 	Numberl = $F0      ; number to find square root of low byte
@@ -89,16 +88,16 @@ Next
     BNE    Loop        ; loop if not all done
 
     RTS
-	`
+	`;
 
-	describe('Square root', () => {
-		assembler.load(sourceCode, memory)
-		cpu.reset()
-		while (memory[cpu.PC] !== 0x00) {
-			cpu.step()
-		}
-		it('SQRT of 256 = 16', () => {
-			strictEqual(cpu.A, 0x10)
-		})
-	})
-})
+    describe("Square root", () => {
+        assembler.load(sourceCode, memory);
+        cpu.reset();
+        while (memory[cpu.PC] !== 0x00)
+            cpu.step();
+
+        it("SQRT of 256 = 16", () => {
+            strictEqual(cpu.A, 0x10);
+        });
+    });
+});

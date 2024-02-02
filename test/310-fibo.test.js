@@ -1,16 +1,15 @@
+"use strict";
 
-'use strict'
+const {strictEqual}    = require("assert");
+const {describe, it}   = require("@popovmp/mocha-tiny");
+const {Cpu, Assembler} = require("../js/index.js");
 
-const { strictEqual } = require('assert')
-const { describe, it } = require('@popovmp/mocha-tiny')
-const { Cpu, Assembler } = require('../js/index.js')
+const memory = new Uint8Array(0xFFFF + 1);
+const cpu    = new Cpu(memory);
 
-const memory = new Uint8Array(0xFFFF + 1)
-const cpu = new Cpu(memory)
+describe("Fibonacci", () => {
 
-describe('Fibonacci', () => {
-
-	const sourceCode = `
+    const sourceCode = `
 	        * = $0800
 	
 	        ; Variables location in Zero Page
@@ -45,18 +44,17 @@ describe('Fibonacci', () => {
 	
 	exit    
 	        BRK
-	`
+	`;
 
-	describe('Fibonacci', () => {
-		const assembler = new Assembler()
-		assembler.load(sourceCode, memory)
+    describe("Fibonacci", () => {
+        const assembler = new Assembler();
+        assembler.load(sourceCode, memory);
+        cpu.reset();
+        while (memory[cpu.PC] !== 0x00)
+            cpu.step();
 
-		cpu.reset()
-		while (memory[cpu.PC] !== 0x00) {
-			cpu.step()
-		}
-		it('Fibo 13 = 233', () => {
-			strictEqual(cpu.A, 233)
-		})
-	})
-})
+        it("Fibo 13 = 233", () => {
+            strictEqual(cpu.A, 233);
+        });
+    });
+});

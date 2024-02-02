@@ -1,16 +1,16 @@
-'use strict'
+"use strict";
 
 
-const { strictEqual } = require('assert')
-const { describe, it } = require('@popovmp/mocha-tiny')
+const {strictEqual}  = require("assert");
+const {describe, it} = require("@popovmp/mocha-tiny");
 
-const { Assembler } = require('../js/index.js')
+const {Assembler} = require("../js/index.js");
 
-describe('Assembler - errors', () => {
-	describe('Tokenize code', () => {
-		it('Show errors', () => {
+describe("Assembler - errors", () => {
+    describe("Tokenize code", () => {
+        it("Show errors", () => {
 
-			const sourceCode = `
+            const sourceCode = `
 			        * = $0800
 			
 			        ; Variables location in Zero Page
@@ -47,30 +47,29 @@ describe('Assembler - errors', () => {
 			
 			exit    
 			        BRK
-			`
+			`;
 
-			const assembler = new Assembler()
-			const codeDto = assembler.tokenize(sourceCode)
+            const assembler = new Assembler();
+            const codeDto   = assembler.tokenize(sourceCode);
 
-			const errorOutput = codeDto.codeTokens
-				.filter(token => token.tokenType === 'error')
-				.reduce( (acc, token) => {
-					acc.push('Error:       ' + token.error)
-					acc.push('Code line:   ' + token.codeLine)
-					acc.push('Instruction: ' + token.instrName)
-					return acc
-				}, [])
+            const errorOutput = codeDto.codeTokens
+                .filter(token => token.tokenType === "error")
+                .reduce((acc, token) => {
+                    acc.push("Error:       " + token.error);
+                    acc.push("Code line:   " + token.codeLine);
+                    acc.push("Instruction: " + token.instrName);
+                    return acc;
+                }, []);
 
-			// console.error(errorOutput.join('\n'))
+            // console.error(errorOutput.join('\n'))
 
-			try {
-				assembler.assemble(sourceCode)
-			}
-			catch (e) {
-				// console.error(e.message)
-			}
+            try {
+                assembler.assemble(sourceCode);
+            } catch (e) {
+                // console.error(e.message)
+            }
 
-			strictEqual(errorOutput.length, 9)
-		})
-	})
-})
+            strictEqual(errorOutput.length, 9);
+        });
+    });
+});

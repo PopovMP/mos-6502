@@ -609,7 +609,7 @@ module.exports.Assembler = Assembler;
 class Cpu {
     constructor(memory) {
         this.addressInstructions = [
-            'ASL', 'DEC', 'INC', 'LSR', 'JMP', 'JSR', 'ROL', 'ROR', 'STA', 'STX', 'STY'
+            "ASL", "DEC", "INC", "LSR", "JMP", "JSR", "ROL", "ROR", "STA", "STX", "STY",
         ];
         this.operandAddress = {
             IMPL: () => NaN,
@@ -948,7 +948,7 @@ class Cpu {
         const mode = this.dataSheet.opCodeMode[opc];
         const opr = this.addressInstructions.includes(name)
             ? this.operandAddress[mode]()
-            : mode === 'IMPL'
+            : mode === "IMPL"
                 ? this.A
                 : this.memory[this.operandAddress[mode]()];
         this.PC += this.dataSheet.opCodeBytes[opc];
@@ -1085,64 +1085,64 @@ class DataSheet {
             TYA: [NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, 0x98, NaN],
         };
         this.instrDescription = {
-            ADC: 'Add with Carry',
-            AND: 'Logical AND',
-            ASL: 'Arithmetic Shift Left',
-            BCC: 'Branch if Carry Clear',
-            BCS: 'Branch if Carry Set',
-            BEQ: 'Branch if Equal',
-            BIT: 'Bit Test',
-            BMI: 'Branch if Minus',
-            BNE: 'Branch if Not Equal',
-            BPL: 'Branch if Plus',
-            BRK: 'Force Interrupt',
-            BVC: 'Branch if Overflow Clear',
-            BVS: 'Branch if Overflow Set',
-            CLC: 'Clear Carry Flag',
-            CLD: 'Clear Decimal Mode',
-            CLI: 'Clear Interrupt Disable',
-            CLV: 'Clear Overflow Flag',
-            CMP: 'Compare',
-            CPX: 'Compare X Register',
-            CPY: 'Compare Y Register',
-            DEC: 'Decrement Memory',
-            DEX: 'Decrement X Register',
-            DEY: 'Decrement Y Register',
-            EOR: 'Exclusive OR',
-            INC: 'Increment Memory',
-            INX: 'Increment X Register',
-            INY: 'Increment Y Register',
-            JMP: 'Jump',
-            JSR: 'Jump to Subroutine',
-            LDA: 'Load Accumulator',
-            LDX: 'Load X Register',
-            LDY: 'Load Y Register',
-            LSR: 'Logical Shift Right',
-            NOP: 'No Operation',
-            ORA: 'Logical OR',
-            PHA: 'Push Accumulator',
-            PHP: 'Push Processor Status',
-            PLA: 'Pull Accumulator',
-            PLP: 'Pull Processor Status',
-            ROL: 'Rotate Left',
-            ROR: 'Rotate Right',
-            RTI: 'Return from Interrupt',
-            RTS: 'Return from Subroutine',
-            SBC: 'Subtract with Carry',
-            SEC: 'Set Carry Flag',
-            SED: 'Set Decimal Flag',
-            SEI: 'Set Interrupt Disable',
-            STA: 'Store Accumulator',
-            STX: 'Store X Register',
-            STY: 'Store Y Register',
-            TAX: 'Transfer Accumulator to X',
-            TAY: 'Transfer Accumulator to Y',
-            TSX: 'Transfer Stack Pointer to X',
-            TXA: 'Transfer X to Accumulator',
-            TXS: 'Transfer X to Stack Pointer',
-            TYA: 'Transfer Y to Accumulator',
+            ADC: "Add with Carry",
+            AND: "Logical AND",
+            ASL: "Arithmetic Shift Left",
+            BCC: "Branch if Carry Clear",
+            BCS: "Branch if Carry Set",
+            BEQ: "Branch if Equal",
+            BIT: "Bit Test",
+            BMI: "Branch if Minus",
+            BNE: "Branch if Not Equal",
+            BPL: "Branch if Plus",
+            BRK: "Force Interrupt",
+            BVC: "Branch if Overflow Clear",
+            BVS: "Branch if Overflow Set",
+            CLC: "Clear Carry Flag",
+            CLD: "Clear Decimal Mode",
+            CLI: "Clear Interrupt Disable",
+            CLV: "Clear Overflow Flag",
+            CMP: "Compare",
+            CPX: "Compare X Register",
+            CPY: "Compare Y Register",
+            DEC: "Decrement Memory",
+            DEX: "Decrement X Register",
+            DEY: "Decrement Y Register",
+            EOR: "Exclusive OR",
+            INC: "Increment Memory",
+            INX: "Increment X Register",
+            INY: "Increment Y Register",
+            JMP: "Jump",
+            JSR: "Jump to Subroutine",
+            LDA: "Load Accumulator",
+            LDX: "Load X Register",
+            LDY: "Load Y Register",
+            LSR: "Logical Shift Right",
+            NOP: "No Operation",
+            ORA: "Logical OR",
+            PHA: "Push Accumulator",
+            PHP: "Push Processor Status",
+            PLA: "Pull Accumulator",
+            PLP: "Pull Processor Status",
+            ROL: "Rotate Left",
+            ROR: "Rotate Right",
+            RTI: "Return from Interrupt",
+            RTS: "Return from Subroutine",
+            SBC: "Subtract with Carry",
+            SEC: "Set Carry Flag",
+            SED: "Set Decimal Flag",
+            SEI: "Set Interrupt Disable",
+            STA: "Store Accumulator",
+            STX: "Store X Register",
+            STY: "Store Y Register",
+            TAX: "Transfer Accumulator to X",
+            TAY: "Transfer Accumulator to Y",
+            TSX: "Transfer Stack Pointer to X",
+            TXA: "Transfer X to Accumulator",
+            TXS: "Transfer X to Stack Pointer",
+            TYA: "Transfer Y to Accumulator",
         };
-        Object.keys(this.Opcodes).forEach(instr => {
+        Object.keys(this.Opcodes).forEach((instr) => {
             this.instructions.push(instr);
             this.Opcodes[instr].forEach((opc, index) => {
                 this.populateData(instr, opc, index);
@@ -1173,27 +1173,27 @@ class Emulator {
         this.cpu = new Cpu(this.memory);
     }
     initialize() {
-        this.codeEditor = document.getElementById('source-code');
-        this.terminal = document.getElementById('terminal');
-        this.codeEditor.addEventListener('keydown', this.codeEditor_keyDown.bind(this));
-        const btnLoadCode = document.getElementById('btn-load-code');
-        btnLoadCode.addEventListener('click', this.btnLoadCode_click.bind(this));
-        const btnCpuReset = document.getElementById('btn-cpu-reset');
-        btnCpuReset.addEventListener('click', this.btnReset_click.bind(this));
-        const btnCpuStep = document.getElementById('btn-cpu-step');
-        btnCpuStep.addEventListener('click', this.btnCpuStep_click.bind(this));
-        const btnCpuDebug = document.getElementById('btn-cpu-debug');
-        btnCpuDebug.addEventListener('click', this.btnDebug_click.bind(this));
-        const btnCpuStop = document.getElementById('btn-cpu-stop');
-        btnCpuStop.addEventListener('click', this.btnPause_click.bind(this));
-        const btnCpuRun = document.getElementById('btn-cpu-run');
-        btnCpuRun.addEventListener('click', this.btnRun_click.bind(this));
-        const btnForever = document.getElementById('btn-run-forever');
-        btnForever.addEventListener('click', this.btnForever_click.bind(this));
+        this.codeEditor = document.getElementById("source-code");
+        this.terminal = document.getElementById("terminal");
+        this.codeEditor.addEventListener("keydown", this.codeEditor_keyDown.bind(this));
+        const btnLoadCode = document.getElementById("btn-load-code");
+        btnLoadCode.addEventListener("click", this.btnLoadCode_click.bind(this));
+        const btnCpuReset = document.getElementById("btn-cpu-reset");
+        btnCpuReset.addEventListener("click", this.btnReset_click.bind(this));
+        const btnCpuStep = document.getElementById("btn-cpu-step");
+        btnCpuStep.addEventListener("click", this.btnCpuStep_click.bind(this));
+        const btnCpuDebug = document.getElementById("btn-cpu-debug");
+        btnCpuDebug.addEventListener("click", this.btnDebug_click.bind(this));
+        const btnCpuStop = document.getElementById("btn-cpu-stop");
+        btnCpuStop.addEventListener("click", this.btnPause_click.bind(this));
+        const btnCpuRun = document.getElementById("btn-cpu-run");
+        btnCpuRun.addEventListener("click", this.btnRun_click.bind(this));
+        const btnForever = document.getElementById("btn-run-forever");
+        btnForever.addEventListener("click", this.btnForever_click.bind(this));
         this.loadExample();
     }
     loadExample() {
-        this.getRequest('./example/game-of-life.asm', this.getRequest_ready.bind(this));
+        this.getRequest("./example/game-of-life.asm", this.getRequest_ready.bind(this));
     }
     getRequest_ready(data) {
         this.codeEditor.value = data;
@@ -1203,11 +1203,11 @@ class Emulator {
         const sourceCode = this.codeEditor.value;
         this.memory.fill(0x00);
         this.isStopRequired = true;
-        this.terminal.innerText = '';
+        this.terminal.innerText = "";
         this.instructionLog = [];
         const codeDto = this.assembler.tokenize(sourceCode);
         const errorOutput = codeDto.codeTokens
-            .filter(token => token.tokenType === 'error')
+            .filter((token) => token.tokenType === "error")
             .reduce((acc, token) => {
             acc.push(`Error:       ${token.error}`);
             acc.push(`Code line:   ${token.codeLine}`);
@@ -1215,7 +1215,7 @@ class Emulator {
             return acc;
         }, []);
         if (errorOutput.length > 0) {
-            this.terminal.innerText = errorOutput.join('\n') + '\n';
+            this.terminal.innerText = errorOutput.join("\n") + "\n";
             return;
         }
         try {
@@ -1224,27 +1224,28 @@ class Emulator {
             this.cpu.reset();
             const disassembly = this.assembler
                 .disassembleCodePages(codePages)
-                .map(tkn => `$${tkn.address}   ${tkn.code.join(' ').padEnd(8, ' ')}   ${tkn.text.padEnd(13, ' ')}  ; ${tkn.description}`)
-                .join('\n');
+                .map((tkn) => `$${tkn.address}   ${tkn.code.join(" ").padEnd(8, " ")}   ` +
+                `${tkn.text.padEnd(13, " ")}  ; ${tkn.description}`)
+                .join("\n");
             const instTokens = this.assembler.parseInstructions(codeDto);
             this.assembler.resolveUnsetLabels(codeDto, instTokens);
-            const labelsText = Object
-                .keys(codeDto.labels)
-                .map(key => `${key.toUpperCase().padEnd(8, ' ')} ${codeDto.labels[key].toString(16).toUpperCase()}`)
-                .join('\n');
-            this.terminal.innerText = '' +
-                '                       Disassembly\n' +
-                '---------------------------------------------------------\n' +
-                disassembly + '\n\n\n' +
-                '                       Object code\n' +
-                '---------------------------------------------------------\n' +
-                Assembler.hexDump(codePages) + '\n\n\n' +
-                '                       Labels\n' +
-                '---------------------------------------------------------\n' +
+            const labelsText = Object.keys(codeDto.labels)
+                .map((key) => `${key.toUpperCase().padEnd(8, " ")} ` +
+                `${codeDto.labels[key].toString(16).toUpperCase()}`)
+                .join("\n");
+            this.terminal.innerText = "" +
+                "                       Disassembly\n" +
+                "---------------------------------------------------------\n" +
+                disassembly + "\n\n\n" +
+                "                       Object code\n" +
+                "---------------------------------------------------------\n" +
+                Assembler.hexDump(codePages) + "\n\n\n" +
+                "                       Labels\n" +
+                "---------------------------------------------------------\n" +
                 labelsText;
         }
         catch (e) {
-            this.terminal.innerText += e.message + '\n';
+            this.terminal.innerText += e.message + "\n";
         }
     }
     btnReset_click(event) {
@@ -1262,7 +1263,7 @@ class Emulator {
             this.dump();
         }
         catch (e) {
-            this.terminal.innerText += e.message + '\n';
+            this.terminal.innerText += e.message + "\n";
         }
     }
     btnDebug_click(event) {
@@ -1280,7 +1281,7 @@ class Emulator {
                 return;
         }
         catch (e) {
-            this.terminal.innerText += e.message + '\n';
+            this.terminal.innerText += e.message + "\n";
         }
         setTimeout(this.debugLoop.bind(this), 700);
     }
@@ -1299,7 +1300,7 @@ class Emulator {
             this.cpuRun();
         }
         catch (e) {
-            this.terminal.innerText += e.message + '\n';
+            this.terminal.innerText += e.message + "\n";
         }
     }
     btnForever_click(event) {
@@ -1312,21 +1313,21 @@ class Emulator {
         this.isStopRequired = true;
     }
     dump() {
-        this.terminal.innerText = '' +
-            this.getCpuDump() + '\n\n\n\n\n' +
-            '                         Instruction Log\n' +
-            '-------------------------------------------------------------------------\n' +
-            this.getAssemblyDump() + '\n\n\n\n\n' +
-            '                           Memory Dump\n' +
-            '-------------------------------------------------------------------------\n' +
-            this.getMemoryDump() + '\n\n';
+        this.terminal.innerText = "" +
+            this.getCpuDump() + "\n\n\n\n\n" +
+            "                         Instruction Log\n" +
+            "-------------------------------------------------------------------------\n" +
+            this.getAssemblyDump() + "\n\n\n\n\n" +
+            "                           Memory Dump\n" +
+            "-------------------------------------------------------------------------\n" +
+            this.getMemoryDump() + "\n\n";
     }
     getCpuDump() {
-        const getRegText = (val) => `${Utils.byteToHex(val)}  ${val.toString(10).padStart(3, ' ')}  ${Utils.byteToSInt(val).padStart(4, ' ')}`;
+        const getRegText = (val) => `${Utils.byteToHex(val)}  ${val.toString(10).padStart(3, " ")}  ${Utils.byteToSInt(val).padStart(4, " ")}`;
         const flagsText = `${+this.cpu.N} ${+this.cpu.V} 1 ${+this.cpu.B} ${+this.cpu.D} ${+this.cpu.I} ${+this.cpu.Z} ${+this.cpu.C}`;
-        return '' +
-            'R  Hex  Dec   +/-    R   Hex   N V - B D I Z C\n' +
-            '-----------------    -------   ---------------\n' +
+        return "" +
+            "R  Hex  Dec   +/-    R   Hex   N V - B D I Z C\n" +
+            "-----------------    -------   ---------------\n" +
             `A   ${getRegText(this.cpu.A)}    P    ${Utils.byteToHex(this.cpu.P)}   ${flagsText}\n` +
             `X   ${getRegText(this.cpu.X)}    S    ${Utils.byteToHex(this.cpu.S)}\n` +
             `Y   ${getRegText(this.cpu.Y)}    PC ${Utils.wordToHex(this.cpu.PC)}`;
@@ -1339,48 +1340,47 @@ class Emulator {
         const tokens = this.assembler.disassemble(code, pc);
         if (tokens.length > 0) {
             const tkn = tokens[0];
-            const currentInst = `$${tkn.address}   ${tkn.code.join(' ').padEnd(8, ' ')}   ${tkn.text.padEnd(13, ' ')}  ; ${tkn.description}`;
+            const currentInst = `$${tkn.address}   ${tkn.code.join(" ").padEnd(8, " ")}   ` +
+                `${tkn.text.padEnd(13, " ")}  ; ${tkn.description}`;
             this.instructionLog.push(currentInst);
             this.instructionLog = this.instructionLog.slice(-3);
         }
-        return this.instructionLog.map((line, index) => (index === this.instructionLog.length - 1 ? ' --> ' : '     ') + line).join('\n');
+        return this.instructionLog
+            .map((line, index) => (index === this.instructionLog.length - 1 ? " --> " : "     ") + line)
+            .join("\n");
     }
     getMemoryDump() {
         const lines = [];
-        let isLineSkipped = false;
-        for (let line = 0; line < this.memory.length / 16; line++) {
+        for (let line = 0; line < this.memory.length / 16; line += 1) {
             const currentBytes = [];
             const currentChars = [];
             const lineAddress = line * 16;
             const lineAddressText = Utils.wordToHex(line * 16);
-            for (let col = 0; col < 16; col++) {
+            for (let col = 0; col < 16; col += 1) {
                 const address = line * 16 + col;
                 const value = this.memory[address];
                 currentBytes.push(Utils.byteToHex(value));
-                currentChars.push(value >= 0x20 && value <= 0x7E ? String.fromCharCode(value) : '.');
+                currentChars.push(value >= 0x20 && value <= 0x7E ? String.fromCharCode(value) : ".");
             }
-            if (lineAddress % 0x0100 === 0 && lines.length > 0 && lines[lines.length - 1] !== '')
-                lines.push('');
-            if (currentBytes.some(e => e !== '00')) {
-                lines.push(`${lineAddressText} | ${currentBytes.join(' ')} | ${currentChars.join('')}`);
-                isLineSkipped = false;
-            }
+            if (lineAddress % 0x0100 === 0 && lines.length > 0 && lines[lines.length - 1] !== "")
+                lines.push("");
+            if (currentBytes.some((e) => e !== "00"))
+                lines.push(`${lineAddressText} | ${currentBytes.join(" ")} | ${currentChars.join("")}`);
         }
-        return lines.join('\n');
+        return lines.join("\n");
     }
     codeEditor_keyDown(event) {
-        if (event.key !== 'Tab')
+        if (event.key !== "Tab")
             return;
         event.preventDefault();
         const selectionStart = this.codeEditor.selectionStart;
-        this.codeEditor.value =
-            this.codeEditor.value.substring(0, this.codeEditor.selectionStart) +
-                '    ' +
-                this.codeEditor.value.substring(this.codeEditor.selectionEnd);
+        this.codeEditor.value = this.codeEditor.value.substring(0, this.codeEditor.selectionStart) +
+            "    " +
+            this.codeEditor.value.substring(this.codeEditor.selectionEnd);
         this.codeEditor.selectionEnd = selectionStart + 4;
     }
     setInitialPCinMemory() {
-        const initialPc = document.getElementById('initial-pc').value;
+        const initialPc = document.getElementById("initial-pc").value;
         const address = parseInt(initialPc, 16);
         this.memory[0xFFFC] = address & 0x00FF;
         this.memory[0xFFFD] = (address >> 8) & 0x00FF;
@@ -1392,18 +1392,18 @@ class Emulator {
             this.cpuRun();
         }
         catch (e) {
-            this.terminal.innerText += e.message + '\n';
+            this.terminal.innerText += e.message + "\n";
         }
         setTimeout(this.runForever.bind(this), 500);
     }
     getRequest(url, callback) {
         const xmlHttp = new XMLHttpRequest();
         xmlHttp.onreadystatechange = readyStateChange;
-        xmlHttp.open('GET', url, true);
+        xmlHttp.open("GET", url, true);
         xmlHttp.send();
         function readyStateChange() {
-            if (xmlHttp.readyState === 4 && xmlHttp.status === 200)
-                callback(xmlHttp.responseText);
+            if (xmlHttp.readyState === 4)
+                callback(xmlHttp.status === 200 ? xmlHttp.responseText : "");
         }
     }
 }
@@ -1421,7 +1421,7 @@ class Utils {
     }
     static byteToSInt(val) {
         if (val > 0x7F)
-            return '-' + (((~val) + 1) & 0xFF).toString(10);
+            return "-" + (((~val) + 1) & 0xFF).toString(10);
         return val.toString(10);
     }
     static randomByte() {
@@ -1431,6 +1431,6 @@ class Utils {
         return Math.floor(2 * Math.random());
     }
 }
-Utils.hex = '0123456789ABCDEF';
+Utils.hex = "0123456789ABCDEF";
 module.exports.Utils = Utils;
 //# sourceMappingURL=index.js.map

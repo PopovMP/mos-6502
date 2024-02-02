@@ -1,12 +1,11 @@
+"use strict";
 
-'use strict'
+const {strictEqual}    = require("assert");
+const {describe, it}   = require("@popovmp/mocha-tiny");
+const {Cpu, Assembler} = require("../js/index.js");
 
-const { strictEqual } = require('assert')
-const { describe, it } = require('@popovmp/mocha-tiny')
-const { Cpu, Assembler } = require('../js/index.js')
-
-const memory = new Uint8Array(0xFFFF + 1)
-const cpu = new Cpu(memory)
+const memory     = new Uint8Array(0xFFFF + 1);
+const cpu        = new Cpu(memory);
 const sourceCode = `
         * = $0800
 
@@ -53,29 +52,30 @@ ready
         JMP start
 
 finish  BRK
-`
-const assembler = new Assembler()
-assembler.load(sourceCode, memory)
+`;
 
-cpu.reset()
+const assembler  = new Assembler();
+assembler.load(sourceCode, memory);
 
-let steps = 0
-const startTime  = Date.now()
+cpu.reset();
+
+let   steps     = 0;
+const startTime = Date.now();
 
 while (memory[cpu.PC] !== 0x00) {
-	cpu.step()
-	steps++
+    cpu.step();
+    steps += 1;
 }
 
-const time   = Date.now() - startTime
+const time = Date.now() - startTime;
 
-const frq = Math.round( (steps / (time / 1000)) / 1000 )
+const frq = Math.round((steps / (time / 1000)) / 1000);
 
-describe('Benchmark', () => {
-	describe('Run demo program', () => {
-		it('Makes more than 1000 kHz', () => {
-			console.log( `Frequency: ${frq} kHz`)
-			strictEqual(frq > 1000, true)
-		})
-	})
-})
+describe("Benchmark", () => {
+    describe("Run demo program", () => {
+        it("Makes more than 1000 kHz", () => {
+            console.log(`Frequency: ${frq} kHz`);
+            strictEqual(frq > 1000, true);
+        });
+    });
+});

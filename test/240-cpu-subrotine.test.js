@@ -1,18 +1,17 @@
+"use strict";
 
-'use strict'
+const {strictEqual}    = require("assert");
+const {describe, it}   = require("@popovmp/mocha-tiny");
+const {Cpu, Assembler} = require("../js/index.js");
 
-const { strictEqual } = require('assert')
-const { describe, it } = require('@popovmp/mocha-tiny')
-const { Cpu, Assembler } = require('../js/index.js')
+const memory    = new Uint8Array(0xFFFF + 1);
+const assembler = new Assembler();
+const cpu       = new Cpu(memory);
 
-const memory    = new Uint8Array(0xFFFF + 1)
-const assembler = new Assembler()
-const cpu       = new Cpu(memory)
+describe("Subroutine", () => {
 
-describe('Subroutine', () => {
-
-	describe('JSR/RTS', () => {
-		const sourceCode = `
+    describe("JSR/RTS", () => {
+        const sourceCode = `
 		        * = $0800
 			  JSR init
 			  JSR loop
@@ -30,20 +29,19 @@ describe('Subroutine', () => {
 			
 			end:
 			  BRK
-		`
-		assembler.load(sourceCode, memory)
-		cpu.reset()
-		while (memory[cpu.PC] !== 0x00) {
-			cpu.step()
-		}
+		`;
+        assembler.load(sourceCode, memory);
+        cpu.reset();
+        while (memory[cpu.PC] !== 0x00)
+            cpu.step();
 
-		it('X = 5', () => {
-			strictEqual(cpu.X, 5)
-		})
-	})
+        it("X = 5", () => {
+            strictEqual(cpu.X, 5);
+        });
+    });
 
-	describe('Math subroutines', () => {
-		const sourceCode = `
+    describe("Math subroutines", () => {
+        const sourceCode = `
 		        * = $0800
 		
 				temp = $30 
@@ -72,20 +70,20 @@ describe('Subroutine', () => {
 				
 		finish		    
 		        BRK
-		`
-		assembler.load(sourceCode, memory)
-		cpu.reset()
-		while (memory[cpu.PC] !== 0x00) {
-			cpu.step()
-		}
+		`;
 
-		it('Answer = 48', () => {
-			strictEqual(cpu.A, 48)
-		})
-	})
+        assembler.load(sourceCode, memory);
+        cpu.reset();
+        while (memory[cpu.PC] !== 0x00)
+            cpu.step();
 
-	describe('Math recursion', () => {
-		const sourceCode = `
+        it("Answer = 48", () => {
+            strictEqual(cpu.A, 48);
+        });
+    });
+
+    describe("Math recursion", () => {
+        const sourceCode = `
 		;; Sum numbers from 1 to 10 with recursion
 		
 		        * = $0800
@@ -116,17 +114,16 @@ describe('Subroutine', () => {
 				
 		finish		    
 		        BRK
-		`
-		const assembler = new Assembler()
-		assembler.load(sourceCode, memory)
+		`;
 
-		cpu.reset()
-		while (memory[cpu.PC] !== 0x00) {
-			cpu.step()
-		}
+        const assembler = new Assembler();
+        assembler.load(sourceCode, memory);
+        cpu.reset();
+        while (memory[cpu.PC] !== 0x00)
+            cpu.step();
 
-		it('Answer = 55', () => {
-			strictEqual(cpu.A, 55)
-		})
-	})
-})
+        it("Answer = 55", () => {
+            strictEqual(cpu.A, 55);
+        });
+    });
+});
