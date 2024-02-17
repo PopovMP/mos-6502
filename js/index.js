@@ -7,7 +7,7 @@ class Assembler {
         const dumpLines = [];
         for (const pageAddress of Object.keys(codePages)) {
             dumpLines.push(pageAddress + ": " + codePages[pageAddress]
-                .map(n => n === null ? " ." : Utils.byteToHex(n))
+                .map((n) => n === null ? " ." : Utils.byteToHex(n))
                 .join(" "));
         }
         return dumpLines.sort().join("\n");
@@ -17,7 +17,7 @@ class Assembler {
         let isPcSet = false;
         for (const pageTag of Object.keys(codePages)) {
             const pageAddress = parseInt(pageTag, 16);
-            for (let offset = 0; offset < codePages[pageTag].length; offset++) {
+            for (let offset = 0; offset < codePages[pageTag].length; offset += 1) {
                 const value = codePages[pageTag][offset];
                 if (typeof value === "number") {
                     const address = pageAddress + offset;
@@ -77,9 +77,8 @@ class Assembler {
                 description: this.dataSheet.instrDescription[name],
             };
             if (bytes === 1) {
-                if ([0x0A, 0x4A, 0x2A, 0x6A].includes(opc)) {
+                if ([0x0A, 0x4A, 0x2A, 0x6A].includes(opc))
                     token.text += " A";
-                }
                 output.push(token);
                 index += bytes;
                 pc += bytes;
@@ -148,10 +147,9 @@ class Assembler {
                 codePC = pageAddress;
             prevAddress = pageAddress;
             const pageData = codePages[Utils.wordToHex(pageAddress)];
-            for (let index = 0; index < pageData.length; index++) {
-                if (typeof pageData[index] === "number") {
-                    code.push(pageData[index]);
-                }
+            for (let i = 0; i < pageData.length; i++) {
+                if (typeof pageData[i] === "number")
+                    code.push(pageData[i]);
             }
         }
         output.push(...this.disassemble(code, codePC));
@@ -160,12 +158,11 @@ class Assembler {
     composeMachineCodePages(instTokens) {
         const pages = {};
         for (const token of instTokens) {
-            for (let b = 0; b < token.bytes.length; b++) {
+            for (let b = 0; b < token.bytes.length; b += 1) {
                 const pageAddress = token.pc + b - (token.pc + b) % 16;
                 const pageKey = Utils.wordToHex(pageAddress);
-                if (!pages.hasOwnProperty(pageKey)) {
+                if (!pages.hasOwnProperty(pageKey))
                     pages[pageKey] = new Array(16).fill(null);
-                }
                 pages[pageKey][token.pc + b - pageAddress] = token.bytes[b];
             }
         }
@@ -177,10 +174,9 @@ class Assembler {
                 const labelValue = codeDto.labels[token.labelRequired];
                 if (isNaN(labelValue))
                     throw new Error(`Label "${token.labelRequired}" has no value: ${token.name}`);
-                if (this.dataSheet.opCodeMode[token.opc] === "REL")
-                    token.bytes = [token.opc, labelValue - token.pc - 2];
-                else
-                    token.bytes = [token.opc, labelValue & 0xFF, (labelValue >> 8) & 0xFF];
+                token.bytes = this.dataSheet.opCodeMode[token.opc] === "REL"
+                    ? [token.opc, labelValue - token.pc - 2]
+                    : [token.opc, labelValue & 0xFF, (labelValue >> 8) & 0xFF];
                 delete token.labelRequired;
             }
         }
@@ -201,14 +197,14 @@ class Assembler {
                 if (token.instrName === ".BYTE" && token.directiveData) {
                     const bytes = token.directiveData
                         .split(/,[ \t]*/)
-                        .map(num => this.parseValue(num, codeTokenDto.labels, codeTokenDto.variables));
+                        .map((num) => this.parseValue(num, codeTokenDto.labels, codeTokenDto.variables));
                     instructionTokens.push({ pc, bytes, name: ".BYTE", opc: -1 });
                     pc += bytes.length;
                 }
                 if (token.instrName === ".WORD" && token.directiveData) {
                     const bytes = token.directiveData
                         .split(/,[ \t]*/)
-                        .map(num => this.parseValue(num, codeTokenDto.labels, codeTokenDto.variables))
+                        .map((num) => this.parseValue(num, codeTokenDto.labels, codeTokenDto.variables))
                         .reduce((acc, word) => {
                         acc.push(word & 0xFF);
                         acc.push((word >> 8) & 0xFF);
@@ -231,14 +227,9 @@ class Assembler {
                 const opc = this.dataSheet.getOpc(name, "REL");
                 const operandText = line.slice(4);
                 const value = this.parseValue(operandText, codeTokenDto.labels);
-                instructionTokens.push(typeof value === "number" ? {
-                    pc, opc, name,
-                    bytes: [opc, value - pc - 2],
-                } : {
-                    pc, opc, name,
-                    bytes: [opc, NaN],
-                    labelRequired: value,
-                });
+                instructionTokens.push(typeof value === "number"
+                    ? { pc, opc, name, bytes: [opc, value - pc - 2] }
+                    : { pc, opc, name, bytes: [opc, NaN], labelRequired: value });
                 pc += this.dataSheet.opCodeBytes[opc];
                 continue;
             }
@@ -325,14 +316,8 @@ class Assembler {
         }
         return instructionTokens;
         function getInstrToken(pc, name, opc, value) {
-            return typeof value === "number" ? {
-                pc, opc, name,
-                bytes: [opc, value & 0xFF, (value >> 8) & 0xFF],
-            } : {
-                pc, opc, name,
-                bytes: [opc, NaN, NaN],
-                labelRequired: value,
-            };
+            return typeof value === "number" ? { pc, opc, name, bytes: [opc, value & 0xFF, (value >> 8) & 0xFF] }
+                : { pc, opc, name, bytes: [opc, NaN, NaN], labelRequired: value };
         }
     }
     parseValue(valueText, labels = {}, variables = {}) {
@@ -611,6 +596,7 @@ class Cpu {
         this.addressInstructions = [
             "ASL", "DEC", "INC", "LSR", "JMP", "JSR", "ROL", "ROR", "STA", "STX", "STY",
         ];
+        this.B = true;
         this.operandAddress = {
             IMPL: () => NaN,
             IMM: () => this.PC + 1,
@@ -910,7 +896,6 @@ class Cpu {
         this.C = false;
         this.PC = this.loadWord(0xFFFC);
     }
-    get B() { return true; }
     get P() {
         return (+this.N << 7) |
             (+this.V << 6) |
@@ -1418,14 +1403,16 @@ class Emulator {
 module.exports.Emulator = Emulator;
 class Utils {
     static byteToHex(val) {
-        return Utils.hex[(val >> 4) & 0xF] +
-            Utils.hex[val & 0xF];
+        const hex = "0123456789ABCDEF";
+        return hex[(val >> 4) & 0xF] +
+            hex[val & 0xF];
     }
     static wordToHex(val) {
-        return Utils.hex[(val >> 12) & 0xF] +
-            Utils.hex[(val >> 8) & 0xF] +
-            Utils.hex[(val >> 4) & 0xF] +
-            Utils.hex[val & 0xF];
+        const hex = "0123456789ABCDEF";
+        return hex[(val >> 12) & 0xF] +
+            hex[(val >> 8) & 0xF] +
+            hex[(val >> 4) & 0xF] +
+            hex[val & 0xF];
     }
     static byteToSInt(val) {
         if (val > 0x7F)
@@ -1439,6 +1426,5 @@ class Utils {
         return Math.floor(2 * Math.random());
     }
 }
-Utils.hex = "0123456789ABCDEF";
 module.exports.Utils = Utils;
 //# sourceMappingURL=index.js.map
