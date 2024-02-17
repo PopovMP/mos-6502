@@ -17,7 +17,7 @@ class Cpu {
 
     public N: boolean; // Negative flag
     public V: boolean; // Overflow flag
-    public get B(): boolean {return true} // Break flag (always true)
+    public readonly B: boolean = true // Break flag (always true)
     public D: boolean; // Decimal flag
     public I: boolean; // Interrupt disabled flag
     public Z: boolean; // Zero flag
@@ -160,7 +160,7 @@ class Cpu {
 
         ASL: (addr: number): void => {
             // Shift Left One Bit (Memory or Accumulator)
-            const input: number = isNaN(addr) ? this.A : this.memory[addr];
+            const input: number = isNaN(addr) ? this.A : this.load(addr);
             const temp : number = input << 1;
             this.C = (temp >> 8) === 1;
             const val: number = temp & 0xFF;
@@ -168,7 +168,7 @@ class Cpu {
             if (isNaN(addr))
                 this.A = val;
             else
-                this.memory[addr] = val;
+                this.store(addr, val);
 
             this.setNZ(val);
         },
@@ -273,7 +273,7 @@ class Cpu {
         },
 
         CPY: (opr: number): void => {
-            // Compare Index X to Memory
+            // Compare Index Y to Memory
             const delta: number = this.Y - opr;
             this.C = this.Y >= opr;
             this.setNZ(delta);
@@ -281,7 +281,8 @@ class Cpu {
 
         DEC: (addr: number): void => {
             // Decrement memory by One
-            const val: number = this.memory[addr] = (this.memory[addr] - 1) & 0xFF;
+            const val: number = (this.load(addr) - 1) & 0xFF;
+            this.store(addr, val);
             this.setNZ(val);
         },
 
@@ -305,7 +306,8 @@ class Cpu {
 
         INC: (addr: number): void => {
             // Increment Memory by One
-            const val: number = this.memory[addr] = (this.memory[addr] + 1) & 0xFF;
+            const val: number = (this.load(addr) + 1) & 0xFF;
+            this.store(addr, val);
             this.setNZ(val);
         },
 
@@ -354,13 +356,13 @@ class Cpu {
 
         LSR: (addr: number): void => {
             // Logical Shift Right
-            const input: number = isNaN(addr) ? this.A : this.memory[addr];
+            const input: number = isNaN(addr) ? this.A : this.load(addr);
             const out  : number = input >> 1;
 
             if (isNaN(addr))
                 this.A = out;
             else
-                this.memory[addr] = out;
+                this.store(addr, out);
 
             this.N = false;
             this.Z = !out;
@@ -400,13 +402,13 @@ class Cpu {
 
         ROL: (addr: number): void => {
             // Rotate Left
-            const input: number = isNaN(addr) ? this.A : this.memory[addr];
+            const input: number = isNaN(addr) ? this.A : this.load(addr);
             const out  : number = (input << 1) + +this.C;
 
             if (isNaN(addr))
                 this.A = out;
             else
-                this.memory[addr] = out;
+                this.store(addr, out);
 
             this.N = !!((input >> 6) & 1);
             this.Z = !out;
@@ -415,13 +417,13 @@ class Cpu {
 
         ROR: (addr: number): void => {
             // Rotate Right
-            const input: number = isNaN(addr) ? this.A : this.memory[addr];
+            const input: number = isNaN(addr) ? this.A : this.load(addr);
             const out  : number = ((input >> 1) + (+this.C << 7)) & 0xFF;
 
             if (isNaN(addr))
                 this.A = out;
             else
-                this.memory[addr] = out;
+                this.store(addr, out);
 
             this.N = this.C;
             this.Z = !out;
@@ -475,17 +477,17 @@ class Cpu {
 
         STA: (addr: number): void => {
             // Store Accumulator in Memory
-            this.memory[addr] = this.A;
+            this.store(addr, this.A);
         },
 
         STX: (addr: number): void => {
             // Store Index X in Memory
-            this.memory[addr] = this.X;
+            this.store(addr, this.X);
         },
 
         STY: (addr: number): void => {
             // Store Index Y in Memory
-            this.memory[addr] = this.Y;
+            this.store(addr, this.Y);
         },
 
         TAX: (): void => {
@@ -523,6 +525,14 @@ class Cpu {
             this.setNZ(this.A);
         },
     };
+
+    private load(addr: number): number {
+        return this.memory[addr];
+    }
+
+    private store(addr: number, data: number): void {
+        this.memory[addr] = data;
+    }
 
     private loadWord(addr: number): number {
         return this.memory[addr] + (this.memory[addr + 1] << 8);

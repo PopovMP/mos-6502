@@ -6,11 +6,11 @@ class Assembler {
     static hexDump(codePages) {
         const dumpLines = [];
         for (const pageAddress of Object.keys(codePages)) {
-            dumpLines.push(pageAddress + ': ' + codePages[pageAddress]
-                .map(n => n === null ? ' .' : Utils.byteToHex(n))
-                .join(' '));
+            dumpLines.push(pageAddress + ": " + codePages[pageAddress]
+                .map(n => n === null ? " ." : Utils.byteToHex(n))
+                .join(" "));
         }
-        return dumpLines.sort().join('\n');
+        return dumpLines.sort().join("\n");
     }
     load(sourcecode, memory) {
         const codePages = this.assemble(sourcecode);
@@ -19,7 +19,7 @@ class Assembler {
             const pageAddress = parseInt(pageTag, 16);
             for (let offset = 0; offset < codePages[pageTag].length; offset++) {
                 const value = codePages[pageTag][offset];
-                if (typeof value === 'number') {
+                if (typeof value === "number") {
                     const address = pageAddress + offset;
                     memory[address] = value;
                     if (!isPcSet) {
@@ -55,10 +55,10 @@ class Assembler {
                 const token = {
                     address: Utils.wordToHex(pc),
                     code: [Utils.byteToHex(opc)],
-                    text: '.BYTE $' + Utils.byteToHex(opc),
-                    mode: 'Data',
+                    text: ".BYTE $" + Utils.byteToHex(opc),
+                    mode: "Data",
                     bytes: 1,
-                    description: 'Data'
+                    description: "Data",
                 };
                 output.push(token);
                 index += 1;
@@ -74,11 +74,11 @@ class Assembler {
                 text: this.dataSheet.opCodeName[opc],
                 mode: mode,
                 bytes: bytes,
-                description: this.dataSheet.instrDescription[name]
+                description: this.dataSheet.instrDescription[name],
             };
             if (bytes === 1) {
                 if ([0x0A, 0x4A, 0x2A, 0x6A].includes(opc)) {
-                    token.text += ' A';
+                    token.text += " A";
                 }
                 output.push(token);
                 index += bytes;
@@ -86,19 +86,19 @@ class Assembler {
                 continue;
             }
             switch (mode) {
-                case 'IMM':
-                    token.text += ' #$';
+                case "IMM":
+                    token.text += " #$";
                     break;
-                case 'IND':
-                case 'XZPI':
-                case 'ZPIY':
-                    token.text += ' ($';
+                case "IND":
+                case "XZPI":
+                case "ZPIY":
+                    token.text += " ($";
                     break;
                 default:
-                    token.text += ' $';
+                    token.text += " $";
                     break;
             }
-            if (['BPL', 'BMI', 'BVC', 'BVS', 'BCC', 'BCS', 'BNE', 'BEQ'].includes(this.dataSheet.opCodeName[opc])) {
+            if (["BPL", "BMI", "BVC", "BVS", "BCC", "BCS", "BNE", "BEQ"].includes(this.dataSheet.opCodeName[opc])) {
                 token.code.push(Utils.byteToHex(code[index + 1]));
                 token.text += Utils.wordToHex(pc + code[index + 1] + bytes);
             }
@@ -112,19 +112,19 @@ class Assembler {
                 token.text += Utils.byteToHex(code[index + 2]) + Utils.byteToHex(code[index + 1]);
             }
             switch (mode) {
-                case 'ABSX':
-                case 'ZPX':
-                    token.text += ',X';
+                case "ABSX":
+                case "ZPX":
+                    token.text += ",X";
                     break;
-                case 'ABSY':
-                case 'ZPY':
-                    token.text += ',Y';
+                case "ABSY":
+                case "ZPY":
+                    token.text += ",Y";
                     break;
-                case 'XZPI':
-                    token.text += ',X)';
+                case "XZPI":
+                    token.text += ",X)";
                     break;
-                case 'ZPIY':
-                    token.text += '),Y';
+                case "ZPIY":
+                    token.text += "),Y";
                     break;
             }
             output.push(token);
@@ -149,7 +149,7 @@ class Assembler {
             prevAddress = pageAddress;
             const pageData = codePages[Utils.wordToHex(pageAddress)];
             for (let index = 0; index < pageData.length; index++) {
-                if (typeof pageData[index] === 'number') {
+                if (typeof pageData[index] === "number") {
                     code.push(pageData[index]);
                 }
             }
@@ -177,7 +177,7 @@ class Assembler {
                 const labelValue = codeDto.labels[token.labelRequired];
                 if (isNaN(labelValue))
                     throw new Error(`Label "${token.labelRequired}" has no value: ${token.name}`);
-                if (this.dataSheet.opCodeMode[token.opc] === 'REL')
+                if (this.dataSheet.opCodeMode[token.opc] === "REL")
                     token.bytes = [token.opc, labelValue - token.pc - 2];
                 else
                     token.bytes = [token.opc, labelValue & 0xFF, (labelValue >> 8) & 0xFF];
@@ -189,23 +189,23 @@ class Assembler {
         const instructionTokens = [];
         let pc = 0x0800;
         for (const token of codeTokenDto.codeTokens) {
-            if (token.tokenType === 'set-pc') {
+            if (token.tokenType === "set-pc") {
                 pc = token.pcValue;
                 continue;
             }
-            if (token.tokenType === 'label') {
+            if (token.tokenType === "label") {
                 codeTokenDto.labels[token.instrName] = pc;
                 continue;
             }
-            if (token.tokenType === 'directive') {
-                if (token.instrName === '.BYTE' && token.directiveData) {
+            if (token.tokenType === "directive") {
+                if (token.instrName === ".BYTE" && token.directiveData) {
                     const bytes = token.directiveData
                         .split(/,[ \t]*/)
                         .map(num => this.parseValue(num, codeTokenDto.labels, codeTokenDto.variables));
-                    instructionTokens.push({ pc, bytes, name: '.BYTE', opc: -1 });
+                    instructionTokens.push({ pc, bytes, name: ".BYTE", opc: -1 });
                     pc += bytes.length;
                 }
-                if (token.instrName === '.WORD' && token.directiveData) {
+                if (token.instrName === ".WORD" && token.directiveData) {
                     const bytes = token.directiveData
                         .split(/,[ \t]*/)
                         .map(num => this.parseValue(num, codeTokenDto.labels, codeTokenDto.variables))
@@ -214,7 +214,7 @@ class Assembler {
                         acc.push((word >> 8) & 0xFF);
                         return acc;
                     }, []);
-                    instructionTokens.push({ pc, bytes, name: '.WORD', opc: -1 });
+                    instructionTokens.push({ pc, bytes, name: ".WORD", opc: -1 });
                     pc += bytes.length;
                 }
                 continue;
@@ -222,16 +222,16 @@ class Assembler {
             const name = token.instrName;
             const line = token.codeLine;
             if (name === line) {
-                const opc = this.dataSheet.getOpc(name, 'IMPL');
+                const opc = this.dataSheet.getOpc(name, "IMPL");
                 instructionTokens.push({ pc, opc, name, bytes: [opc] });
                 pc += this.dataSheet.opCodeBytes[opc];
                 continue;
             }
-            if (['BPL', 'BMI', 'BVC', 'BVS', 'BCC', 'BCS', 'BNE', 'BEQ'].includes(name)) {
-                const opc = this.dataSheet.getOpc(name, 'REL');
+            if (["BPL", "BMI", "BVC", "BVS", "BCC", "BCS", "BNE", "BEQ"].includes(name)) {
+                const opc = this.dataSheet.getOpc(name, "REL");
                 const operandText = line.slice(4);
                 const value = this.parseValue(operandText, codeTokenDto.labels);
-                instructionTokens.push(typeof value === 'number' ? {
+                instructionTokens.push(typeof value === "number" ? {
                     pc, opc, name,
                     bytes: [opc, value - pc - 2],
                 } : {
@@ -244,7 +244,7 @@ class Assembler {
             }
             const matchIMM = /^[A-Z]{3} #([$%]?[\dA-Z]+)$/.exec(line);
             if (matchIMM) {
-                const opc = this.dataSheet.getOpc(name, 'IMM');
+                const opc = this.dataSheet.getOpc(name, "IMM");
                 const value = this.parseValue(matchIMM[1]);
                 instructionTokens.push({ pc, opc, name, bytes: [opc, value] });
                 pc += this.dataSheet.opCodeBytes[opc];
@@ -253,13 +253,13 @@ class Assembler {
             const matchABS = /^[A-Z]{3} ([$%]?[\dA-Z_]+)$/.exec(line);
             if (matchABS) {
                 const value = this.parseValue(matchABS[1], codeTokenDto.labels);
-                if (typeof value === 'number' && value >= 0x00 && value <= 0xFF) {
-                    const opc = this.dataSheet.getOpc(name, 'ZP');
+                if (typeof value === "number" && value >= 0x00 && value <= 0xFF) {
+                    const opc = this.dataSheet.getOpc(name, "ZP");
                     instructionTokens.push({ pc, opc, name, bytes: [opc, value] });
                     pc += this.dataSheet.opCodeBytes[opc];
                     continue;
                 }
-                const opc = this.dataSheet.getOpc(name, 'ABS');
+                const opc = this.dataSheet.getOpc(name, "ABS");
                 instructionTokens.push(getInstrToken(pc, name, opc, value));
                 pc += this.dataSheet.opCodeBytes[opc];
                 continue;
@@ -267,13 +267,13 @@ class Assembler {
             const matchABSX = /^[A-Z]{3} ([$%]?[\dA-Z_]+),X$/.exec(line);
             if (matchABSX) {
                 const value = this.parseValue(matchABSX[1], codeTokenDto.labels);
-                if (typeof value === 'number' && value >= 0x00 && value <= 0xFF) {
-                    const opc = this.dataSheet.getOpc(name, 'ZPX');
+                if (typeof value === "number" && value >= 0x00 && value <= 0xFF) {
+                    const opc = this.dataSheet.getOpc(name, "ZPX");
                     instructionTokens.push({ pc, opc, name, bytes: [opc, value] });
                     pc += this.dataSheet.opCodeBytes[opc];
                     continue;
                 }
-                const opc = this.dataSheet.getOpc(name, 'ABSX');
+                const opc = this.dataSheet.getOpc(name, "ABSX");
                 instructionTokens.push(getInstrToken(pc, name, opc, value));
                 pc += this.dataSheet.opCodeBytes[opc];
                 continue;
@@ -281,20 +281,20 @@ class Assembler {
             const matchABSY = /^[A-Z]{3} ([$%]?[\dA-Z_]+),Y$/.exec(line);
             if (matchABSY) {
                 const value = this.parseValue(matchABSY[1], codeTokenDto.labels);
-                if (typeof value === 'number' && value >= 0x00 && value <= 0xFF && name !== 'LDA') {
-                    const opc = this.dataSheet.getOpc(name, 'ZPY');
+                if (typeof value === "number" && value >= 0x00 && value <= 0xFF && name !== "LDA") {
+                    const opc = this.dataSheet.getOpc(name, "ZPY");
                     instructionTokens.push({ pc, opc, name, bytes: [opc, value] });
                     pc += this.dataSheet.opCodeBytes[opc];
                     continue;
                 }
-                const opc = this.dataSheet.getOpc(name, 'ABSY');
+                const opc = this.dataSheet.getOpc(name, "ABSY");
                 instructionTokens.push(getInstrToken(pc, name, opc, value));
                 pc += this.dataSheet.opCodeBytes[opc];
                 continue;
             }
             const matchIND = /^[A-Z]{3} \(([$%]?[\dA-Z_]+)\)$/.exec(line);
             if (matchIND) {
-                const opc = this.dataSheet.getOpc(name, 'IND');
+                const opc = this.dataSheet.getOpc(name, "IND");
                 const value = this.parseValue(matchIND[1], codeTokenDto.labels);
                 instructionTokens.push(getInstrToken(pc, name, opc, value));
                 pc += this.dataSheet.opCodeBytes[opc];
@@ -302,7 +302,7 @@ class Assembler {
             }
             const matchINDX = /^[A-Z]{3} \(([$%]?[\dA-Z]+),X\)$/.exec(line);
             if (matchINDX) {
-                const opc = this.dataSheet.getOpc(name, 'XZPI');
+                const opc = this.dataSheet.getOpc(name, "XZPI");
                 const value = this.parseValue(matchINDX[1]);
                 instructionTokens.push({ pc, opc, name, bytes: [opc, value] });
                 pc += this.dataSheet.opCodeBytes[opc];
@@ -310,7 +310,7 @@ class Assembler {
             }
             const matchINDY = /^[A-Z]{3} \(([$%]?[\dA-Z]+)\),Y$/.exec(line);
             if (matchINDY) {
-                const opc = this.dataSheet.getOpc(name, 'ZPIY');
+                const opc = this.dataSheet.getOpc(name, "ZPIY");
                 const value = this.parseValue(matchINDY[1]);
                 instructionTokens.push({ pc, opc, name, bytes: [opc, value] });
                 pc += this.dataSheet.opCodeBytes[opc];
@@ -325,7 +325,7 @@ class Assembler {
         }
         return instructionTokens;
         function getInstrToken(pc, name, opc, value) {
-            return typeof value === 'number' ? {
+            return typeof value === "number" ? {
                 pc, opc, name,
                 bytes: [opc, value & 0xFF, (value >> 8) & 0xFF],
             } : {
@@ -336,13 +336,13 @@ class Assembler {
         }
     }
     parseValue(valueText, labels = {}, variables = {}) {
-        if (valueText.startsWith('$')) {
+        if (valueText.startsWith("$")) {
             const value = parseInt(valueText.slice(1), 16);
             if (isNaN(value))
                 throw new Error(`Cannot parse a hex number: ${valueText}`);
             return value;
         }
-        if (valueText.startsWith('%')) {
+        if (valueText.startsWith("%")) {
             const value = parseInt(valueText.slice(1), 2);
             if (isNaN(value))
                 throw new Error(`Cannot parse a bin number: ${valueText}`);
@@ -364,8 +364,8 @@ class Assembler {
         return value;
     }
     cleanSourceCode(sourceCode) {
-        return sourceCode.split('\n')
-            .map(line => line.replace(/;.*$/m, ''))
+        return sourceCode.split("\n")
+            .map(line => line.replace(/;.*$/m, ""))
             .map(line => line.trim())
             .filter(line => line.length > 0)
             .reduce((acc, line) => {
@@ -388,7 +388,7 @@ class Assembler {
                 const data = matchLabelDirective[3];
                 if (!this.dataSheet.instructions.includes(labelName.toUpperCase())) {
                     acc.push(labelName.trim().toUpperCase());
-                    acc.push(directive.trim().toUpperCase() + ' ' + data.trim());
+                    acc.push(directive.trim().toUpperCase() + " " + data.trim());
                     return acc;
                 }
             }
@@ -404,7 +404,7 @@ class Assembler {
             if (matchDirective) {
                 const directive = matchDirective[1];
                 const data = matchDirective[2];
-                acc.push(directive.trim().toUpperCase() + ' ' + data.trim());
+                acc.push(directive.trim().toUpperCase() + " " + data.trim());
                 return acc;
             }
             acc.push(line.toUpperCase());
@@ -416,7 +416,7 @@ class Assembler {
                 const instrName = matchInstrOperand[1];
                 const operand = matchInstrOperand[2];
                 if (this.dataSheet.instructions.includes(instrName.toUpperCase())) {
-                    acc.push(instrName.trim().toUpperCase() + ' ' + operand.replace(/[ \t]*/g, '').toUpperCase());
+                    acc.push(instrName.trim().toUpperCase() + " " + operand.replace(/[ \t]*/g, "").toUpperCase());
                     return acc;
                 }
             }
@@ -424,10 +424,10 @@ class Assembler {
             if (matchDirective) {
                 const directive = matchDirective[1];
                 const data = matchDirective[2];
-                acc.push(directive + ' ' + data);
+                acc.push(directive + " " + data);
                 return acc;
             }
-            acc.push(line.replace(/[ \t]*/g, '').toUpperCase());
+            acc.push(line.replace(/[ \t]*/g, "").toUpperCase());
             return acc;
         }, []);
     }
@@ -439,18 +439,18 @@ class Assembler {
             if (codePCMatch.isPC) {
                 if (codePCMatch.error) {
                     tokens.push({
-                        tokenType: 'error',
-                        instrName: 'PC',
+                        tokenType: "error",
+                        instrName: "PC",
                         codeLine: line,
                         error: codePCMatch.error,
                     });
                 }
                 else {
                     tokens.push({
-                        tokenType: 'set-pc',
-                        instrName: 'PC',
+                        tokenType: "set-pc",
+                        instrName: "PC",
                         codeLine: line,
-                        pcValue: codePCMatch.pcValue
+                        pcValue: codePCMatch.pcValue,
                     });
                 }
                 return tokens;
@@ -459,7 +459,7 @@ class Assembler {
             if (variableMatch.isVariable) {
                 if (variableMatch.error) {
                     tokens.push({
-                        tokenType: 'error',
+                        tokenType: "error",
                         instrName: variableMatch.varName,
                         codeLine: line,
                         error: variableMatch.error,
@@ -471,7 +471,7 @@ class Assembler {
             if (labelMatch.isLabel) {
                 if (labelMatch.error) {
                     tokens.push({
-                        tokenType: 'error',
+                        tokenType: "error",
                         instrName: labelMatch.labelName,
                         codeLine: line,
                         error: labelMatch.error,
@@ -479,7 +479,7 @@ class Assembler {
                 }
                 else {
                     tokens.push({
-                        tokenType: 'label',
+                        tokenType: "label",
                         instrName: labelMatch.labelName,
                         codeLine: line,
                     });
@@ -490,7 +490,7 @@ class Assembler {
             if (instructionImplied) {
                 const instrName = instructionImplied[1];
                 tokens.push({
-                    tokenType: 'instruction',
+                    tokenType: "instruction",
                     instrName: instrName,
                     codeLine: instrName,
                 });
@@ -502,14 +502,14 @@ class Assembler {
                 const varLabelName = matchInstWithVarOrLabel[2];
                 if (variables.hasOwnProperty(varLabelName)) {
                     tokens.push({
-                        tokenType: 'instruction',
+                        tokenType: "instruction",
                         instrName: instrName,
                         codeLine: line.replace(varLabelName, variables[varLabelName]),
                     });
                     return tokens;
                 }
                 tokens.push({
-                    tokenType: 'instruction',
+                    tokenType: "instruction",
                     instrName: instrName,
                     codeLine: line,
                 });
@@ -518,7 +518,7 @@ class Assembler {
             const matchInstrLine = /^([A-Z]{3}) /m.exec(line);
             if (matchInstrLine) {
                 tokens.push({
-                    tokenType: 'instruction',
+                    tokenType: "instruction",
                     instrName: matchInstrLine[1],
                     codeLine: line,
                 });
@@ -527,7 +527,7 @@ class Assembler {
             const matchDirective = /^(\.[A-Z]+) (.+)/m.exec(line);
             if (matchDirective) {
                 tokens.push({
-                    tokenType: 'directive',
+                    tokenType: "directive",
                     instrName: matchDirective[1],
                     codeLine: line,
                     directiveData: matchDirective[2],
@@ -535,10 +535,10 @@ class Assembler {
                 return tokens;
             }
             tokens.push({
-                tokenType: 'error',
-                instrName: 'error',
+                tokenType: "error",
+                instrName: "error",
                 codeLine: line,
-                error: `Cannot parse code line: ${line}`
+                error: `Cannot parse code line: ${line}`,
             });
             return tokens;
         }, []);
@@ -571,14 +571,14 @@ class Assembler {
                 return {
                     isVariable: true,
                     varName: variable,
-                    error: `Variable matches an instruction name: ${variable}`
+                    error: `Variable matches an instruction name: ${variable}`,
                 };
             }
             if (variables.hasOwnProperty(variable)) {
                 return {
                     isVariable: true,
                     varName: variable,
-                    error: `Variable already defined: ${variable}`
+                    error: `Variable already defined: ${variable}`,
                 };
             }
             variables[variable] = matchVarInit[2];
@@ -596,7 +596,7 @@ class Assembler {
                 return {
                     isLabel: true,
                     labelName: label,
-                    error: `Label already defined: ${label}`
+                    error: `Label already defined: ${label}`,
                 };
             }
             labels[label] = NaN;
@@ -647,14 +647,14 @@ class Cpu {
                 this.setNZ(this.A);
             },
             ASL: (addr) => {
-                const input = isNaN(addr) ? this.A : this.memory[addr];
+                const input = isNaN(addr) ? this.A : this.load(addr);
                 const temp = input << 1;
                 this.C = (temp >> 8) === 1;
                 const val = temp & 0xFF;
                 if (isNaN(addr))
                     this.A = val;
                 else
-                    this.memory[addr] = val;
+                    this.store(addr, val);
                 this.setNZ(val);
             },
             BCC: (opr) => {
@@ -729,7 +729,8 @@ class Cpu {
                 this.setNZ(delta);
             },
             DEC: (addr) => {
-                const val = this.memory[addr] = (this.memory[addr] - 1) & 0xFF;
+                const val = (this.load(addr) - 1) & 0xFF;
+                this.store(addr, val);
                 this.setNZ(val);
             },
             DEX: () => {
@@ -745,7 +746,8 @@ class Cpu {
                 this.setNZ(this.A);
             },
             INC: (addr) => {
-                const val = this.memory[addr] = (this.memory[addr] + 1) & 0xFF;
+                const val = (this.load(addr) + 1) & 0xFF;
+                this.store(addr, val);
                 this.setNZ(val);
             },
             INX: () => {
@@ -778,12 +780,12 @@ class Cpu {
                 this.setNZ(this.Y);
             },
             LSR: (addr) => {
-                const input = isNaN(addr) ? this.A : this.memory[addr];
+                const input = isNaN(addr) ? this.A : this.load(addr);
                 const out = input >> 1;
                 if (isNaN(addr))
                     this.A = out;
                 else
-                    this.memory[addr] = out;
+                    this.store(addr, out);
                 this.N = false;
                 this.Z = !out;
                 this.C = !!(input & 1);
@@ -808,23 +810,23 @@ class Cpu {
                 this.P = this.pull();
             },
             ROL: (addr) => {
-                const input = isNaN(addr) ? this.A : this.memory[addr];
+                const input = isNaN(addr) ? this.A : this.load(addr);
                 const out = (input << 1) + +this.C;
                 if (isNaN(addr))
                     this.A = out;
                 else
-                    this.memory[addr] = out;
+                    this.store(addr, out);
                 this.N = !!((input >> 6) & 1);
                 this.Z = !out;
                 this.C = !!((input >> 7) & 1);
             },
             ROR: (addr) => {
-                const input = isNaN(addr) ? this.A : this.memory[addr];
+                const input = isNaN(addr) ? this.A : this.load(addr);
                 const out = ((input >> 1) + (+this.C << 7)) & 0xFF;
                 if (isNaN(addr))
                     this.A = out;
                 else
-                    this.memory[addr] = out;
+                    this.store(addr, out);
                 this.N = this.C;
                 this.Z = !out;
                 this.C = !!(input & 1);
@@ -862,13 +864,13 @@ class Cpu {
                 this.I = true;
             },
             STA: (addr) => {
-                this.memory[addr] = this.A;
+                this.store(addr, this.A);
             },
             STX: (addr) => {
-                this.memory[addr] = this.X;
+                this.store(addr, this.X);
             },
             STY: (addr) => {
-                this.memory[addr] = this.Y;
+                this.store(addr, this.Y);
             },
             TAX: () => {
                 this.X = this.A;
@@ -967,6 +969,12 @@ class Cpu {
         this.push(this.PC & 0xFF);
         this.push((this.P | 0x02) & ~(1 << 0x04));
         this.PC = this.loadWord(0xFFFA);
+    }
+    load(addr) {
+        return this.memory[addr];
+    }
+    store(addr, data) {
+        this.memory[addr] = data;
     }
     loadWord(addr) {
         return this.memory[addr] + (this.memory[addr + 1] << 8);
