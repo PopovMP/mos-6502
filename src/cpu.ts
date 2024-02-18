@@ -87,11 +87,12 @@ class Cpu {
             throw new Error(`Invalid instruction '${Utils.byteToHex(opc)}' at: $${Utils.wordToHex(this.PC)}`);
 
         const mode: string = this.dataSheet.opCodeMode[opc];
+        const addr: number = this.operandAddress[mode](this.PC + 1, this.X, this.Y);
         const opr : number = this.addressInstructions.includes(name)
-                             ? this.operandAddress[mode]()                 // Instruction needs an effective address
-                             : mode === "IMPL"                             // Implied addressing mode doesn't require address
-                               ? this.A                                    // However, it may need the A register value
-                               : this.memory[this.operandAddress[mode]()]; // Instruction needs the operand value
+                                    ? addr                 // Instruction needs an effective address
+                                    : mode === "IMPL"      // Implied addressing mode doesn't require address
+                                        ? this.A           // However, it may need the A register value
+                                        : this.load(addr); // Operand value
 
         this.PC += this.dataSheet.opCodeBytes[opc];
 
@@ -116,45 +117,45 @@ class Cpu {
         this.PC = this.loadWord(0xFFFA);
     }
 
-    private readonly operandAddress: Record<string, () => number> = {
-        IMPL: () => NaN, // Implied and Accumulator modes don't need an address
-        IMM : () => this.PC + 1,
-        ZP  : () => this.memory[this.PC + 1],
-        ZPX : () => this.memory[this.PC + 1] + this.X,
-        ZPY : () => this.memory[this.PC + 1] + this.Y,
-        ABS : () => this.loadWord(this.PC + 1),
-        ABSX: () => this.loadWord(this.PC + 1) + this.X,
-        ABSY: () => this.loadWord(this.PC + 1) + this.Y,
-        IND : () => this.loadWord(this.PC + 1),
-        XZPI: () => this.loadWord(this.memory[this.PC + 1] + this.X),
-        ZPIY: () => this.loadWord(this.memory[this.PC + 1]) + this.Y,
-        REL : () => this.PC + 1,
+    private readonly operandAddress: Record<string, (addr: number, x: number, y: number) => number> = {
+        IMPL: (): number => NaN, // Implied and Accumulator modes don't need an address
+        IMM : (addr: number                      ): number => addr,
+        ZP  : (addr: number                      ): number => this.memory  [addr],
+        ZPX : (addr: number, x: number           ): number => this.memory  [addr] + x,
+        ZPY : (addr: number, _: number, y: number): number => this.memory  [addr] + y,
+        ABS : (addr: number                      ): number => this.loadWord(addr),
+        ABSX: (addr: number, x: number           ): number => this.loadWord(addr) + x,
+        ABSY: (addr: number, _: number, y: number): number => this.loadWord(addr) + y,
+        IND : (addr: number                      ): number => this.loadWord(addr),
+        XZPI: (addr: number, x: number           ): number => this.loadWord(this.memory[addr]  + x),
+        ZPIY: (addr: number, _: number, y: number): number => this.loadWord(this.memory[addr]) + y,
+        REL : (addr: number                      ): number => addr,
     };
 
     private readonly instruction: Record<string, (opr: number) => void> = {
-        ADC: (opr: number): void => {
+        ADC: (val: number): void => {
             // Add Memory to Accumulator with Carry
-            this.V = !((this.A ^ opr) & 0x80);
+            this.V = !((this.A ^ val) & 0x80);
 
-            const val: number = this.A + opr + +this.C;
-            this.A = val & 0xFF;
+            const res: number = this.A + val + +this.C;
+            this.A = res & 0xFF;
 
-            if (val >= 0x100) {
+            if (res >= 0x100) {
                 this.C = true;
-                if (this.V && val >= 0x180)
+                if (this.V && res >= 0x180)
                     this.V = false;
             } else {
                 this.C = false;
-                if (this.V && val < 0x80)
+                if (this.V && res < 0x80)
                     this.V = false;
             }
 
             this.setNZ(this.A);
         },
 
-        AND: (opr: number): void => {
+        AND: (val: number): void => {
             // "AND" Memory with Accumulator
-            this.A &= opr;
+            this.A &= val;
             this.setNZ(this.A);
         },
 
@@ -173,49 +174,49 @@ class Cpu {
             this.setNZ(val);
         },
 
-        BCC: (opr: number): void => {
+        BCC: (addr: number): void => {
             // Branch on Carry Clear
             if (!this.C)
-                this.branch(opr);
+                this.branch(addr);
         },
 
-        BCS: (opr: number): void => {
+        BCS: (addr: number): void => {
             // Branch on Carry Set
             if (this.C)
-                this.branch(opr);
+                this.branch(addr);
         },
 
-        BEQ: (opr: number): void => {
+        BEQ: (addr: number): void => {
             // Branch on Result Zero
             if (this.Z)
-                this.branch(opr);
+                this.branch(addr);
         },
 
-        BIT: (opr: number): void => {
+        BIT: (val: number): void => {
             // Test Bits in Memory with Accumulator
-            const val: number = this.A & opr;
+            const res: number = this.A & val;
 
-            this.N = !!(opr >> 7);
-            this.V = !!(opr >> 6);
-            this.Z = !val;
+            this.N = !!(val >> 7);
+            this.V = !!(val >> 6);
+            this.Z = !res;
         },
 
-        BMI: (opr: number): void => {
+        BMI: (addr: number): void => {
             // Branch on Result Minus
             if (this.N)
-                this.branch(opr);
+                this.branch(addr);
         },
 
-        BNE: (opr: number): void => {
+        BNE: (addr: number): void => {
             // Branch on Result not Zero
             if (!this.Z)
-                this.branch(opr);
+                this.branch(addr);
         },
 
-        BPL: (opr: number): void => {
+        BPL: (addr: number): void => {
             // Branch on Result Plus
             if (!this.N)
-                this.branch(opr);
+                this.branch(addr);
         },
 
         BRK: (): void => {
@@ -226,16 +227,16 @@ class Cpu {
             this.PC = this.loadWord(0xFFFE);
         },
 
-        BVC: (opr: number): void => {
+        BVC: (addr: number): void => {
             // Branch on Overflow Clear
             if (!this.V)
-                this.branch(opr);
+                this.branch(addr);
         },
 
-        BVS: (opr: number): void => {
+        BVS: (addr: number): void => {
             // Branch on Overflow Set
             if (this.V)
-                this.branch(opr);
+                this.branch(addr);
         },
 
         CLC: (): void => {
@@ -258,24 +259,24 @@ class Cpu {
             this.V = false;
         },
 
-        CMP: (opr: number): void => {
+        CMP: (val: number): void => {
             // Compare Memory and Accumulator
-            const delta: number = this.A - opr;
-            this.C = this.A >= opr;
+            const delta: number = this.A - val;
+            this.C = this.A >= val;
             this.setNZ(delta);
         },
 
-        CPX: (opr: number): void => {
+        CPX: (val: number): void => {
             // Compare Index X to Memory
-            const delta: number = this.X - opr;
-            this.C = this.X >= opr;
+            const delta: number = this.X - val;
+            this.C = this.X >= val;
             this.setNZ(delta);
         },
 
-        CPY: (opr: number): void => {
+        CPY: (val: number): void => {
             // Compare Index Y to Memory
-            const delta: number = this.Y - opr;
-            this.C = this.Y >= opr;
+            const delta: number = this.Y - val;
+            this.C = this.Y >= val;
             this.setNZ(delta);
         },
 
@@ -298,9 +299,9 @@ class Cpu {
             this.setNZ(this.Y);
         },
 
-        EOR: (opr: number): void => {
+        EOR: (val: number): void => {
             // "Exclusive-Or" Memory with Accumulator
-            this.A ^= opr;
+            this.A ^= val;
             this.setNZ(this.A);
         },
 
@@ -336,21 +337,21 @@ class Cpu {
             this.PC = addr;
         },
 
-        LDA: (opr: number): void => {
+        LDA: (val: number): void => {
             // Load Accumulator with Memory
-            this.A = opr;
+            this.A = val;
             this.setNZ(this.A);
         },
 
-        LDX: (opr: number): void => {
+        LDX: (val: number): void => {
             // Load X Register
-            this.X = opr;
+            this.X = val;
             this.setNZ(this.X);
         },
 
-        LDY: (opr: number): void => {
+        LDY: (val: number): void => {
             // Load Y Register
-            this.Y = opr;
+            this.Y = val;
             this.setNZ(this.Y);
         },
 
@@ -373,9 +374,9 @@ class Cpu {
             // No Operation
         },
 
-        ORA: (opr: number): void => {
+        ORA: (val: number): void => {
             // "OR" Memory with Accumulator
-            this.A |= opr;
+            this.A |= val;
             this.setNZ(this.A);
         },
 
@@ -442,22 +443,22 @@ class Cpu {
             this.PC = this.pull() + (this.pull() << 8) + 1;
         },
 
-        SBC: (opr: number): void => {
+        SBC: (val: number): void => {
             // Subtract Memory from Accumulator with Borrow
-            this.V = !!((this.A ^ opr) & 0x80);
-            const value: number = 0xff + this.A - opr + (this.C ? 1 : 0);
+            this.V = !!((this.A ^ val) & 0x80);
+            const res: number = 0xff + this.A - val + (this.C ? 1 : 0);
 
-            if (value < 0x100) {
+            if (res < 0x100) {
                 this.C = false;
-                if (this.V && value < 0x80)
+                if (this.V && res < 0x80)
                     this.V = false;
             } else {
                 this.C = true;
-                if (this.V && value >= 0x180)
+                if (this.V && res >= 0x180)
                     this.V = false;
             }
 
-            this.A = value & 0xff;
+            this.A = res & 0xff;
         },
 
         SEC: (): void => {
