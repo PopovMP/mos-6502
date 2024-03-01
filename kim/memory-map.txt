@@ -1,0 +1,47 @@
+Memory Layout
+
+A15 A14 A13 A12   A11 A10 A9 A8
+ 1   1   1   1     1   1   1  1   FFFF  ROM ^ 16 kB
+ 1   1   0   0     0   0   0  0   C000  ROM v
+
+ 1   0   1   1     1   1   1  1   BFFF  IO ^
+ 1   0   0   0     0   0   0  0   8000  IO v
+
+ 0   1   1   1     1   1   1  1   7FFF  RAM ^ 32 kB
+ 0   0   0   0     0   0   0  0   0000  RAM v
+
+IO Layout
+
+A15 A14 A13 A12   A11 A10 A9 A8
+
+
+ 1   0   0   1     1   1   1  1   9FFF  IO ^
+ 1   0   0   1     1   0   0  0   9800  IO v
+
+ 1   0   0   1     0   1   1  1   97FF  IO ^
+ 1   0   0   1     0   0   0  0   9000  IO v
+
+ 1   0   0   0     1   1   1  1   8FFF  IO ^
+ 1   0   0   0     1   0   0  0   8800  IO v
+
+ 1   0   0   0     0   1   1  1   87FF  IO ^
+ 1   0   0   0     0   0   0  0   8000  IO v 65C22
+
+
+ Display / Keyboard Connection
+
+
+
+  0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19
+0 -
+1 +  _  B1 B2 B3 B4 _  NM RS _  _  A0 A1 A2 A3 A4 A5 A6  x  y
+
+0 0 - Vss - Ground
+1 0 - Vcc - +5V
+...
+1  7 - NMI# - may not be connected. #5
+1  8 - Reset
+1 18 - Single Step or Power button
+1 19 - Single Step or Power button
+
+

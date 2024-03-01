@@ -17,7 +17,7 @@ class Cpu {
 
     public N: boolean; // Negative flag
     public V: boolean; // Overflow flag
-    public readonly B: boolean = true // Break flag (always true)
+    public readonly B: boolean = true; // Break flag (always true)
     public D: boolean; // Decimal flag
     public I: boolean; // Interrupt disabled flag
     public Z: boolean; // Zero flag
@@ -80,7 +80,7 @@ class Cpu {
     }
 
     public step(): void {
-        const opc : number = this.memory[this.PC];
+        const opc : number = this.load(this.PC);
         const name: string = this.dataSheet.opCodeName[opc];
 
         if (name === undefined)
@@ -120,15 +120,15 @@ class Cpu {
     private readonly operandAddress: Record<string, (addr: number, x: number, y: number) => number> = {
         IMPL: (): number => NaN, // Implied and Accumulator modes don't need an address
         IMM : (addr: number                      ): number => addr,
-        ZP  : (addr: number                      ): number => this.memory  [addr],
-        ZPX : (addr: number, x: number           ): number => this.memory  [addr] + x,
-        ZPY : (addr: number, _: number, y: number): number => this.memory  [addr] + y,
+        ZP  : (addr: number                      ): number => this.load(addr),
+        ZPX : (addr: number, x: number           ): number => this.load(addr) + x,
+        ZPY : (addr: number, _: number, y: number): number => this.load(addr) + y,
         ABS : (addr: number                      ): number => this.loadWord(addr),
         ABSX: (addr: number, x: number           ): number => this.loadWord(addr) + x,
         ABSY: (addr: number, _: number, y: number): number => this.loadWord(addr) + y,
         IND : (addr: number                      ): number => this.loadWord(addr),
-        XZPI: (addr: number, x: number           ): number => this.loadWord(this.memory[addr]  + x),
-        ZPIY: (addr: number, _: number, y: number): number => this.loadWord(this.memory[addr]) + y,
+        XZPI: (addr: number, x: number           ): number => this.loadWord(this.load(addr)  + x),
+        ZPIY: (addr: number, _: number, y: number): number => this.loadWord(this.load(addr)) + y,
         REL : (addr: number                      ): number => addr,
     };
 

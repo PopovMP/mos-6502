@@ -1,4 +1,4 @@
-// noinspection JSMethodCanBeStatic
+// noinspection JSMethodCanBeStatic,GrazieInspection
 
 type CodeToken = {
     tokenType     : "label" | "instruction" | "set-pc" | "error" | "directive"
@@ -21,7 +21,7 @@ type InstructionToken = {
     name          : string
     bytes         : number[]
     labelRequired?: string
-    error        ?: string,
+    error        ?: string
 }
 
 type DisassemblyToken = {
@@ -34,9 +34,9 @@ type DisassemblyToken = {
 }
 
 type VariableMatch = {
-    isVariable: boolean,
-    varName  ?: string,
-    error    ?: string,
+    isVariable: boolean
+    varName  ?: string
+    error    ?: string
 }
 
 type LabelMatch = {
@@ -211,7 +211,7 @@ class Assembler {
 
             output.push(token);
             index += bytes;
-            pc += bytes;
+            pc    += bytes;
         }
 
         return output;
@@ -489,13 +489,10 @@ class Assembler {
         const value: number = parseInt(valueText, 10);
         if (isNaN(value)) {
             const valuetextUp: string = valueText.toUpperCase(); // Because pragma operands are not uppercase
-            if (labels.hasOwnProperty(valuetextUp)) {
-                return isNaN(labels[valuetextUp])
-                       ? valuetextUp
-                       : labels[valuetextUp];
-            } else if (variables.hasOwnProperty(valuetextUp)) {
+            if (labels.hasOwnProperty(valuetextUp))
+                return isNaN(labels[valuetextUp]) ? valuetextUp : labels[valuetextUp];
+            if (variables.hasOwnProperty(valuetextUp))
                 return this.parseValue(variables[valuetextUp]);
-            }
 
             throw new Error(`Cannot find a label: ${valueText}`);
         }
@@ -578,7 +575,7 @@ class Assembler {
 
     private tokenizeSourceCode(sourceCodeLines: string[]): CodeTokenDto {
         const variables: Record<string, string> = {};
-        const labels: Record<string, number>    = {};
+        const labels   : Record<string, number> = {};
 
         const codeTokens: CodeToken[] = sourceCodeLines.reduce((tokens: CodeToken[], line: string) => {
 

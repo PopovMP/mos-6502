@@ -599,37 +599,37 @@ class Cpu {
         this.B = true;
         this.operandAddress = {
             IMPL: () => NaN,
-            IMM: () => this.PC + 1,
-            ZP: () => this.memory[this.PC + 1],
-            ZPX: () => this.memory[this.PC + 1] + this.X,
-            ZPY: () => this.memory[this.PC + 1] + this.Y,
-            ABS: () => this.loadWord(this.PC + 1),
-            ABSX: () => this.loadWord(this.PC + 1) + this.X,
-            ABSY: () => this.loadWord(this.PC + 1) + this.Y,
-            IND: () => this.loadWord(this.PC + 1),
-            XZPI: () => this.loadWord(this.memory[this.PC + 1] + this.X),
-            ZPIY: () => this.loadWord(this.memory[this.PC + 1]) + this.Y,
-            REL: () => this.PC + 1,
+            IMM: (addr) => addr,
+            ZP: (addr) => this.load(addr),
+            ZPX: (addr, x) => this.load(addr) + x,
+            ZPY: (addr, _, y) => this.load(addr) + y,
+            ABS: (addr) => this.loadWord(addr),
+            ABSX: (addr, x) => this.loadWord(addr) + x,
+            ABSY: (addr, _, y) => this.loadWord(addr) + y,
+            IND: (addr) => this.loadWord(addr),
+            XZPI: (addr, x) => this.loadWord(this.load(addr) + x),
+            ZPIY: (addr, _, y) => this.loadWord(this.load(addr)) + y,
+            REL: (addr) => addr,
         };
         this.instruction = {
-            ADC: (opr) => {
-                this.V = !((this.A ^ opr) & 0x80);
-                const val = this.A + opr + +this.C;
-                this.A = val & 0xFF;
-                if (val >= 0x100) {
+            ADC: (val) => {
+                this.V = !((this.A ^ val) & 0x80);
+                const res = this.A + val + +this.C;
+                this.A = res & 0xFF;
+                if (res >= 0x100) {
                     this.C = true;
-                    if (this.V && val >= 0x180)
+                    if (this.V && res >= 0x180)
                         this.V = false;
                 }
                 else {
                     this.C = false;
-                    if (this.V && val < 0x80)
+                    if (this.V && res < 0x80)
                         this.V = false;
                 }
                 this.setNZ(this.A);
             },
-            AND: (opr) => {
-                this.A &= opr;
+            AND: (val) => {
+                this.A &= val;
                 this.setNZ(this.A);
             },
             ASL: (addr) => {
@@ -643,35 +643,35 @@ class Cpu {
                     this.store(addr, val);
                 this.setNZ(val);
             },
-            BCC: (opr) => {
+            BCC: (addr) => {
                 if (!this.C)
-                    this.branch(opr);
+                    this.branch(addr);
             },
-            BCS: (opr) => {
+            BCS: (addr) => {
                 if (this.C)
-                    this.branch(opr);
+                    this.branch(addr);
             },
-            BEQ: (opr) => {
+            BEQ: (addr) => {
                 if (this.Z)
-                    this.branch(opr);
+                    this.branch(addr);
             },
-            BIT: (opr) => {
-                const val = this.A & opr;
-                this.N = !!(opr >> 7);
-                this.V = !!(opr >> 6);
-                this.Z = !val;
+            BIT: (val) => {
+                const res = this.A & val;
+                this.N = !!(val >> 7);
+                this.V = !!(val >> 6);
+                this.Z = !res;
             },
-            BMI: (opr) => {
+            BMI: (addr) => {
                 if (this.N)
-                    this.branch(opr);
+                    this.branch(addr);
             },
-            BNE: (opr) => {
+            BNE: (addr) => {
                 if (!this.Z)
-                    this.branch(opr);
+                    this.branch(addr);
             },
-            BPL: (opr) => {
+            BPL: (addr) => {
                 if (!this.N)
-                    this.branch(opr);
+                    this.branch(addr);
             },
             BRK: () => {
                 this.PC += 1;
@@ -679,13 +679,13 @@ class Cpu {
                 this.push(this.PC & 0xFF);
                 this.PC = this.loadWord(0xFFFE);
             },
-            BVC: (opr) => {
+            BVC: (addr) => {
                 if (!this.V)
-                    this.branch(opr);
+                    this.branch(addr);
             },
-            BVS: (opr) => {
+            BVS: (addr) => {
                 if (this.V)
-                    this.branch(opr);
+                    this.branch(addr);
             },
             CLC: () => {
                 this.C = false;
@@ -699,19 +699,19 @@ class Cpu {
             CLV: () => {
                 this.V = false;
             },
-            CMP: (opr) => {
-                const delta = this.A - opr;
-                this.C = this.A >= opr;
+            CMP: (val) => {
+                const delta = this.A - val;
+                this.C = this.A >= val;
                 this.setNZ(delta);
             },
-            CPX: (opr) => {
-                const delta = this.X - opr;
-                this.C = this.X >= opr;
+            CPX: (val) => {
+                const delta = this.X - val;
+                this.C = this.X >= val;
                 this.setNZ(delta);
             },
-            CPY: (opr) => {
-                const delta = this.Y - opr;
-                this.C = this.Y >= opr;
+            CPY: (val) => {
+                const delta = this.Y - val;
+                this.C = this.Y >= val;
                 this.setNZ(delta);
             },
             DEC: (addr) => {
@@ -727,8 +727,8 @@ class Cpu {
                 this.Y = (this.Y - 1) & 0xFF;
                 this.setNZ(this.Y);
             },
-            EOR: (opr) => {
-                this.A ^= opr;
+            EOR: (val) => {
+                this.A ^= val;
                 this.setNZ(this.A);
             },
             INC: (addr) => {
@@ -753,16 +753,16 @@ class Cpu {
                 this.push(this.PC & 0xFF);
                 this.PC = addr;
             },
-            LDA: (opr) => {
-                this.A = opr;
+            LDA: (val) => {
+                this.A = val;
                 this.setNZ(this.A);
             },
-            LDX: (opr) => {
-                this.X = opr;
+            LDX: (val) => {
+                this.X = val;
                 this.setNZ(this.X);
             },
-            LDY: (opr) => {
-                this.Y = opr;
+            LDY: (val) => {
+                this.Y = val;
                 this.setNZ(this.Y);
             },
             LSR: (addr) => {
@@ -778,8 +778,8 @@ class Cpu {
             },
             NOP: () => {
             },
-            ORA: (opr) => {
-                this.A |= opr;
+            ORA: (val) => {
+                this.A |= val;
                 this.setNZ(this.A);
             },
             PHA: () => {
@@ -825,20 +825,20 @@ class Cpu {
             RTS: () => {
                 this.PC = this.pull() + (this.pull() << 8) + 1;
             },
-            SBC: (opr) => {
-                this.V = !!((this.A ^ opr) & 0x80);
-                const value = 0xff + this.A - opr + (this.C ? 1 : 0);
-                if (value < 0x100) {
+            SBC: (val) => {
+                this.V = !!((this.A ^ val) & 0x80);
+                const res = 0xff + this.A - val + (this.C ? 1 : 0);
+                if (res < 0x100) {
                     this.C = false;
-                    if (this.V && value < 0x80)
+                    if (this.V && res < 0x80)
                         this.V = false;
                 }
                 else {
                     this.C = true;
-                    if (this.V && value >= 0x180)
+                    if (this.V && res >= 0x180)
                         this.V = false;
                 }
-                this.A = value & 0xff;
+                this.A = res & 0xff;
             },
             SEC: () => {
                 this.C = true;
@@ -928,16 +928,17 @@ class Cpu {
         this.PC = this.loadWord(0xFFFC);
     }
     step() {
-        const opc = this.memory[this.PC];
+        const opc = this.load(this.PC);
         const name = this.dataSheet.opCodeName[opc];
         if (name === undefined)
             throw new Error(`Invalid instruction '${Utils.byteToHex(opc)}' at: $${Utils.wordToHex(this.PC)}`);
         const mode = this.dataSheet.opCodeMode[opc];
+        const addr = this.operandAddress[mode](this.PC + 1, this.X, this.Y);
         const opr = this.addressInstructions.includes(name)
-            ? this.operandAddress[mode]()
+            ? addr
             : mode === "IMPL"
                 ? this.A
-                : this.memory[this.operandAddress[mode]()];
+                : this.load(addr);
         this.PC += this.dataSheet.opCodeBytes[opc];
         this.instruction[name](opr);
     }

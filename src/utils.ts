@@ -1,16 +1,16 @@
 class Utils {
     public static byteToHex(val: number): string {
         const hex: string = "0123456789ABCDEF";
-        return hex[(val >> 4) & 0xF] +
-               hex[val & 0xF];
+        return hex[(val >> 4) & 0x0F] +
+               hex[(val >> 0) & 0x0F];
     }
 
     public static wordToHex(val: number): string {
         const hex: string = "0123456789ABCDEF";
-        return hex[(val >> 12) & 0xF] +
-               hex[(val >>  8) & 0xF] +
-               hex[(val >>  4) & 0xF] +
-               hex[val         & 0xF];
+        return hex[(val >> 12) & 0x0F] +
+               hex[(val >>  8) & 0x0F] +
+               hex[(val >>  4) & 0x0F] +
+               hex[(val >>  0) & 0x0F];
     }
 
     /**
