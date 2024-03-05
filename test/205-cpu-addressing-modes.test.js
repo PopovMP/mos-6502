@@ -1,15 +1,15 @@
-"use strict";
+import {strictEqual}  from "node:assert";
+import {describe, it} from "node:test";
 
-const {strictEqual}    = require("assert");
-const {describe, it}   = require("@popovmp/mocha-tiny");
-const {Cpu, Assembler} = require("../js/index.js");
+import {Assembler} from "../js/assembler.js";
+import {Cpu}       from "../js/cpu.js";
 
 const memory    = new Uint8Array(0xFFFF + 1);
 const assembler = new Assembler();
 const cpu       = new Cpu((addr) => memory[addr], (addr, data) => memory[addr] = data);
 
 describe("CPU - addressing modes", () => {
-    describe("($nn,X)", () => {
+    it("($nn,X)", () => {
         const sourceCode = `
 			* = $0800
 			LDX #$01
@@ -27,12 +27,10 @@ describe("CPU - addressing modes", () => {
         while (memory[cpu.PC] !== 0x00)
             cpu.step();
 
-        it("Gets correct value", () => {
-            strictEqual(cpu.A, 0x0A);
-        });
+        strictEqual(cpu.A, 0x0A);
     });
 
-    describe("(variable,X)", () => {
+    it("(variable,X)", () => {
         const sourceCode = `
 			* = $0800
 			var = $00
@@ -51,12 +49,10 @@ describe("CPU - addressing modes", () => {
         while (memory[cpu.PC] !== 0x00)
             cpu.step();
 
-        it("Gets correct value", () => {
-            strictEqual(cpu.A, 0x0A);
-        });
+        strictEqual(cpu.A, 0x0A);
     });
 
-    describe("($nn),Y", () => {
+    it("($nn),Y", () => {
         const sourceCode = `
 			* = $0800
 			LDY #$01
@@ -74,8 +70,6 @@ describe("CPU - addressing modes", () => {
         while (memory[cpu.PC] !== 0x00)
             cpu.step();
 
-        it("Gets correct value", () => {
-            strictEqual(cpu.A, 0x0A);
-        })
+        strictEqual(cpu.A, 0x0A);
     })
 })

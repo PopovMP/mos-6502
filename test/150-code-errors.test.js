@@ -1,10 +1,7 @@
-"use strict";
+import {strictEqual}  from "node:assert";
+import {describe, it} from "node:test";
 
-
-const {strictEqual}  = require("assert");
-const {describe, it} = require("@popovmp/mocha-tiny");
-
-const {Assembler} = require("../js/index.js");
+import {Assembler} from "../js/assembler.js";
 
 describe("Assembler - errors", () => {
     describe("Tokenize code", () => {

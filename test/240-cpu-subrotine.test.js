@@ -1,8 +1,8 @@
-"use strict";
+import {strictEqual}  from "node:assert";
+import {describe, it} from "node:test";
 
-const {strictEqual}    = require("assert");
-const {describe, it}   = require("@popovmp/mocha-tiny");
-const {Cpu, Assembler} = require("../js/index.js");
+import {Assembler} from "../js/assembler.js";
+import {Cpu}       from "../js/cpu.js";
 
 const memory    = new Uint8Array(0xFFFF + 1);
 const assembler = new Assembler();
@@ -10,7 +10,7 @@ const cpu       = new Cpu((addr) => memory[addr], (addr, data) => memory[addr] =
 
 describe("Subroutine", () => {
 
-    describe("JSR/RTS", () => {
+    it("JSR/RTS", () => {
         const sourceCode = `
 		        * = $0800
 			  JSR init
@@ -35,12 +35,10 @@ describe("Subroutine", () => {
         while (memory[cpu.PC] !== 0x00)
             cpu.step();
 
-        it("X = 5", () => {
-            strictEqual(cpu.X, 5);
-        });
+        strictEqual(cpu.X, 5);
     });
 
-    describe("Math subroutines", () => {
+    it("Math subroutines", () => {
         const sourceCode = `
 		        * = $0800
 		
@@ -77,12 +75,10 @@ describe("Subroutine", () => {
         while (memory[cpu.PC] !== 0x00)
             cpu.step();
 
-        it("Answer = 48", () => {
-            strictEqual(cpu.A, 48);
-        });
+        strictEqual(cpu.A, 48);
     });
 
-    describe("Math recursion", () => {
+    it("Math recursion", () => {
         const sourceCode = `
 		;; Sum numbers from 1 to 10 with recursion
 		
@@ -122,8 +118,6 @@ describe("Subroutine", () => {
         while (memory[cpu.PC] !== 0x00)
             cpu.step();
 
-        it("Answer = 55", () => {
-            strictEqual(cpu.A, 55);
-        });
+        strictEqual(cpu.A, 55);
     });
 });

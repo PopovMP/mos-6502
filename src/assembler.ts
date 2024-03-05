@@ -1,60 +1,10 @@
 // noinspection JSMethodCanBeStatic,GrazieInspection
+import type * as Types from "./def.js"
+import {Utils} from "./utils.js";
+import {DataSheet} from "./data-sheet.js";
 
-type CodeToken = {
-    tokenType     : "label" | "instruction" | "set-pc" | "error" | "directive"
-    instrName     : string
-    codeLine      : string
-    pcValue      ?: number
-    error        ?: string
-    directiveData?: string
-}
-
-type CodeTokenDto = {
-    codeTokens: CodeToken[]
-    variables : Record<string, string>
-    labels    : Record<string, number>
-}
-
-type InstructionToken = {
-    pc            : number
-    opc           : number
-    name          : string
-    bytes         : number[]
-    labelRequired?: string
-    error        ?: string
-}
-
-type DisassemblyToken = {
-    address    : string
-    code       : string[]
-    text       : string
-    mode       : string
-    bytes      : number
-    description: string
-}
-
-type VariableMatch = {
-    isVariable: boolean
-    varName  ?: string
-    error    ?: string
-}
-
-type LabelMatch = {
-    isLabel   : boolean
-    labelName?: string
-    error    ?: string
-}
-
-type CodePCMatch = {
-    isPC    : boolean
-    pcValue?: number
-    error  ?: string
-}
-
-type CodePages = Record<string, Array<number | null>>
-
-class Assembler {
-    public static hexDump(codePages: CodePages): string {
+export class Assembler {
+    public static hexDump(codePages: Types.CodePages): string {
         const dumpLines: string[] = [];
 
         for (const pageAddress of Object.keys(codePages)) {
@@ -72,8 +22,8 @@ class Assembler {
         this.dataSheet = new DataSheet();
     }
 
-    public load(sourcecode: string, memory: Uint8Array): CodePages {
-        const codePages: CodePages = this.assemble(sourcecode);
+    public load(sourcecode: string, memory: Uint8Array): Types.CodePages {
+        const codePages: Types.CodePages = this.assemble(sourcecode);
         let   isPcSet  : boolean   = false;
 
         for (const pageTag of Object.keys(codePages)) {
@@ -96,24 +46,24 @@ class Assembler {
         return codePages;
     }
 
-    public assemble(sourceCode: string): CodePages {
-        const codeDto: CodeTokenDto = this.tokenize(sourceCode);
+    public assemble(sourceCode: string): Types.CodePages {
+        const codeDto: Types.CodeTokenDto = this.tokenize(sourceCode);
         return this.parse(codeDto);
     }
 
-    public tokenize(sourceCode: string): CodeTokenDto {
+    public tokenize(sourceCode: string): Types.CodeTokenDto {
         const codeLines: string[] = this.cleanSourceCode(sourceCode);
         return this.tokenizeSourceCode(codeLines);
     }
 
-    public parse(codeDto: CodeTokenDto): CodePages {
-        const instTokens: InstructionToken[] = this.parseInstructions(codeDto);
+    public parse(codeDto: Types.CodeTokenDto): Types.CodePages {
+        const instTokens: Types.InstructionToken[] = this.parseInstructions(codeDto);
         this.resolveUnsetLabels(codeDto, instTokens);
         return this.composeMachineCodePages(instTokens);
     }
 
-    public disassemble(code: number[], initialPC: number): DisassemblyToken[] {
-        const output: DisassemblyToken[] = [];
+    public disassemble(code: number[], initialPC: number): Types.DisassemblyToken[] {
+        const output: Types.DisassemblyToken[] = [];
 
         let index: number = 0;
         let pc   : number = initialPC;
@@ -122,7 +72,7 @@ class Assembler {
             const opc: number = code[index];
 
             if (!this.dataSheet.opCodeName.hasOwnProperty(opc)) {
-                const token: DisassemblyToken = {
+                const token: Types.DisassemblyToken = {
                     address    : Utils.wordToHex(pc),
                     code       : [Utils.byteToHex(opc)],
                     text       : ".BYTE $" + Utils.byteToHex(opc),
@@ -142,7 +92,7 @@ class Assembler {
             const mode : string = this.dataSheet.opCodeMode[opc];
             const bytes: number = this.dataSheet.opCodeBytes[opc];
 
-            const token: DisassemblyToken = {
+            const token: Types.DisassemblyToken = {
                 address    : Utils.wordToHex(pc),
                 code       : [Utils.byteToHex(opc)],
                 text       : this.dataSheet.opCodeName[opc],
@@ -217,8 +167,8 @@ class Assembler {
         return output;
     }
 
-    public disassembleCodePages(codePages: CodePages): DisassemblyToken[] {
-        const output: DisassemblyToken[] = [];
+    public disassembleCodePages(codePages: Types.CodePages): Types.DisassemblyToken[] {
+        const output: Types.DisassemblyToken[] = [];
         let   code       : number[]      = [];
         let   codePC     : number        = -1;
         let   prevAddress: number        = -1;
@@ -247,8 +197,8 @@ class Assembler {
         return output;
     }
 
-    private composeMachineCodePages(instTokens: InstructionToken[]): CodePages {
-        const pages: CodePages = {};
+    private composeMachineCodePages(instTokens: Types.InstructionToken[]): Types.CodePages {
+        const pages: Types.CodePages = {};
 
         // Make pages
         for (const token of instTokens) {
@@ -264,7 +214,7 @@ class Assembler {
         return pages;
     }
 
-    public resolveUnsetLabels(codeDto: CodeTokenDto, instTokens: InstructionToken[]): void {
+    public resolveUnsetLabels(codeDto: Types.CodeTokenDto, instTokens: Types.InstructionToken[]): void {
         for (const token of instTokens) {
             if (token.labelRequired) {
                 const labelValue: number = codeDto.labels[token.labelRequired];
@@ -281,8 +231,8 @@ class Assembler {
         }
     }
 
-    public parseInstructions(codeTokenDto: CodeTokenDto): InstructionToken[] {
-        const instructionTokens: InstructionToken[] = [];
+    public parseInstructions(codeTokenDto: Types.CodeTokenDto): Types.InstructionToken[] {
+        const instructionTokens: Types.InstructionToken[] = [];
 
         let pc: number = 0x0800; // Default PC
 
@@ -459,7 +409,7 @@ class Assembler {
 
         return instructionTokens;
 
-        function getInstrToken(pc: number, name: string, opc: number, value: number | string): InstructionToken {
+        function getInstrToken(pc: number, name: string, opc: number, value: number | string): Types.InstructionToken {
             return typeof value === "number" ? {pc, opc, name, bytes: [opc, value & 0xFF, (value >> 8) & 0xFF]}
                                              : {pc, opc, name, bytes: [opc, NaN, NaN], labelRequired: value};
         }
@@ -573,14 +523,14 @@ class Assembler {
             }, []);
     }
 
-    private tokenizeSourceCode(sourceCodeLines: string[]): CodeTokenDto {
+    private tokenizeSourceCode(sourceCodeLines: string[]): Types.CodeTokenDto {
         const variables: Record<string, string> = {};
         const labels   : Record<string, number> = {};
 
-        const codeTokens: CodeToken[] = sourceCodeLines.reduce((tokens: CodeToken[], line: string) => {
+        const codeTokens: Types.CodeToken[] = sourceCodeLines.reduce((tokens: Types.CodeToken[], line: string): Types.CodeToken[] => {
 
             // Match initial PC from: * = $0800
-            const codePCMatch: CodePCMatch = this.matchCodePC(line);
+            const codePCMatch: Types.CodePCMatch = this.matchCodePC(line);
             if (codePCMatch.isPC) {
                 if (codePCMatch.error) {
                     tokens.push({
@@ -601,7 +551,7 @@ class Assembler {
             }
 
             // Match variable initialization
-            const variableMatch: VariableMatch = this.matchVariableInitialization(line, variables);
+            const variableMatch: Types.VariableMatch = this.matchVariableInitialization(line, variables);
             if (variableMatch.isVariable) {
                 if (variableMatch.error) {
                     tokens.push({
@@ -616,7 +566,7 @@ class Assembler {
             }
 
             // Match label declaration
-            const labelMatch: LabelMatch = this.matchLabelDeclaration(line, labels);
+            const labelMatch: Types.LabelMatch = this.matchLabelDeclaration(line, labels);
             if (labelMatch.isLabel) {
                 if (labelMatch.error) {
                     tokens.push({
@@ -709,7 +659,7 @@ class Assembler {
         };
     }
 
-    private matchCodePC(codeLine: string): CodePCMatch {
+    private matchCodePC(codeLine: string): Types.CodePCMatch {
         const matchInitialPC: RegExpMatchArray | null = /\*=\$([A-H\d]{4})/.exec(codeLine);
         if (matchInitialPC) {
             const valueText: string = matchInitialPC[1];
@@ -728,7 +678,7 @@ class Assembler {
         return {isPC: false};
     }
 
-    private matchVariableInitialization(codeLine: string, variables: Record<string, string>): VariableMatch {
+    private matchVariableInitialization(codeLine: string, variables: Record<string, string>): Types.VariableMatch {
         const matchVarInit: RegExpMatchArray | null = /([A-Z\d_]+)=([$%]?[A-H\d]+)/.exec(codeLine);
         if (matchVarInit) {
             const variable: string = matchVarInit[1];
@@ -757,7 +707,7 @@ class Assembler {
         return {isVariable: false};
     }
 
-    private matchLabelDeclaration(codeLine: string, labels: Record<string, number>): LabelMatch {
+    private matchLabelDeclaration(codeLine: string, labels: Record<string, number>): Types.LabelMatch {
         const matchLabel: RegExpMatchArray | null = /^([A-Z\d_]+)$/m.exec(codeLine);
         if (matchLabel) {
             const label: string = matchLabel[1];
@@ -781,5 +731,3 @@ class Assembler {
         return {isLabel: false};
     }
 }
-
-module.exports.Assembler = Assembler;

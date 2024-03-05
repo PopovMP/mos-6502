@@ -1,4 +1,4 @@
-class Utils {
+export class Utils {
     public static byteToHex(val: number): string {
         const hex: string = "0123456789ABCDEF";
         return hex[(val >> 4) & 0x0F] +
@@ -35,5 +35,3 @@ class Utils {
         return Math.floor(2 * Math.random());
     }
 }
-
-module.exports.Utils = Utils;

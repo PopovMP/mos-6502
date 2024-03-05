@@ -1,11 +1,15 @@
-"use strict";
+import * as fs from "node:fs";
 
-const fs = require("fs");
+import {strictEqual}  from "node:assert";
+import {describe, it} from "node:test";
 
-const {strictEqual}  = require("assert");
-const {describe, it} = require("@popovmp/mocha-tiny");
+import {Assembler} from "../js/assembler.js";
 
-const {Assembler} = require("../js/index.js");
+import {fileURLToPath} from "node:url";
+import {dirname} from "node:path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 describe("Assembler", () => {
     const sourceCode = `

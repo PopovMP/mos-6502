@@ -1,8 +1,7 @@
-"use strict";
+import {strictEqual}  from "node:assert";
+import {describe, it} from "node:test";
 
-const {strictEqual}  = require("assert");
-const {describe, it} = require("@popovmp/mocha-tiny");
-const {Utils}        = require("../js/index.js");
+import {Utils}     from "../js/utils.js";
 
 describe("Utils", () => {
     describe("wordToHex", () => {

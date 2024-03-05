@@ -1,8 +1,8 @@
-"use strict";
+import {strictEqual}  from "node:assert";
+import {describe, it} from "node:test";
 
-const {strictEqual}    = require("assert");
-const {describe, it}   = require("@popovmp/mocha-tiny");
-const {Cpu, Assembler} = require("../js/index.js");
+import {Assembler} from "../js/assembler.js";
+import {Cpu}       from "../js/cpu.js";
 
 const memory     = new Uint8Array(0xFFFF + 1);
 const cpu        = new Cpu((addr) => memory[addr], (addr, data) => memory[addr] = data);

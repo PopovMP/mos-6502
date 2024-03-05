@@ -1,4 +1,4 @@
-class DataSheet {
+export class DataSheet {
 	public readonly instructions: string[] = [];
 	public readonly opCodeBytes : Record<number, number> = {};
 	public readonly opCodeMode  : Record<number, string> = {};
@@ -177,5 +177,3 @@ class DataSheet {
 		return this.Opcodes[instName][modeIndex] as number;
 	}
 }
-
-module.exports.DataSheet = DataSheet;

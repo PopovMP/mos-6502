@@ -1,17 +1,17 @@
-"use strict";
+import {strictEqual}  from "node:assert";
+import {describe, it} from "node:test";
 
-const {strictEqual}    = require("assert");
-const {describe, it}   = require("@popovmp/mocha-tiny");
-const {Assembler, Cpu} = require("../js/index.js");
+import {Assembler} from "../js/assembler.js";
+import {Cpu}       from "../js/cpu.js";
 
 const memory    = new Uint8Array(0xFFFF + 1);
 const assembler = new Assembler();
 const cpu       = new Cpu((addr) => memory[addr], (addr, data) => memory[addr] = data);
 
 describe("CPU Branching", () => {
-    describe("BEQ branch forward", () => {
+    it("BEQ branch forward", () => {
         const sourceCode = `
-			*=$0800
+			*=$0000
 			LDX #42
 			CPX #42
 			BEQ good
@@ -28,12 +28,10 @@ describe("CPU Branching", () => {
         while (memory[cpu.PC] !== 0x00)
             cpu.step();
 
-        it("Correct location", () => {
-            strictEqual(cpu.A, 1);
-        });
+        strictEqual(cpu.A, 1);
     });
 
-    describe("BEQ skip branch forward", () => {
+    it("BEQ skip branch forward", () => {
         const sourceCode = `
 			*=$0800
 			LDX #42
@@ -52,12 +50,10 @@ describe("CPU Branching", () => {
         while (memory[cpu.PC] !== 0x00)
             cpu.step();
 
-        it("Correct location", () => {
-            strictEqual(cpu.A, 2);
-        });
+        strictEqual(cpu.A, 2);
     });
 
-    describe("BEQ branch backwards", () => {
+    it("BEQ branch backwards", () => {
         const sourceCode = `
 			*=$0800
 
@@ -79,12 +75,10 @@ describe("CPU Branching", () => {
         while (memory[cpu.PC] !== 0x00)
             cpu.step();
 
-        it("Correct location", () => {
-            strictEqual(cpu.A, 1);
-        });
+        strictEqual(cpu.A, 1);
     });
 
-    describe("BEQ skip branch backwards", () => {
+    it("BEQ skip branch backwards", () => {
         const sourceCode = `
 			*=$0800
 
@@ -106,8 +100,6 @@ describe("CPU Branching", () => {
         while (memory[cpu.PC] !== 0x00)
             cpu.step();
 
-        it("Correct location", () => {
-            strictEqual(cpu.A, 2);
-        });
+        strictEqual(cpu.A, 2);
     });
 });

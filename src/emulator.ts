@@ -1,4 +1,11 @@
-class Emulator {
+import type * as Types from "./def.js"
+
+import {DataSheet} from "./data-sheet.js";
+import {Cpu} from "./cpu.js";
+import {Utils} from "./utils.js";
+import {Assembler} from "./assembler.js";
+
+export class Emulator {
     private readonly dataSheet: DataSheet;
     private readonly assembler: Assembler;
     private readonly memory   : Uint8Array;
@@ -69,11 +76,11 @@ class Emulator {
         this.terminal.innerText = "";
         this.instructionLog     = [];
 
-        const codeDto: CodeTokenDto = this.assembler.tokenize(sourceCode);
+        const codeDto: Types.CodeTokenDto = this.assembler.tokenize(sourceCode);
 
         const errorOutput: string[] = codeDto.codeTokens
-            .filter((token: CodeToken): boolean => token.tokenType === "error")
-            .reduce((acc: string[], token: CodeToken) => {
+            .filter((token: Types.CodeToken): boolean => token.tokenType === "error")
+            .reduce((acc: string[], token: Types.CodeToken) => {
                 acc.push(`Error:       ${token.error}`);
                 acc.push(`Code line:   ${token.codeLine}`);
                 acc.push(`Instruction: ${token.instrName}`);
@@ -86,18 +93,18 @@ class Emulator {
         }
 
         try {
-            const codePages: CodePages = this.assembler.load(sourceCode, this.memory);
+            const codePages: Types.CodePages = this.assembler.load(sourceCode, this.memory);
             this.setInitialPCinMemory();
             this.cpu.reset();
 
             const disassembly: string = this.assembler
                 .disassembleCodePages(codePages)
-                .map((tkn: DisassemblyToken): string =>
+                .map((tkn: Types.DisassemblyToken): string =>
                          `$${tkn.address}   ${tkn.code.join(" ").padEnd(8, " ")}   ` +
                          `${tkn.text.padEnd(13, " ")}  ; ${tkn.description}`)
                 .join("\n");
 
-            const instTokens: InstructionToken[] = this.assembler.parseInstructions(codeDto);
+            const instTokens: Types.InstructionToken[] = this.assembler.parseInstructions(codeDto);
             this.assembler.resolveUnsetLabels(codeDto, instTokens);
 
             const labelsText: string = Object.keys(codeDto.labels)
@@ -236,10 +243,10 @@ class Emulator {
         const opc   : number   = this.memory[pc];
         const bytes : number   = this.dataSheet.opCodeBytes[opc];
         const code  : number[] = Array.from(this.memory.slice(pc, pc + bytes));
-        const tokens: DisassemblyToken[] = this.assembler.disassemble(code, pc);
+        const tokens: Types.DisassemblyToken[] = this.assembler.disassemble(code, pc);
 
         if (tokens.length > 0) {
-            const tkn: DisassemblyToken = tokens[0];
+            const tkn: Types.DisassemblyToken = tokens[0];
             const currentInst: string = `$${tkn.address}   ${tkn.code.join(" ").padEnd(8, " ")}   ` +
                                         `${tkn.text.padEnd(13, " ")}  ; ${tkn.description}`;
             this.instructionLog.push(currentInst);
@@ -321,5 +328,3 @@ class Emulator {
         }
     }
 }
-
-module.exports.Emulator = Emulator;

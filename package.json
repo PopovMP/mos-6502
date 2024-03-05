@@ -4,6 +4,7 @@
   "description": "MOS 6502 emulator",
   "author": "Popov <info@forexsb.com>",
   "license": "MIT",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/popovmp/mos-6502"
@@ -14,12 +15,11 @@
     "Assembler"
   ],
   "devDependencies": {
-    "@popovmp/mocha-tiny": "^2.2.0",
     "@types/node": "^18.0.0",
     "typescript": "^4.7.4"
   },
   "scripts": {
-    "test": "mocha-tiny",
+    "test": "node --test",
     "build": "tsc --build"
   }
 }

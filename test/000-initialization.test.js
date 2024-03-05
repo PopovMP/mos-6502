@@ -1,8 +1,11 @@
-"use strict";
+import {strictEqual}  from "node:assert";
+import {describe, it} from "node:test";
 
-const {strictEqual}  = require("assert");
-const {describe, it} = require("@popovmp/mocha-tiny");
-const {Assembler, Cpu, DataSheet, Emulator, Utils} = require("../js/index.js");
+import {Assembler} from "../js/assembler.js";
+import {Cpu}       from "../js/cpu.js";
+import {DataSheet} from "../js/data-sheet.js";
+import {Emulator}  from "../js/emulator.js";
+import {Utils}     from "../js/utils.js";
 
 describe("Initialization", () => {
     describe("Assembler", () => {

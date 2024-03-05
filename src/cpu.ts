@@ -1,6 +1,9 @@
 // noinspection DuplicatedCode
 
-class Cpu {
+import {Utils} from "./utils.js";
+import {DataSheet} from "./data-sheet.js";
+
+export class Cpu {
     // The following instructions need the address
     // designated by the operand instead of its value
     private readonly addressInstructions: string[] = [
@@ -562,5 +565,3 @@ class Cpu {
         this.Z = !val;
     }
 }
-
-module.exports.Cpu = Cpu;

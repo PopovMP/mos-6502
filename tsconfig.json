@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "outFile": "js/index.js",
+    "module": "ES6",
+    "outDir": "./js",
     "incremental": true,
     "target": "ES2018",
     "strict": true,
