@@ -336,14 +336,10 @@ class Assembler {
         const value = parseInt(valueText, 10);
         if (isNaN(value)) {
             const valuetextUp = valueText.toUpperCase();
-            if (labels.hasOwnProperty(valuetextUp)) {
-                return isNaN(labels[valuetextUp])
-                    ? valuetextUp
-                    : labels[valuetextUp];
-            }
-            else if (variables.hasOwnProperty(valuetextUp)) {
+            if (labels.hasOwnProperty(valuetextUp))
+                return isNaN(labels[valuetextUp]) ? valuetextUp : labels[valuetextUp];
+            if (variables.hasOwnProperty(valuetextUp))
                 return this.parseValue(variables[valuetextUp]);
-            }
             throw new Error(`Cannot find a label: ${valueText}`);
         }
         return value;
@@ -928,19 +924,19 @@ class Cpu {
         this.PC = this.loadWord(0xFFFC);
     }
     step() {
-        const opc = this.load(this.PC);
-        const name = this.dataSheet.opCodeName[opc];
-        if (name === undefined)
-            throw new Error(`Invalid instruction '${Utils.byteToHex(opc)}' at: $${Utils.wordToHex(this.PC)}`);
-        const mode = this.dataSheet.opCodeMode[opc];
-        const addr = this.operandAddress[mode](this.PC + 1, this.X, this.Y);
-        const opr = this.addressInstructions.includes(name)
-            ? addr
-            : mode === "IMPL"
+        const opcode = this.load(this.PC);
+        const instructionName = this.dataSheet.opCodeName[opcode];
+        if (instructionName === undefined)
+            throw new Error(`Invalid instruction '${Utils.byteToHex(opcode)}' at: $${Utils.wordToHex(this.PC)}`);
+        const addressingMode = this.dataSheet.opCodeMode[opcode];
+        const operandAddr = this.operandAddress[addressingMode](this.PC + 1, this.X, this.Y);
+        const operandValue = this.addressInstructions.includes(instructionName)
+            ? operandAddr
+            : addressingMode === "IMPL"
                 ? this.A
-                : this.load(addr);
-        this.PC += this.dataSheet.opCodeBytes[opc];
-        this.instruction[name](opr);
+                : this.load(operandAddr);
+        this.PC += this.dataSheet.opCodeBytes[opcode];
+        this.instruction[instructionName](operandValue);
     }
     irq() {
         if (this.I)
@@ -963,7 +959,7 @@ class Cpu {
         this.memory[addr] = data;
     }
     loadWord(addr) {
-        return this.memory[addr] + (this.memory[addr + 1] << 8);
+        return this.load(addr) + (this.load(addr + 1) << 8);
     }
     push(val) {
         this.memory[0x0100 + this.S] = val;
@@ -1136,20 +1132,21 @@ class DataSheet {
             TXS: "Transfer X to Stack Pointer",
             TYA: "Transfer Y to Accumulator",
         };
-        Object.keys(this.Opcodes).forEach((instr) => {
-            this.instructions.push(instr);
-            this.Opcodes[instr].forEach((opc, index) => {
-                this.populateData(instr, opc, index);
-            });
-        });
+        for (const instructionName of Object.keys(this.Opcodes)) {
+            this.instructions.push(instructionName);
+            for (const opcode of this.Opcodes[instructionName]) {
+                const index = this.Opcodes[instructionName].indexOf(opcode);
+                this.populateData(instructionName, opcode, index);
+            }
+        }
     }
-    populateData(instr, opc, index) {
-        if (isNaN(opc))
+    populateData(instructionName, opcode, index) {
+        if (isNaN(opcode))
             return;
         const addressingMode = this.addressingModes[index];
-        this.opCodeName[opc] = instr;
-        this.opCodeMode[opc] = addressingMode;
-        this.opCodeBytes[opc] = this.addressingModeBytes[addressingMode];
+        this.opCodeName[opcode] = instructionName;
+        this.opCodeMode[opcode] = addressingMode;
+        this.opCodeBytes[opcode] = this.addressingModeBytes[addressingMode];
     }
     getOpc(instName, mode) {
         const modeIndex = this.addressingModes.indexOf(mode);
@@ -1402,18 +1399,20 @@ class Emulator {
     }
 }
 module.exports.Emulator = Emulator;
+class Infrastructure {
+}
 class Utils {
     static byteToHex(val) {
         const hex = "0123456789ABCDEF";
-        return hex[(val >> 4) & 0xF] +
-            hex[val & 0xF];
+        return hex[(val >> 4) & 0x0F] +
+            hex[(val >> 0) & 0x0F];
     }
     static wordToHex(val) {
         const hex = "0123456789ABCDEF";
-        return hex[(val >> 12) & 0xF] +
-            hex[(val >> 8) & 0xF] +
-            hex[(val >> 4) & 0xF] +
-            hex[val & 0xF];
+        return hex[(val >> 12) & 0x0F] +
+            hex[(val >> 8) & 0x0F] +
+            hex[(val >> 4) & 0x0F] +
+            hex[(val >> 0) & 0x0F];
     }
     static byteToSInt(val) {
         if (val > 0x7F)

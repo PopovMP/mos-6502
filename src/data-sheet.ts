@@ -154,20 +154,22 @@ class DataSheet {
 	};
 
 	constructor() {
-		Object.keys(this.Opcodes).forEach((instr: string): void => {
-			this.instructions.push(instr);
-			this.Opcodes[instr].forEach((opc: number, index: number): void =>
-				                            this.populateData(instr, opc, index));
-		});
+		for (const instructionName of Object.keys(this.Opcodes)) {
+			this.instructions.push(instructionName);
+			for (const opcode of this.Opcodes[instructionName]) {
+				const index: number = this.Opcodes[instructionName].indexOf(opcode);
+				this.populateData(instructionName, opcode, index);
+			}
+		}
 	}
 
-	private populateData(instr: string, opc: number, index: number): void {
-		if (isNaN(opc)) return;
+	private populateData(instructionName: string, opcode: number, index: number): void {
+		if (isNaN(opcode)) return;
 
 		const addressingMode: string = this.addressingModes[index];
-		this.opCodeName [opc] = instr;
-		this.opCodeMode [opc] = addressingMode;
-		this.opCodeBytes[opc] = this.addressingModeBytes[addressingMode];
+		this.opCodeName [opcode] = instructionName;
+		this.opCodeMode [opcode] = addressingMode;
+		this.opCodeBytes[opcode] = this.addressingModeBytes[addressingMode];
 	}
 
 	public getOpc(instName: string, mode: string): number {

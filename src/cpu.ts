@@ -80,23 +80,23 @@ class Cpu {
     }
 
     public step(): void {
-        const opc : number = this.load(this.PC);
-        const name: string = this.dataSheet.opCodeName[opc];
+        const opcode: number = this.load(this.PC);
+        const instructionName: string = this.dataSheet.opCodeName[opcode];
 
-        if (name === undefined)
-            throw new Error(`Invalid instruction '${Utils.byteToHex(opc)}' at: $${Utils.wordToHex(this.PC)}`);
+        if (instructionName === undefined)
+            throw new Error(`Invalid instruction '${Utils.byteToHex(opcode)}' at: $${Utils.wordToHex(this.PC)}`);
 
-        const mode: string = this.dataSheet.opCodeMode[opc];
-        const addr: number = this.operandAddress[mode](this.PC + 1, this.X, this.Y);
-        const opr : number = this.addressInstructions.includes(name)
-                                    ? addr                 // Instruction needs an effective address
-                                    : mode === "IMPL"      // Implied addressing mode doesn't require address
-                                        ? this.A           // However, it may need the A register value
-                                        : this.load(addr); // Operand value
+        const addressingMode: string = this.dataSheet.opCodeMode[opcode];
+        const operandAddr   : number = this.operandAddress[addressingMode](this.PC + 1, this.X, this.Y);
+        const operandValue  : number = this.addressInstructions.includes(instructionName)
+                                    ? operandAddr                 // Instruction needs an effective address
+                                    : addressingMode === "IMPL"   // Implied addressing mode doesn't require address
+                                        ? this.A                  // However, it may need the A register value
+                                        : this.load(operandAddr); // Operand value
 
-        this.PC += this.dataSheet.opCodeBytes[opc];
+        this.PC += this.dataSheet.opCodeBytes[opcode];
 
-        this.instruction[name](opr);
+        this.instruction[instructionName](operandValue);
     }
 
     // noinspection JSUnusedGlobalSymbols
@@ -536,7 +536,7 @@ class Cpu {
     }
 
     private loadWord(addr: number): number {
-        return this.memory[addr] + (this.memory[addr + 1] << 8);
+        return this.load(addr) + (this.load(addr + 1) << 8);
     }
 
     private push(val: number): void {
