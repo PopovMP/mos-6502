@@ -588,7 +588,7 @@ class Assembler {
 }
 module.exports.Assembler = Assembler;
 class Cpu {
-    constructor(memory) {
+    constructor(load, store) {
         this.addressInstructions = [
             "ASL", "DEC", "INC", "LSR", "JMP", "JSR", "ROL", "ROR", "STA", "STX", "STY",
         ];
@@ -878,8 +878,9 @@ class Cpu {
                 this.setNZ(this.A);
             },
         };
+        this.load = load;
+        this.store = store;
         this.dataSheet = new DataSheet();
-        this.memory = memory;
         this.A = Utils.randomByte();
         this.X = Utils.randomByte();
         this.Y = Utils.randomByte();
@@ -952,17 +953,11 @@ class Cpu {
         this.push((this.P | 0x02) & ~(1 << 0x04));
         this.PC = this.loadWord(0xFFFA);
     }
-    load(addr) {
-        return this.memory[addr];
-    }
-    store(addr, data) {
-        this.memory[addr] = data;
-    }
     loadWord(addr) {
         return this.load(addr) + (this.load(addr + 1) << 8);
     }
     push(val) {
-        this.memory[0x0100 + this.S] = val;
+        this.store(0x0100 + this.S, val);
         this.S -= 1;
         if (this.S < 0)
             this.S = 0xFF;
@@ -971,7 +966,7 @@ class Cpu {
         this.S += 1;
         if (this.S > 0xFF)
             this.S = 0;
-        return this.memory[0x0100 + this.S];
+        return this.load(0x0100 + this.S);
     }
     branch(offset) {
         this.PC += offset < 128 ? offset : offset - 256;
@@ -1161,7 +1156,7 @@ class Emulator {
         this.dataSheet = new DataSheet();
         this.assembler = new Assembler();
         this.memory = new Uint8Array(0xFFFF + 1);
-        this.cpu = new Cpu(this.memory);
+        this.cpu = new Cpu((addr) => this.memory[addr], (addr, data) => this.memory[addr] = data);
     }
     initialize() {
         this.codeEditor = document.getElementById("source-code");
@@ -1399,8 +1394,6 @@ class Emulator {
     }
 }
 module.exports.Emulator = Emulator;
-class Infrastructure {
-}
 class Utils {
     static byteToHex(val) {
         const hex = "0123456789ABCDEF";

@@ -7,7 +7,6 @@ class Cpu {
         "ASL", "DEC", "INC", "LSR", "JMP", "JSR", "ROL", "ROR", "STA", "STX", "STY",
     ];
     private readonly dataSheet: DataSheet;
-    private readonly memory   : Uint8Array;
 
     public A : number; // Accumulator
     public X : number; // X index register
@@ -44,9 +43,14 @@ class Cpu {
         this.C = !!((val >> 0) & 0x01);
     }
 
-    constructor(memory: Uint8Array) {
+    private readonly load : (addr: number) => number;
+    private readonly store: (addr: number, data: number) => void;
+
+    constructor(load : (addr: number) => number,
+                store: (addr: number, data: number) => void) {
+        this.load      = load;
+        this.store     = store;
         this.dataSheet = new DataSheet();
-        this.memory    = memory;
 
         this.A = Utils.randomByte();
         this.X = Utils.randomByte();
@@ -131,6 +135,10 @@ class Cpu {
         ZPIY: (addr: number, _: number, y: number): number => this.loadWord(this.load(addr)) + y,
         REL : (addr: number                      ): number => addr,
     };
+
+    private loadWord(addr: number): number {
+        return this.load(addr) + (this.load(addr + 1) << 8);
+    }
 
     private readonly instruction: Record<string, (opr: number) => void> = {
         ADC: (val: number): void => {
@@ -527,20 +535,8 @@ class Cpu {
         },
     };
 
-    private load(addr: number): number {
-        return this.memory[addr];
-    }
-
-    private store(addr: number, data: number): void {
-        this.memory[addr] = data;
-    }
-
-    private loadWord(addr: number): number {
-        return this.load(addr) + (this.load(addr + 1) << 8);
-    }
-
     private push(val: number): void {
-        this.memory[0x0100 + this.S] = val;
+        this.store(0x0100 + this.S,  val);
 
         this.S -= 1;
 
@@ -554,7 +550,7 @@ class Cpu {
         if (this.S > 0xFF)
             this.S = 0;
 
-        return this.memory[0x0100 + this.S];
+        return this.load(0x0100 + this.S);
     }
 
     private branch(offset: number): void {

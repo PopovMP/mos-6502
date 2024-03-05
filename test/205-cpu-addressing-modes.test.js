@@ -6,7 +6,7 @@ const {Cpu, Assembler} = require("../js/index.js");
 
 const memory    = new Uint8Array(0xFFFF + 1);
 const assembler = new Assembler();
-const cpu       = new Cpu(memory);
+const cpu       = new Cpu((addr) => memory[addr], (addr, data) => memory[addr] = data);
 
 describe("CPU - addressing modes", () => {
     describe("($nn,X)", () => {

@@ -15,7 +15,7 @@ describe("Initialization", () => {
     describe("CPU", () => {
         it("can be instantiated", () => {
             const memory = new Uint8Array(0xFFFF + 1);
-            const cpu    = new Cpu(memory);
+            const cpu    = new Cpu((addr) => memory[addr], (addr, data) => memory[addr] = data);
             strictEqual(typeof cpu, "object");
         });
     });

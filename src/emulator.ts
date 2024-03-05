@@ -1,8 +1,8 @@
 class Emulator {
     private readonly dataSheet: DataSheet;
     private readonly assembler: Assembler;
-    private readonly memory: Uint8Array;
-    private readonly cpu: Cpu;
+    private readonly memory   : Uint8Array;
+    private readonly cpu      : Cpu;
 
     // @ts-ignore
     private codeEditor: HTMLTextAreaElement;
@@ -16,7 +16,8 @@ class Emulator {
         this.dataSheet = new DataSheet();
         this.assembler = new Assembler();
         this.memory    = new Uint8Array(0xFFFF + 1);
-        this.cpu       = new Cpu(this.memory);
+        this.cpu       = new Cpu((addr: number) => this.memory[addr],
+                                 (addr: number, data: number) => this.memory[addr] = data);
     }
 
     // noinspection JSUnusedGlobalSymbols
