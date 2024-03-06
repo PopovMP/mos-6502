@@ -34,4 +34,9 @@ export class Utils {
     public static randomBit(): number {
         return Math.floor(2 * Math.random());
     }
+
+    public static replaceLastInstance(text: string, search: string, replace: string): string {
+        const pos: number = text.lastIndexOf(search);
+        return pos >= 0 ? text.substring(0, pos) + replace + text.substring(pos + search.length) : text;
+    }
 }
