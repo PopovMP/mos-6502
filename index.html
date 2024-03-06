@@ -34,17 +34,14 @@
   </div>
 </div>
 
-<script>
-    'use strict';
-    const module = { exports: {} }
-</script>
-<script src="js/index.js"></script>
-<script>
-    let emu
-    window.addEventListener("load", () => {
-        emu = new Emulator()
-        emu.initialize()
-    })
+<script type="module">
+  import {Emulator} from "./js/emulator.js";
+
+  let emu;
+  window.addEventListener("load", () => {
+    emu = new Emulator();
+    emu.initialize();
+  });
 </script>
 </body>
 </html>
