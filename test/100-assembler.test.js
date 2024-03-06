@@ -319,5 +319,30 @@ $0734   60         RTS            ; Return from Subroutine
             );
         });
     });
+
+    it("assemble WozMon code 1", () => {
+        const sourceCode = `
+        L       = $28               ; Hex value parsing Low
+        *=$FF00
+        ROL     L               ; Rotate into LSD
+`;
+
+        const assembler     = new Assembler();
+        const codePages     = assembler.assemble(sourceCode);
+        const disAssyTokens = assembler.disassembleCodePages(codePages);
+
+        const output = [];
+
+        for (const tkn of disAssyTokens) {
+            // noinspection JSUnresolvedVariable
+            output.push(`$${tkn.address}   ${tkn.code.join(" ").padEnd(8, " ")}   ${tkn.text.padEnd(13, " ")}  ; ${tkn.description}`);
+        }
+
+        const actual = "\n" + output.join("\n") + "\n";
+
+        strictEqual(actual, `
+$FF00   26 28      ROL $28        ; Rotate Left
+`);
+    })
 });
 

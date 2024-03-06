@@ -22,5 +22,9 @@ export class Utils {
     static randomBit() {
         return Math.floor(2 * Math.random());
     }
+    static replaceLastInstance(text, search, replace) {
+        const pos = text.lastIndexOf(search);
+        return pos >= 0 ? text.substring(0, pos) + replace + text.substring(pos + search.length) : text;
+    }
 }
 //# sourceMappingURL=utils.js.map

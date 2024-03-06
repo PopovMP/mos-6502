@@ -9,16 +9,16 @@
 ;  Memory declaration
 ;-------------------------------------------------------------------------
 
-        XAML    =  $24              ; Last "opened" location Low
-        XAMH    =  $25              ; Last "opened" location High
-        STL     =  $26              ; Store address Low
-        STH     =  $27              ; Store address High
-        L       =  $28              ; Hex value parsing Low
-        H       =  $29              ; Hex value parsing High
-        YSAV    =  $2A              ; Used to see if hex value is given
-        MODE    =  $2B              ; $00=XAM, $7F=STOR, $AE=BLOCK XAM
+        XAML    = $24               ; Last "opened" location Low
+        XAMH    = $25               ; Last "opened" location High
+        STL     = $26               ; Store address Low
+        STH     = $27               ; Store address High
+        L       = $28               ; Hex value parsing Low
+        H       = $29               ; Hex value parsing High
+        YSAV    = $2A               ; Used to see if hex value is given
+        MODE    = $2B               ; $00=XAM, $7F=STOR, $AE=BLOCK XAM
 
-        IN      =  $0200            ; Input buffer
+        IN      = $0200             ; Input buffer
 
         KBD     = $D010             ; PIA.A keyboard input
         KBDCR   = $D011             ; PIA.A keyboard control register
@@ -41,7 +41,7 @@
         BS       = $DF             ; Backspace key, arrow left key
         CR       = $8D             ; Carriage Return
         ESC      = $9B             ; ESC key
-        PROMPT   = "\"             ; Prompt character
+        PROMPT   = $DC             ; Prompt character "/"
 
 ;-------------------------------------------------------------------------
 ;  Let's get started
@@ -94,7 +94,7 @@ NEXTCHAR        LDA     KBDCR           ; Wait for key press
 ; Line received, now let's parse it
 
                 LDY     #$FF            ; Reset text index
-                LDA     #0              ; Default mode is XAM
+                LDA     #$00            ; Default mode is XAM
                 TAX                     ; X=0
 
 SETSTOR         ASL                     ; Leaves $7B if setting STOR mode
@@ -106,12 +106,12 @@ BLSKIP          INY                     ; Advance text index
 NEXTITEM        LDA     IN,Y            ; Get character
                 CMP     #CR
                 BEQ     GETLINE         ; We're done if it's CR!
-                CMP     #"."
+                CMP     #$AE            ; "."?
                 BCC     BLSKIP          ; Ignore everything below "."!
                 BEQ     SETMODE         ; Set BLOCK XAM mode ("." = $AE)
-                CMP     #":"
+                CMP     #$BA            ; ":"?
                 BEQ     SETSTOR         ; Set STOR mode! $BA will become $7B
-                CMP     #"R"
+                CMP     #$D2            ; "R"?
                 BEQ     RUN             ; Run the program! Forget the rest
                 STX     L               ; Clear input value (X=0)
                 STX     H
@@ -132,7 +132,7 @@ DIG             ASL
                 ASL
                 ASL
 
-                LDX     #$04            ;  Shift count
+                LDX     #$04            ; Shift count
 HEXSHIFT        ASL                     ; Hex digit left, MSB to carry
                 ROL     L               ; Rotate into LSD
                 ROL     H               ; Rotate into MSD's
@@ -171,9 +171,9 @@ NOTSTOR         BMI     XAMNEXT        ; B7 = 0 for XAM, 1 for BLOCK XAM
 ; We're in XAM mode now
 
                 LDX     #$02            ; Copy 2 bytes
-SETADR          LDA     L-1,X           ; Copy hex data to
-                STA     STL-1,X         ;  'store index'
-                STA     XAML-1,X        ;  and to 'XAM index'
+SETADR          LDA     $27,X           ; Copy hex data to
+                STA     $25,X           ;  'store index'
+                STA     $23,X           ;  and to 'XAM index'
                 DEX                     ; Next of 2 bytes
                 BNE     SETADR          ; Loop unless X = 0
 
@@ -186,10 +186,10 @@ NXTPRNT         BNE     PRDATA          ; NE means no address to print
                 JSR     PRBYTE
                 LDA     XAML            ; Output low-order byte of address
                 JSR     PRBYTE
-                LDA     #":"            ; Print colon
+                LDA     #$BA            ; ":"  Print colon
                 JSR     ECHO
 
-PRDATA          LDA     #" "            ; Print space
+PRDATA          LDA     #$A0            ; " " Print space
                 JSR     ECHO
                 LDA     (XAML,X)        ; Get data from address (X=0)
                 JSR     PRBYTE          ; Output it in hex format
@@ -226,11 +226,11 @@ PRBYTE          PHA                     ; Save A for LSD
 ;  Subroutine to print a hexadecimal digit
 ;-------------------------------------------------------------------------
 
-PRHEX           AND     #%0000.1111     ; Mask LSD for hex print
-                ORA     #"0"            ; Add "0"
-                CMP     #"9"+1          ; Is it a decimal digit?
+PRHEX           AND     #%00001111      ; Mask LSD for hex print
+                ORA     #$B0            ; Add "0"
+                CMP     #$BA            ; Is it a decimal digit?
                 BCC     ECHO            ; Yes! output it
-                ADC     #6              ; Add offset for letter A-F
+                ADC     #$06            ; Add offset for letter A-F
 
 ; Fall through to print routine
 

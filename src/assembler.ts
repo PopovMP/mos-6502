@@ -607,7 +607,7 @@ export class Assembler {
                     tokens.push({
                         tokenType: "instruction",
                         instrName: instrName,
-                        codeLine : line.replace(varLabelName, variables[varLabelName]),
+                        codeLine : Utils.replaceLastInstance(line, varLabelName, variables[varLabelName]),
                     });
                     return tokens;
                 }

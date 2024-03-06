@@ -1,6 +1,5 @@
 import {strictEqual}  from "node:assert";
-import {describe, it} from "node:test"
-;
+import {describe, it} from "node:test";
 
 import {Cpu}       from "../js/cpu.js";
 
