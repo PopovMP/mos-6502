@@ -143,6 +143,9 @@ export class Assembler {
             }
 
             switch (mode) {
+                case "IND":
+                    token.text += ")";
+                    break;
                 case "ABSX":
                 case "ZPX":
                     token.text += ",X";
@@ -168,10 +171,10 @@ export class Assembler {
     }
 
     public disassembleCodePages(codePages: Types.CodePages): Types.DisassemblyToken[] {
-        const output: Types.DisassemblyToken[] = [];
-        let   code       : number[]      = [];
-        let   codePC     : number        = -1;
-        let   prevAddress: number        = -1;
+        const output     : Types.DisassemblyToken[] = [];
+        let   code       : number[] = [];
+        let   codePC     : number   = -1;
+        let   prevAddress: number   = -1;
 
         for (const pageAddress of Object.keys(codePages).map(key => parseInt(key, 16)).sort()) {
             if (prevAddress > -1 && pageAddress - prevAddress > 16) {

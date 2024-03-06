@@ -112,6 +112,9 @@ export class Assembler {
                 token.text += Utils.byteToHex(code[index + 2]) + Utils.byteToHex(code[index + 1]);
             }
             switch (mode) {
+                case "IND":
+                    token.text += ")";
+                    break;
                 case "ABSX":
                 case "ZPX":
                     token.text += ",X";
