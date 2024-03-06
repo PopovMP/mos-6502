@@ -1,0 +1,15 @@
+body {
+    background-color: #bbc28f;
+}
+
+.text-center {
+    text-align: center;
+}
+
+#screen-holder {
+    padding: 4px 4px 3px 6px;
+    background-color: #000000;
+    display: inline-block;
+    border: solid 15px #7b6a55;
+    border-radius: 10px;
+}

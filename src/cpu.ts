@@ -134,7 +134,7 @@ export class Cpu {
         ABSX: (addr: number, x: number           ): number => this.loadWord(addr) + x,
         ABSY: (addr: number, _: number, y: number): number => this.loadWord(addr) + y,
         IND : (addr: number                      ): number => this.loadWord(addr),
-        XZPI: (addr: number, x: number           ): number => this.loadWord(this.load(addr)  + x),
+        XZPI: (addr: number, x: number           ): number => this.loadWord((this.load(addr) + x) & 0xFF),
         ZPIY: (addr: number, _: number, y: number): number => this.loadWord(this.load(addr)) + y,
         REL : (addr: number                      ): number => addr,
     };
