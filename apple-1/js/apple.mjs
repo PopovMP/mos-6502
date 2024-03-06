@@ -65,6 +65,7 @@ function store(addr, data) {
             const char = String.fromCharCode(data & 0b0111_1111);
             if (charset.includes(char))
                 screen.print(char);
+            dsp = dsp & 0b0111_1111;
             return;
         case DSP_CR:
             dspCR = data & 0b0011_1111;
@@ -88,7 +89,7 @@ function run() {
     cpu.step();
 
     loops += 1;
-    if (loops > 100)
+    if (loops > 500)
         loops = 0;
 
     if (loops > 0)
