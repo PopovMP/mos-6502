@@ -1,6 +1,7 @@
 import {Assembler} from "../../js/assembler.js";
 import {Cpu}       from "../../js/cpu.js";
 import {Screen}    from "./screen.mjs";
+import {Utils} from "../../js/utils.js";
 
 const KBD     = 0xD010 // PIA.A keyboard input
 const KBD_CR  = 0xD011 // PIA.A keyboard control register
@@ -48,6 +49,8 @@ function load(addr) {
 }
 
 /**
+ * Store data to an address in memory or send it to IO.
+ *
  * @param {number} addr
  * @param {number} data
  */
@@ -62,9 +65,7 @@ function store(addr, data) {
         case DSP:
             if ((dspCR & 0b0000_0100) === 0) return; // DDR
             dsp = data;
-            const char = String.fromCharCode(data & 0b0111_1111);
-            if (charset.includes(char))
-                screen.print(char);
+            print();
             dsp = dsp & 0b0111_1111;
             return;
         case DSP_CR:
@@ -78,6 +79,19 @@ function store(addr, data) {
     memory[addr] = data;
 }
 
+/**
+ * Print a WazMon CharCode.
+ * @return {void}
+ */
+function print() {
+    let charCode = dsp & 0b0111_1111;
+    if (charCode >= 0x60 && charCode <= 0x7F)
+        charCode -= 0x1F;
+    const char = String.fromCharCode(charCode);
+    if (charset.includes(char))
+        screen.print(char);
+}
+
 function wazMon_ready(sourceCode) {
     const assembler = new Assembler();
     assembler.load(sourceCode, memory);
@@ -89,7 +103,7 @@ function run() {
     cpu.step();
 
     loops += 1;
-    if (loops > 500)
+    if (loops > 100)
         loops = 0;
 
     if (loops > 0)
