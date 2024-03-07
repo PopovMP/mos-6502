@@ -1,18 +1,16 @@
 import * as fs from "node:fs";
 
-import {Assembler} from "../js/assembler.js";
-import {Utils}     from "../js/utils.js";
+import {Assembler} from "../../js/assembler.js";
+import {Utils}     from "../../js/utils.js";
 
 import {fileURLToPath} from "node:url";
 import {dirname}       from "node:path";
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname  = dirname(__filename);
 
-const sourceDir  = (__dirname).endsWith("apple-1") ? __dirname : __dirname + "/apple-1";
-const sourceCode = fs.readFileSync(sourceDir + "/wazmon.asm", {encoding: "utf8"});
-
-const binFilePath = sourceDir + "/bin/rom-8k.bin";
+const sourceCode  = fs.readFileSync(__dirname + "/wazmon.asm", {encoding: "utf8"});
+const binFilePath = __dirname + "/../bin/rom-8k.bin";
 
 const assembler = new Assembler();
 const codePages = assembler.assemble(sourceCode);

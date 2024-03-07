@@ -3,6 +3,7 @@ import {DataSheet} from "../../js/data-sheet.js";
 import {Cpu}       from "../../js/cpu.js";
 import {Utils}     from "../../js/utils.js";
 import {Screen}    from "./screen.mjs";
+import {WazMon}    from "./wazmon.mjs";
 
 const KBD     = 0xD010 // PIA.A keyboard input
 const KBD_CR  = 0xD011 // PIA.A keyboard control register
@@ -26,10 +27,15 @@ const dataSheet = new DataSheet();
 const cpu       = new Cpu(load, store);
 const kbdBuffer = [];
 
+// Load WazMon
+for (let i = 0; i < WazMon.data.length; i += 1)
+    memory[WazMon.start + i] = WazMon.data[i];
+
 window.addEventListener("keydown", keydown);
 
-export function loadWazMon() {
-    getRequest("./wazmon.asm", wazMon_ready);
+export function startApple() {
+    cpu.reset();
+    setTimeout(run, 0);
 }
 
 function load(addr) {
@@ -97,12 +103,6 @@ function print() {
     const char = String.fromCharCode(charCode);
     if (charset.includes(char))
         screen.print(char);
-}
-
-function wazMon_ready(sourceCode) {
-    assembler.load(sourceCode, memory);
-    cpu.reset();
-    setTimeout(run, 0);
 }
 
 function run() {
@@ -177,17 +177,6 @@ function keydown (event) {
     if (charset.includes(character)) {
         kbdCR = kbdCR | 0b1000_0000;
         kbdBuffer.push(character.charCodeAt(0) | 0b1000_0000);
-    }
-}
-
-function getRequest(url, callback) {
-    const xmlHttp = new XMLHttpRequest();
-    xmlHttp.onreadystatechange = readyStateChange;
-    xmlHttp.open("GET", url, true);
-    xmlHttp.send();
-    function readyStateChange() {
-        if (xmlHttp.readyState === 4)
-            callback(xmlHttp.status === 200 ? xmlHttp.responseText : "");
     }
 }
 
