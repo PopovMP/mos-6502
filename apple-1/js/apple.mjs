@@ -1,7 +1,8 @@
 import {Assembler} from "../../js/assembler.js";
+import {DataSheet} from "../../js/data-sheet.js";
 import {Cpu}       from "../../js/cpu.js";
+import {Utils}     from "../../js/utils.js";
 import {Screen}    from "./screen.mjs";
-import {Utils} from "../../js/utils.js";
 
 const KBD     = 0xD010 // PIA.A keyboard input
 const KBD_CR  = 0xD011 // PIA.A keyboard control register
@@ -20,6 +21,8 @@ const charset   = " !\"#$%&'()*+,-./0123456789:;<=>?\r@ABCDEFGHIJKLMNOPQRSTUVWXY
 const canvasElm = document.getElementById("screen");
 const screen    = new Screen(canvasElm, scale);
 const memory    = new Uint8Array(0xFFFF + 1);
+const assembler = new Assembler();
+const dataSheet = new DataSheet();
 const cpu       = new Cpu(load, store);
 const kbdBuffer = [];
 
@@ -74,7 +77,11 @@ function store(addr, data) {
     }
 
     // Protect the WazMon code
-    if (addr >= 0xFF00) return;
+    if (addr >= 0xFF00) {
+        console.error(`Attempt to write in WazMon: ${Utils.wordToHex(addr)}: ${Utils.byteToHex(data)}`);
+        dump();
+        return;
+    }
 
     memory[addr] = data;
 }
@@ -183,4 +190,60 @@ function getRequest(url, callback) {
         if (xmlHttp.readyState === 4)
             callback(xmlHttp.status === 200 ? xmlHttp.responseText : "");
     }
+}
+
+function dump() {
+    const output = `${getCpuDump()}
+
+                   Instruction
+${getAssemblyDump()}
+
+$24 XAML    = ${Utils.byteToHex(memory[0x24])}   ; Last "opened" location Low
+$25 XAMH    = ${Utils.byteToHex(memory[0x25])}   ; Last "opened" location High
+$26 STL     = ${Utils.byteToHex(memory[0x26])}   ; Store address Low
+$27 STH     = ${Utils.byteToHex(memory[0x27])}   ; Store address High
+$28 L       = ${Utils.byteToHex(memory[0x28])}   ; Hex value parsing Low
+$29 H       = ${Utils.byteToHex(memory[0x29])}   ; Hex value parsing High
+$2A YSAV    = ${Utils.byteToHex(memory[0x2A])}   ; Used to see if hex value is given
+$2B MODE    = ${Utils.byteToHex(memory[0x2B])}   ; $00=XAM, $7F=STOR, $AE=BLOCK XAM
+
+`;
+
+    console.log(output);
+}
+
+function getCpuDump() {
+    const getRegText = (val) =>
+        `${Utils.byteToHex(val)}  ${val.toString().padStart(3, " ")}  ${Utils.byteToSInt(val).padStart(4, " ")}`;
+
+    const flagsText = `${+cpu.N} ${+cpu.V} 1 ${+cpu.B} ${+cpu.D} ${+cpu.I} ${+cpu.Z} ${+cpu.C}`;
+
+    return "" +
+        "R  Hex  Dec   +/-    R   Hex   N V - B D I Z C\n" +
+        "-----------------    -------   ---------------\n" +
+        `A   ${getRegText(cpu.A)}    P    ${Utils.byteToHex(cpu.P)}   ${flagsText}\n` +
+        `X   ${getRegText(cpu.X)}    S    ${Utils.byteToHex(cpu.S)}\n` +
+        `Y   ${getRegText(cpu.Y)}    PC ${Utils.wordToHex(cpu.PC)}`;
+}
+
+function getAssemblyDump() {
+    const pc     = cpu.currentPC;
+    const opc    = memory[pc];
+    const bytes  = dataSheet.opCodeBytes[opc];
+    const code   = Array.from(memory.slice(pc, pc + bytes));
+    const tokens = assembler.disassemble(code, pc);
+
+    let instructionLog = [];
+
+    if (tokens.length > 0) {
+        const tkn = tokens[0];
+        const currentInst = `$${tkn.address}   ${tkn.code.join(" ").padEnd(8, " ")}   ` +
+            `${tkn.text.padEnd(13, " ")}  ; ${tkn.description}`;
+        instructionLog.push(currentInst);
+        instructionLog = instructionLog.slice(-3);
+    }
+
+    return instructionLog
+        .map((line, index) => (index === instructionLog.length - 1 ? " --> " : "     ") + line)
+        .join("\n");
 }

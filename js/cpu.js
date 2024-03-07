@@ -305,6 +305,7 @@ export class Cpu {
         this.Z = false;
         this.C = false;
         this.PC = this.loadWord(0xFFFC);
+        this.currentPC = this.PC;
     }
     get P() {
         return (+this.N << 7) |
@@ -336,6 +337,7 @@ export class Cpu {
         this.Z = false;
         this.C = false;
         this.PC = this.loadWord(0xFFFC);
+        this.currentPC = this.PC;
     }
     step() {
         const opcode = this.load(this.PC);
@@ -349,6 +351,7 @@ export class Cpu {
             : addressingMode === "IMPL"
                 ? this.A
                 : this.load(operandAddr);
+        this.currentPC = this.PC;
         this.PC += this.dataSheet.opCodeBytes[opcode];
         this.instruction[instructionName](operandValue);
     }
