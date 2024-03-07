@@ -100,7 +100,6 @@ function print() {
 }
 
 function wazMon_ready(sourceCode) {
-    const assembler = new Assembler();
     assembler.load(sourceCode, memory);
     cpu.reset();
     setTimeout(run, 0);
@@ -195,8 +194,7 @@ function getRequest(url, callback) {
 function dump() {
     const output = `${getCpuDump()}
 
-                   Instruction
-${getAssemblyDump()}
+${getInstructionDump()}
 
 $24 XAML    = ${Utils.byteToHex(memory[0x24])}   ; Last "opened" location Low
 $25 XAMH    = ${Utils.byteToHex(memory[0x25])}   ; Last "opened" location High
@@ -206,7 +204,6 @@ $28 L       = ${Utils.byteToHex(memory[0x28])}   ; Hex value parsing Low
 $29 H       = ${Utils.byteToHex(memory[0x29])}   ; Hex value parsing High
 $2A YSAV    = ${Utils.byteToHex(memory[0x2A])}   ; Used to see if hex value is given
 $2B MODE    = ${Utils.byteToHex(memory[0x2B])}   ; $00=XAM, $7F=STOR, $AE=BLOCK XAM
-
 `;
 
     console.log(output);
@@ -226,24 +223,13 @@ function getCpuDump() {
         `Y   ${getRegText(cpu.Y)}    PC ${Utils.wordToHex(cpu.PC)}`;
 }
 
-function getAssemblyDump() {
+function getInstructionDump() {
     const pc     = cpu.currentPC;
     const opc    = memory[pc];
     const bytes  = dataSheet.opCodeBytes[opc];
     const code   = Array.from(memory.slice(pc, pc + bytes));
     const tokens = assembler.disassemble(code, pc);
+    const token  = tokens[0];
 
-    let instructionLog = [];
-
-    if (tokens.length > 0) {
-        const tkn = tokens[0];
-        const currentInst = `$${tkn.address}   ${tkn.code.join(" ").padEnd(8, " ")}   ` +
-            `${tkn.text.padEnd(13, " ")}  ; ${tkn.description}`;
-        instructionLog.push(currentInst);
-        instructionLog = instructionLog.slice(-3);
-    }
-
-    return instructionLog
-        .map((line, index) => (index === instructionLog.length - 1 ? " --> " : "     ") + line)
-        .join("\n");
+    return `$${token.address}   ${token.code.join(" ").padEnd(8, " ")}   ${token.text}  ; ${token.description}`;
 }
