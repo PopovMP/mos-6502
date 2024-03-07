@@ -66,8 +66,8 @@ export class Cpu {
             },
             BIT: (val) => {
                 const res = this.A & val;
-                this.N = !!(val >> 7);
-                this.V = !!(val >> 6);
+                this.N = !!(val & 0x80);
+                this.V = !!(val & 0x40);
                 this.Z = !res;
             },
             BMI: (addr) => {

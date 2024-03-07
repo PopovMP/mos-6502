@@ -212,8 +212,8 @@ export class Cpu {
             // Test Bits in Memory with Accumulator
             const res: number = this.A & val;
 
-            this.N = !!(val >> 7);
-            this.V = !!(val >> 6);
+            this.N = !!(val & 0x80);
+            this.V = !!(val & 0x40);
             this.Z = !res;
         },
 
