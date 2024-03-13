@@ -15,7 +15,7 @@ export class Cpu {
             ABS: (addr) => this.loadWord(addr),
             ABSX: (addr, x) => this.loadWord(addr) + x,
             ABSY: (addr, _, y) => this.loadWord(addr) + y,
-            IND: (addr) => this.loadWord(addr),
+            IND: (addr) => this.loadWord(this.loadWord(addr)),
             XZPI: (addr, x) => this.loadWord((this.load(addr) + x) & 0xFF),
             ZPIY: (addr, _, y) => this.loadWord(this.load(addr)) + y,
             REL: (addr) => addr,
@@ -338,7 +338,7 @@ export class Cpu {
         this.PC = this.loadWord(0xFFFC);
     }
     step() {
-        const opcode = this.load(this.PC);
+        const opcode = this.load(this.PC, true);
         const instructionName = this.dataSheet.opCodeName[opcode];
         if (instructionName === undefined)
             throw new Error(`Invalid instruction '${Utils.byteToHex(opcode)}' at: $${Utils.wordToHex(this.PC)}`);

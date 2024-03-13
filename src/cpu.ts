@@ -46,7 +46,7 @@ export class Cpu {
         this.C = !!((val >> 0) & 0x01);
     }
 
-    private readonly load : (addr: number) => number;
+    private readonly load : (addr: number, sync?: boolean) => number;
     private readonly store: (addr: number, data: number) => void;
 
     constructor(load : (addr: number) => number,
@@ -87,7 +87,8 @@ export class Cpu {
     }
 
     public step(): void {
-        const opcode: number = this.load(this.PC);
+        const opcode: number = this.load(this.PC, true);
+
         const instructionName: string = this.dataSheet.opCodeName[opcode];
 
         if (instructionName === undefined)
@@ -133,7 +134,7 @@ export class Cpu {
         ABS : (addr: number                      ): number => this.loadWord(addr),
         ABSX: (addr: number, x: number           ): number => this.loadWord(addr) + x,
         ABSY: (addr: number, _: number, y: number): number => this.loadWord(addr) + y,
-        IND : (addr: number                      ): number => this.loadWord(addr),
+        IND : (addr: number                      ): number => this.loadWord(this.loadWord(addr)),
         XZPI: (addr: number, x: number           ): number => this.loadWord((this.load(addr) + x) & 0xFF),
         ZPIY: (addr: number, _: number, y: number): number => this.loadWord(this.load(addr)) + y,
         REL : (addr: number                      ): number => addr,

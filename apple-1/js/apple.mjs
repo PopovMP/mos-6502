@@ -17,6 +17,9 @@ let kbd   = 0
 let dspCR = 0;
 let kbdCR = 0;
 
+let debugMode = false;
+let lastPC    = 0;
+
 // noinspection SpellCheckingInspection
 const charset   = " !\"#$%&'()*+,-./0123456789:;<=>?\r@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_";
 const canvasElm = document.getElementById("screen");
@@ -38,7 +41,13 @@ export function startApple() {
     setTimeout(run, 0);
 }
 
-function load(addr) {
+/**
+ *
+ * @param {number} addr
+ * @param {boolean} [sync] - Synchronise with Op Code
+ * @returns {number}
+ */
+function load(addr, sync=false) {
     switch (addr) {
         case KBD:
             if (kbdBuffer.length === 0)
@@ -53,6 +62,11 @@ function load(addr) {
         case DSP_CR:
             return dspCR;
     }
+
+    if (sync)
+        lastPC = addr;
+    if (debugMode && sync && lastPC >= 0x0300 && lastPC < 0xFF00)
+        console.log(getInstructionDump());
 
     return memory[addr];
 }
@@ -130,6 +144,14 @@ function keydown (event) {
     if (event.ctrlKey && event.key === "r") {
         event.preventDefault();
         cpu.reset();
+        return;
+    }
+
+    // Debug mode Ctrl+D
+    if (event.ctrlKey && event.key === "d") {
+        event.preventDefault();
+        debugMode = !debugMode;
+        console.log("Debug " + (debugMode ? "enabled" : "disabled"));
         return;
     }
 
@@ -213,7 +235,7 @@ function getCpuDump() {
 }
 
 function getInstructionDump() {
-    const pc     = cpu.currentPC;
+    const pc     = lastPC;
     const opc    = memory[pc];
     const bytes  = dataSheet.opCodeBytes[opc];
     const code   = Array.from(memory.slice(pc, pc + bytes));
