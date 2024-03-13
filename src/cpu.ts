@@ -11,8 +11,6 @@ export class Cpu {
     ];
     private readonly dataSheet: DataSheet;
 
-    public currentPC: number;
-
     public A : number; // Accumulator
     public X : number; // X index register
     public Y : number; // Y index register
@@ -70,7 +68,6 @@ export class Cpu {
         this.C = false;
 
         this.PC = this.loadWord(0xFFFC);
-        this.currentPC = this.PC;
     }
 
     public reset(): void {
@@ -87,7 +84,6 @@ export class Cpu {
         this.C = false;
 
         this.PC = this.loadWord(0xFFFC);
-        this.currentPC = this.PC;
     }
 
     public step(): void {
@@ -105,7 +101,6 @@ export class Cpu {
                                         ? this.A                  // However, it may need the A register value
                                         : this.load(operandAddr); // Operand value
 
-        this.currentPC = this.PC;
         this.PC += this.dataSheet.opCodeBytes[opcode];
 
         this.instruction[instructionName](operandValue);
