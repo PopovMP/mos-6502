@@ -386,7 +386,7 @@ export class Cpu {
         this.PC += offset < 128 ? offset : offset - 256;
     }
     setNZ(val) {
-        this.N = !!(val >> 7);
+        this.N = !!(val & 0x80);
         this.Z = !val;
     }
 }

@@ -451,7 +451,7 @@ export class Cpu {
 
         SBC: (val: number): void => {
             // Subtract Memory from Accumulator with Borrow
-            let res :number;
+            let res: number;
 
             if (this.D) {
                 let tmp: number = (this.A & 0x0F) - (val & 0x0F) - +!this.C;
@@ -558,7 +558,7 @@ export class Cpu {
     }
 
     private setNZ(val: number): void {
-        this.N = !!(val >> 7);
+        this.N = !!(val & 0x80);
         this.Z = !val;
     }
 }
