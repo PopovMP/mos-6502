@@ -163,7 +163,7 @@ export class Emulator {
     }
     getCpuDump() {
         const getRegText = (val) => `${Utils.byteToHex(val)}  ${val.toString(10).padStart(3, " ")}  ${Utils.byteToSInt(val).padStart(4, " ")}`;
-        const flagsText = `${+this.cpu.N} ${+this.cpu.V} 1 ${+this.cpu.B} ${+this.cpu.D} ${+this.cpu.I} ${+this.cpu.Z} ${+this.cpu.C}`;
+        const flagsText = `${+this.cpu.N} ${+this.cpu.V} 1 1 ${+this.cpu.D} ${+this.cpu.I} ${+this.cpu.Z} ${+this.cpu.C}`;
         return "" +
             "R  Hex  Dec   +/-    R   Hex   N V - B D I Z C\n" +
             "-----------------    -------   ---------------\n" +

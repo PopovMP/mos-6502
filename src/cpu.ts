@@ -19,7 +19,6 @@ export class Cpu {
 
     public N: boolean; // Negative flag
     public V: boolean; // Overflow flag
-    public readonly B: boolean = true; // Break flag (always true)
     public D: boolean; // Decimal flag
     public I: boolean; // Interrupt disabled flag
     public Z: boolean; // Zero flag
@@ -113,7 +112,7 @@ export class Cpu {
 
         this.push((this.PC >> 8) & 0xFF);
         this.push(this.PC & 0xFF);
-        this.push((this.P | 0x02) & ~(1 << 0x04)); // Set I, reset B
+        this.push((this.P | (1 << 3)) & ~(1 << 5)); // Set I, reset B
         this.PC = this.loadWord(0xFFFE);
     }
 
@@ -121,7 +120,7 @@ export class Cpu {
     public nmi(): void {
         this.push((this.PC >> 8) & 0xFF);
         this.push(this.PC & 0xFF);
-        this.push((this.P | 0x02) & ~(1 << 0x04)); // Set I, reset B
+        this.push((this.P | (1 << 3)) & ~(1 << 5)); // Set I, reset B
         this.PC = this.loadWord(0xFFFA);
     }
 
@@ -129,8 +128,8 @@ export class Cpu {
         IMPL: (): number => NaN, // Implied and Accumulator modes don't need an address
         IMM : (addr: number                      ): number => addr,
         ZP  : (addr: number                      ): number => this.load(addr),
-        ZPX : (addr: number, x: number           ): number => this.load(addr) + x,
-        ZPY : (addr: number, _: number, y: number): number => this.load(addr) + y,
+        ZPX : (addr: number, x: number           ): number => (this.load(addr) + x) & 0xFF,
+        ZPY : (addr: number, _: number, y: number): number => (this.load(addr) + y) & 0xFF,
         ABS : (addr: number                      ): number => this.loadWord(addr),
         ABSX: (addr: number, x: number           ): number => this.loadWord(addr) + x,
         ABSY: (addr: number, _: number, y: number): number => this.loadWord(addr) + y,
@@ -147,21 +146,15 @@ export class Cpu {
     private readonly instruction: Record<string, (opr: number) => void> = {
         ADC: (val: number): void => {
             // Add Memory to Accumulator with Carry
-            this.V = !((this.A ^ val) & 0x80);
-
-            const res: number = this.A + val + +this.C;
-            this.A = res & 0xFF;
-
-            if (res >= 0x100) {
-                this.C = true;
-                if (this.V && res >= 0x180)
-                    this.V = false;
-            } else {
-                this.C = false;
-                if (this.V && res < 0x80)
-                    this.V = false;
+            let res: number = this.A + val + +this.C;
+            if (this.D) {
+                if ((this.A & 0x0F) + (val & 0x0F) + +this.C > 0x09) res += 0x06;
+                if (res > 0x99) res += 0x60;
             }
 
+            this.C = res > 0xFF;
+            this.V = !((this.A ^ val) & 0x80) && !!((this.A ^ res) & 0x80);
+            this.A = res & 0xFF;
             this.setNZ(this.A);
         },
 
@@ -236,6 +229,8 @@ export class Cpu {
             this.PC += 1;
             this.push((this.PC >> 8) & 0xFF);
             this.push(this.PC & 0xFF);
+            this.push(this.P | (1 << 5)); // Set B
+            this.I = true;
             this.PC = this.loadWord(0xFFFE);
         },
 
@@ -416,7 +411,7 @@ export class Cpu {
         ROL: (addr: number): void => {
             // Rotate Left
             const input: number = isNaN(addr) ? this.A : this.load(addr);
-            const out  : number = (input << 1) + +this.C;
+            const out  : number = ((input << 1) + +this.C) & 0xFF;
 
             if (isNaN(addr))
                 this.A = out;
@@ -447,7 +442,6 @@ export class Cpu {
             // Return from Interrupt
             this.P  = this.pull();
             this.PC = this.pull() + (this.pull() << 8);
-            this.I  = false;
         },
 
         RTS: (): void => {
@@ -457,20 +451,22 @@ export class Cpu {
 
         SBC: (val: number): void => {
             // Subtract Memory from Accumulator with Borrow
-            this.V = !!((this.A ^ val) & 0x80);
-            const res: number = 0xff + this.A - val + (this.C ? 1 : 0);
+            let res :number;
 
-            if (res < 0x100) {
-                this.C = false;
-                if (this.V && res < 0x80)
-                    this.V = false;
+            if (this.D) {
+                let tmp: number = (this.A & 0x0F) - (val & 0x0F) - +!this.C;
+                if (tmp < 0) tmp -= 0x06;
+                res = (this.A & 0xF0) - (val & 0xF0) + tmp;
+                this.C = res >= 0;
+                if (res < 0) res -= 0x60;
             } else {
-                this.C = true;
-                if (this.V && res >= 0x180)
-                    this.V = false;
+                res = 0xFF + this.A - val + +this.C;
+                this.C = res >= 0x100;
             }
 
-            this.A = res & 0xff;
+            this.V = !!((this.A ^ val) & (this.A ^ res) & 0x80);
+            this.A = res & 0xFF;
+            this.setNZ(this.A);
         },
 
         SEC: (): void => {

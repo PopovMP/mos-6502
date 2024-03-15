@@ -5,13 +5,12 @@ export class Cpu {
         this.addressInstructions = [
             "ASL", "DEC", "INC", "LSR", "JMP", "JSR", "ROL", "ROR", "STA", "STX", "STY",
         ];
-        this.B = true;
         this.operandAddress = {
             IMPL: () => NaN,
             IMM: (addr) => addr,
             ZP: (addr) => this.load(addr),
-            ZPX: (addr, x) => this.load(addr) + x,
-            ZPY: (addr, _, y) => this.load(addr) + y,
+            ZPX: (addr, x) => (this.load(addr) + x) & 0xFF,
+            ZPY: (addr, _, y) => (this.load(addr) + y) & 0xFF,
             ABS: (addr) => this.loadWord(addr),
             ABSX: (addr, x) => this.loadWord(addr) + x,
             ABSY: (addr, _, y) => this.loadWord(addr) + y,
@@ -22,19 +21,16 @@ export class Cpu {
         };
         this.instruction = {
             ADC: (val) => {
-                this.V = !((this.A ^ val) & 0x80);
-                const res = this.A + val + +this.C;
+                let res = this.A + val + +this.C;
+                if (this.D) {
+                    if ((this.A & 0x0F) + (val & 0x0F) + +this.C > 0x09)
+                        res += 0x06;
+                    if (res > 0x99)
+                        res += 0x60;
+                }
+                this.C = res > 0xFF;
+                this.V = !((this.A ^ val) & 0x80) && !!((this.A ^ res) & 0x80);
                 this.A = res & 0xFF;
-                if (res >= 0x100) {
-                    this.C = true;
-                    if (this.V && res >= 0x180)
-                        this.V = false;
-                }
-                else {
-                    this.C = false;
-                    if (this.V && res < 0x80)
-                        this.V = false;
-                }
                 this.setNZ(this.A);
             },
             AND: (val) => {
@@ -86,6 +82,8 @@ export class Cpu {
                 this.PC += 1;
                 this.push((this.PC >> 8) & 0xFF);
                 this.push(this.PC & 0xFF);
+                this.push(this.P | (1 << 5));
+                this.I = true;
                 this.PC = this.loadWord(0xFFFE);
             },
             BVC: (addr) => {
@@ -206,7 +204,7 @@ export class Cpu {
             },
             ROL: (addr) => {
                 const input = isNaN(addr) ? this.A : this.load(addr);
-                const out = (input << 1) + +this.C;
+                const out = ((input << 1) + +this.C) & 0xFF;
                 if (isNaN(addr))
                     this.A = out;
                 else
@@ -229,25 +227,28 @@ export class Cpu {
             RTI: () => {
                 this.P = this.pull();
                 this.PC = this.pull() + (this.pull() << 8);
-                this.I = false;
             },
             RTS: () => {
                 this.PC = this.pull() + (this.pull() << 8) + 1;
             },
             SBC: (val) => {
-                this.V = !!((this.A ^ val) & 0x80);
-                const res = 0xff + this.A - val + (this.C ? 1 : 0);
-                if (res < 0x100) {
-                    this.C = false;
-                    if (this.V && res < 0x80)
-                        this.V = false;
+                let res;
+                if (this.D) {
+                    let tmp = (this.A & 0x0F) - (val & 0x0F) - +!this.C;
+                    if (tmp < 0)
+                        tmp -= 0x06;
+                    res = (this.A & 0xF0) - (val & 0xF0) + tmp;
+                    this.C = res >= 0;
+                    if (res < 0)
+                        res -= 0x60;
                 }
                 else {
-                    this.C = true;
-                    if (this.V && res >= 0x180)
-                        this.V = false;
+                    res = 0xFF + this.A - val + +this.C;
+                    this.C = res >= 0x100;
                 }
-                this.A = res & 0xff;
+                this.V = !!((this.A ^ val) & (this.A ^ res) & 0x80);
+                this.A = res & 0xFF;
+                this.setNZ(this.A);
             },
             SEC: () => {
                 this.C = true;
@@ -357,13 +358,13 @@ export class Cpu {
             return;
         this.push((this.PC >> 8) & 0xFF);
         this.push(this.PC & 0xFF);
-        this.push((this.P | 0x02) & ~(1 << 0x04));
+        this.push((this.P | (1 << 3)) & ~(1 << 5));
         this.PC = this.loadWord(0xFFFE);
     }
     nmi() {
         this.push((this.PC >> 8) & 0xFF);
         this.push(this.PC & 0xFF);
-        this.push((this.P | 0x02) & ~(1 << 0x04));
+        this.push((this.P | (1 << 3)) & ~(1 << 5));
         this.PC = this.loadWord(0xFFFA);
     }
     loadWord(addr) {
