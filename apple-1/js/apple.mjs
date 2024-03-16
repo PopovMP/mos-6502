@@ -13,9 +13,8 @@ const DSP_CR = 0xD013 // PIA.B display control register
 
 // 6521 registers
 let dsp   = 0;
-let kbd   = 0
+let kbd   = 0x80; // Bit 7 is 1
 let dspCR = 0;
-let kbdCR = 0;
 
 let scale = 3;
 let loops = 0;
@@ -37,6 +36,10 @@ const kbdBuffer = [];
 for (let i = 0; i < WazMon.data.length; i += 1)
     memory[WazMon.start + i] = WazMon.data[i];
 
+import {IntegerBasic} from "../roms/integer-basic.mjs";
+for (let i = 0; i < IntegerBasic.data.length; i += 1)
+    memory[IntegerBasic.start + i] = IntegerBasic.data[i];
+
 window.addEventListener("keydown", keydown);
 
 export function startApple() {
@@ -53,11 +56,9 @@ export function startApple() {
 function load(addr, sync=false) {
     switch (addr) {
         case KBD:
-            return kbdBuffer.length > 0 ? kbdBuffer.shift() : 0;
+            return (kbdBuffer.length > 0 ? kbdBuffer.shift() : 0x80);
         case KBD_CR:
-            const kbdReg = kbdCR;
-            kbdCR = kbdCR & 0b0111_1111;
-            return kbdReg;
+            return kbdBuffer.length > 0 ? 0x80 : 0x00;
         case DSP:
             return dsp;
         case DSP_CR:
@@ -84,7 +85,6 @@ function store(addr, data) {
             kbd = data;
             return;
         case KBD_CR:
-            kbdCR = data & 0b0011_1111;
             return;
         case DSP:
             if ((dspCR & 0b0000_0100) === 0) return; // DDR
@@ -144,9 +144,8 @@ function keydown (event) {
     if (event.ctrlKey && event.key === "r") {
         event.preventDefault();
         dspCR = 0x00; // Reset 6521
-        kbdCR = 0x00;
         dsp   = 0x00;
-        kbd   = 0x00;
+        kbd   = 0x80; // Bit 7 is 1
         cpu.reset();
         return;
     }
@@ -187,21 +186,18 @@ function keydown (event) {
 
     if (event.key === "Backspace") {
         event.preventDefault();
-        kbdCR = kbdCR | 0x80;
         kbdBuffer.push(0xDF);
         return;
     }
 
     if (event.key === "Escape") {
         event.preventDefault();
-        kbdCR = kbdCR | 0x80;
         kbdBuffer.push(0x9B);
         return;
     }
 
     const character = event.key === "Enter" ? "\r" : event.key.toUpperCase();
     if (charset.includes(character)) {
-        kbdCR = kbdCR | 0x80;
         kbdBuffer.push(character.charCodeAt(0) | 0x80);
     }
 }
