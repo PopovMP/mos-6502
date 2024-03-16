@@ -1,0 +1,12 @@
+/*
+    import {Rom} from "../roms/template.mjs";
+    for (let i = 0; i < Rom.data.length; i += 1)
+        memory[Rom.start + i] = Rom.data[i];
+*/
+
+export class Rom {
+    static start = 0x0000;
+
+    static data = [
+    ];
+}
