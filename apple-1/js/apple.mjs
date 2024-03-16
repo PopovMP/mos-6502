@@ -5,17 +5,20 @@ import {Utils}     from "../../js/utils.js";
 import {Screen}    from "./screen.mjs";
 import {WazMon}    from "./wazmon.mjs";
 
-const KBD     = 0xD010 // PIA.A keyboard input
-const KBD_CR  = 0xD011 // PIA.A keyboard control register
-const DSP     = 0xD012 // PIA.B display output register
-const DSP_CR  = 0xD013 // PIA.B display control register
+// 6521 registers addresses
+const KBD    = 0xD010 // PIA.A keyboard input
+const KBD_CR = 0xD011 // PIA.A keyboard control register
+const DSP    = 0xD012 // PIA.B display output register
+const DSP_CR = 0xD013 // PIA.B display control register
 
-let scale = 3;
-let loops = 0;
+// 6521 registers
 let dsp   = 0;
 let kbd   = 0
 let dspCR = 0;
 let kbdCR = 0;
+
+let scale = 3;
+let loops = 0;
 
 let debugMode = false;
 let lastPC    = 0;
@@ -50,9 +53,7 @@ export function startApple() {
 function load(addr, sync=false) {
     switch (addr) {
         case KBD:
-            if (kbdBuffer.length === 0)
-                throw new Error("Keyboard buffer underflow");
-            return kbdBuffer.shift();
+            return kbdBuffer.length > 0 ? kbdBuffer.shift() : 0;
         case KBD_CR:
             const kbdReg = kbdCR;
             kbdCR = kbdCR & 0b0111_1111;
@@ -111,9 +112,8 @@ function store(addr, data) {
  * @return {void}
  */
 function print() {
-    let charCode = dsp & 0b0111_1111;
-    if (charCode >= 0x60 && charCode <= 0x7F)
-        charCode -= 0x1F;
+    let charCode = dsp & 0x7F;              // Reset 8th bit
+    if (charCode >= 0x60) charCode -= 0x20; // Make uppercase
     const char = String.fromCharCode(charCode);
     if (charset.includes(char))
         screen.print(char);
@@ -143,6 +143,10 @@ function keydown (event) {
     // Reset CPU Ctrl+R
     if (event.ctrlKey && event.key === "r") {
         event.preventDefault();
+        dspCR = 0x00; // Reset 6521
+        kbdCR = 0x00;
+        dsp   = 0x00;
+        kbd   = 0x00;
         cpu.reset();
         return;
     }
@@ -183,22 +187,22 @@ function keydown (event) {
 
     if (event.key === "Backspace") {
         event.preventDefault();
-        kbdCR = kbdCR | 0b1000_0000;
+        kbdCR = kbdCR | 0x80;
         kbdBuffer.push(0xDF);
         return;
     }
 
     if (event.key === "Escape") {
         event.preventDefault();
-        kbdCR = kbdCR | 0b1000_0000;
+        kbdCR = kbdCR | 0x80;
         kbdBuffer.push(0x9B);
         return;
     }
 
     const character = event.key === "Enter" ? "\r" : event.key.toUpperCase();
     if (charset.includes(character)) {
-        kbdCR = kbdCR | 0b1000_0000;
-        kbdBuffer.push(character.charCodeAt(0) | 0b1000_0000);
+        kbdCR = kbdCR | 0x80;
+        kbdBuffer.push(character.charCodeAt(0) | 0x80);
     }
 }
 
@@ -224,7 +228,7 @@ function getCpuDump() {
     const getRegText = (val) =>
         `${Utils.byteToHex(val)}  ${val.toString().padStart(3, " ")}  ${Utils.byteToSInt(val).padStart(4, " ")}`;
 
-    const flagsText = `${+cpu.N} ${+cpu.V} 1 ${+cpu.B} ${+cpu.D} ${+cpu.I} ${+cpu.Z} ${+cpu.C}`;
+    const flagsText = `${+cpu.N} ${+cpu.V} 1 1 ${+cpu.D} ${+cpu.I} ${+cpu.Z} ${+cpu.C}`;
 
     return "" +
         "R  Hex  Dec   +/-    R   Hex   N V - B D I Z C\n" +
