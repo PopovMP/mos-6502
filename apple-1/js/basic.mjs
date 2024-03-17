@@ -1,12 +1,12 @@
 /*
     // https://github.com/w4jbm/Apple-1-Integer-BASIC
 
-    import {IntegerBasic} from "../roms/integer-basic.mjs";
-    for (let i = 0; i < IntegerBasic.data.length; i += 1)
-        memory[IntegerBasic.start + i] = IntegerBasic.data[i];
+    import {Basic} from "../roms/basic.mjs";
+    for (let i = 0; i < Basic.data.length; i += 1)
+        memory[Basic.start + i] = Basic.data[i];
 */
 
-export class IntegerBasic {
+export class Basic {
     static start = 0xE000;
 
     static data = [

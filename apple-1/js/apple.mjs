@@ -4,6 +4,7 @@ import {Cpu}       from "../../js/cpu.js";
 import {Utils}     from "../../js/utils.js";
 import {Screen}    from "./screen.mjs";
 import {WazMon}    from "./wazmon.mjs";
+import {Basic}     from "./basic.mjs";
 
 // 6521 registers addresses
 const KBD    = 0xD010 // PIA.A keyboard input
@@ -36,9 +37,9 @@ const kbdBuffer = [];
 for (let i = 0; i < WazMon.data.length; i += 1)
     memory[WazMon.start + i] = WazMon.data[i];
 
-import {IntegerBasic} from "../roms/integer-basic.mjs";
-for (let i = 0; i < IntegerBasic.data.length; i += 1)
-    memory[IntegerBasic.start + i] = IntegerBasic.data[i];
+// Basic
+for (let i = 0; i < Basic.data.length; i += 1)
+    memory[Basic.start + i] = Basic.data[i];
 
 window.addEventListener("keydown", keydown);
 
