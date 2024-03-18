@@ -57,7 +57,7 @@ export function startApple() {
 function load(addr, sync=false) {
     switch (addr) {
         case KBD:
-            return (kbdBuffer.length > 0 ? kbdBuffer.shift() : 0x80);
+            return (kbdBuffer.length > 0 ? kbdBuffer.shift() : 0x00) | 0x80;
         case KBD_CR:
             return kbdBuffer.length > 0 ? 0x80 : 0x00;
         case DSP:
@@ -68,7 +68,7 @@ function load(addr, sync=false) {
 
     if (sync)
         lastPC = addr;
-    if (debugMode && sync && lastPC >= 0x0300 && lastPC < 0xFF00)
+    if (debugMode && sync && lastPC >= 0x0800 && lastPC < 0xE000)
         console.log(getInstructionDump());
 
     return memory[addr];
@@ -98,9 +98,9 @@ function store(addr, data) {
             return;
     }
 
-    // Protect the WazMon code
-    if (addr >= 0xFF00) {
-        console.error(`Attempt to write in WazMon: ${Utils.wordToHex(addr)}: ${Utils.byteToHex(data)}`);
+    // Protect the Basic and the WazMon code
+    if (addr >= 0xE000) {
+        console.error(`Attempt to write in ROM: ${Utils.wordToHex(addr)}: ${Utils.byteToHex(data)}`);
         dump();
         return;
     }
@@ -198,9 +198,8 @@ function keydown (event) {
     }
 
     const character = event.key === "Enter" ? "\r" : event.key.toUpperCase();
-    if (charset.includes(character)) {
-        kbdBuffer.push(character.charCodeAt(0) | 0x80);
-    }
+    if (charset.includes(character))
+        kbdBuffer.push(character.charCodeAt(0));
 }
 
 function dump() {
