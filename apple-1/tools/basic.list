@@ -469,17 +469,17 @@ E27D  F0 C5                     BEQ LE244
 
 E27F                            .BYTE $FF
 
-E280  C9 84     LE280:          CMP #$84    ; 132 .
-E282  D0 02                     BNE LE286
-E284  46 F8                     LSR AUTO_FLAG
-E286  C9 DF     LE286:          CMP #$DF    ; 223 _
-E288  F0 11                     BEQ LE29B
-E28A  C9 9B                     CMP #$9B    ; 155 .
-E28C  F0 06                     BEQ LE294
-E28E  99 00 02                  STA BUFFER,Y
-E291  C8                        INY
-E292  10 0A                     BPL READ_LINE
-E294  A0 8B     LE294:          LDY #$8B    ; 139 .
+E280  C9 84     LE280:          CMP #$84        ; "Ctrl+D" with B7 set.
+E282  D0 02                     BNE LE286       ; Skip forward if not "Ctrl+D"
+E284  46 F8                     LSR AUTO_FLAG   ; Terminate AUTO mode otherwise
+E286  C9 DF     LE286:          CMP #$DF        ; "_" with B7 set
+E288  F0 11                     BEQ LE29B       ; "Delete" last character
+E28A  C9 9B                     CMP #$9B        ; "ESC" with B7 set
+E28C  F0 06                     BEQ LE294       ; If "ESC" skip forward
+E28E  99 00 02                  STA BUFFER,Y    ; Store the char to buffer at Y
+E291  C8                        INY             ; Increment Y
+E292  10 0A                     BPL READ_LINE   ; If Y < 128 continue to READ_LINE
+E294  A0 8B     LE294:          LDY #$8B        ; "\" with B7 set (Terminate long line)
 E296  20 C4 E3                  JSR OUTPUT_MESSAGE
 
 E299  A0 01     SE299:          LDY #$01
@@ -491,9 +491,9 @@ E29E  20 03 E0  READ_LINE:      JSR RDKEY
 E2A1  EA                        NOP
 E2A2  EA                        NOP
 E2A3  20 C9 E3                  JSR COUT
-E2A6  C9 8D                     CMP #$8D    ; 141 .
+E2A6  C9 8D                     CMP #$8D    ; "\r" with B7 set
 E2A8  D0 D6                     BNE LE280
-E2AA  A9 DF                     LDA #$DF    ; 223 _
+E2AA  A9 DF                     LDA #$DF    ; "_" with B7 set
 E2AC  99 00 02                  STA BUFFER,Y
 E2AF  60                        RTS
 
@@ -1345,7 +1345,7 @@ E858  99 18 01                  STA GSTK_PLINEH,Y
 E85B  20 15 E7  GOTO_STMT:      JSR GET16BIT
 E85E  20 6D E5                  JSR FIND_LINE
 E861  90 04                     BCC LE867
-E863  A0 37                     LDY #$37    ; 55 7
+E863  A0 37                     LDY #$37    ; Error" BAD BRANCH
 E865  D0 3B                     BNE GO_ERRMESS_4
 E867  A5 E4     LE867:          LDA P2
 E869  A4 E5                     LDY P2+1
@@ -1356,10 +1356,10 @@ E86D  84 DD                     STY PLINE+1
 E86F  2C 11 D0                  BIT KBDCR
 E872  30 4F                     BMI LE8C3
 E874  18                        CLC
-E875  69 03                     ADC #$03    ; 3 .
+E875  69 03                     ADC #$03
 E877  90 01                     BCC LE87A
 E879  C8                        INY
-E87A  A2 FF     LE87A:          LDX #$FF    ; 255 .
+E87A  A2 FF     LE87A:          LDX #$FF
 E87C  86 D9                     STX RUN_FLAG
 E87E  9A                        TXS
 E87F  85 E0                     STA PVERB
@@ -1368,7 +1368,7 @@ E883  20 79 E6  LE883:          JSR EXECUTE_STMT
 E886  24 D9                     BIT RUN_FLAG
 E888  10 49                     BPL END_STMT
 E88A  18                        CLC
-E88B  A0 00                     LDY #$00    ; 0 .
+E88B  A0 00                     LDY #$00
 E88D  A5 DC                     LDA PLINE
 E88F  71 DC                     ADC (PLINE),Y
 E891  A4 DD                     LDY PLINE+1
@@ -1378,7 +1378,7 @@ E896  C5 4C     LE896:          CMP HIMEM
 E898  D0 D1                     BNE RUN_LOOP
 E89A  C4 4D                     CPY HIMEM+1
 E89C  D0 CD                     BNE RUN_LOOP
-E89E  A0 34                     LDY #$34    ; 52 4
+E89E  A0 34                     LDY #$34    ; "END"
 E8A0  46 D9                     LSR RUN_FLAG
 E8A2  4C E0 E3  GO_ERRMESS_4:   JMP PRINT_ERR_MSG
 
@@ -1584,12 +1584,12 @@ EBA6  A0 8D                     LDY #$8D    ; 141 .
 EBA8  D0 02                     BNE LEBAC
 
                 ; token $54 - "INPUT" statement, numeric, no prompt
-EBAA  A0 99     INPUT_NUM_STMT: LDY #$99
+EBAA  A0 99     INPUT_NUM_STMT: LDY #$99    ; "?" with B7 set
 EBAC  20 C4 E3  LEBAC:          JSR OUTPUT_MESSAGE
 EBAF  86 CE                     STX ACC
 EBB1  BA                        TSX
 EBB2  86 CF                     STX ACC+1
-EBB4  A0 FE                     LDY #$FE    ; 254 ~
+EBB4  A0 FE                     LDY #$FE    ; Set RUN mode
 EBB6  84 D9                     STY RUN_FLAG
 EBB8  C8                        INY
 EBB9  84 C8                     STY TEXT_INDEX
@@ -1777,11 +1777,12 @@ EE51  60                        RTS
 
 EE52                            .BYTE $FF,$FF
 
+                ; Switch off AUTO mode (not used ?)
 EE54  46 F8     MAN_CMD:        LSR AUTO_FLAG
 EE56  60                        RTS
 
 EE57  20 34 EE  VTAB_STMT:      JSR GETBYTE
-EE5A  C9 18                     CMP #$18
+EE5A  C9 18                     CMP #$18    ; Error: FULL
 EE5C  B0 0A                     BCS RANGE_ERR
 EE5E  85 25                     STA CV
 EE60  60                        RTS
