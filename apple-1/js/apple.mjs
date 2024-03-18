@@ -152,7 +152,7 @@ function keydown (event) {
     }
 
     // Debug mode Ctrl+D
-    if (event.ctrlKey && event.key === "d") {
+    if (event.ctrlKey && event.key === "D") {
         event.preventDefault();
         debugMode = !debugMode;
         console.log("Debug " + (debugMode ? "enabled" : "disabled"));
@@ -197,6 +197,12 @@ function keydown (event) {
         return;
     }
 
+    // Ctrl+D - Terminate AUTO mode in Basic
+    if (event.ctrlKey && event.key === "d") {
+        event.preventDefault();
+        kbdBuffer.push(0x04);
+        return;
+    }
     const character = event.key === "Enter" ? "\r" : event.key.toUpperCase();
     if (charset.includes(character))
         kbdBuffer.push(character.charCodeAt(0));
