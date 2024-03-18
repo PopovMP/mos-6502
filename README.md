@@ -80,4 +80,7 @@ Y   00    0     0    PC 0825   Cycles: 393
 FFF0 | 00 00 00 00 00 00 00 00 00 00 00 00 00 08 00 00 | ................
 ```
 
-Author: Miroslav Popov: https://forexsb.com
+## Resources
+
+6502 Opcodes: https://www.pagetable.com/c64ref/6502/
+Rockwell 6502 Programmers Reference: https://csh.rit.edu/~moffitt/docs/6502.html
