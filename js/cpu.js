@@ -6,7 +6,7 @@ export class Cpu {
             "ASL", "DEC", "INC", "LSR", "JMP", "JSR", "ROL", "ROR", "STA", "STX", "STY",
         ];
         this.operandAddress = {
-            IMPL: () => NaN,
+            IMPL: () => -0x01,
             IMM: (addr) => addr,
             ZP: (addr) => this.load(addr),
             ZPX: (addr, x) => (this.load(addr) + x) & 0xFF,
@@ -38,11 +38,11 @@ export class Cpu {
                 this.setNZ(this.A);
             },
             ASL: (addr) => {
-                const input = isNaN(addr) ? this.A : this.load(addr);
+                const input = addr === -1 ? this.A : this.load(addr);
                 const temp = input << 1;
                 this.C = (temp >> 8) === 1;
                 const val = temp & 0xFF;
-                if (isNaN(addr))
+                if (addr === -1)
                     this.A = val;
                 else
                     this.store(addr, val);
@@ -173,9 +173,9 @@ export class Cpu {
                 this.setNZ(this.Y);
             },
             LSR: (addr) => {
-                const input = isNaN(addr) ? this.A : this.load(addr);
+                const input = addr === -1 ? this.A : this.load(addr);
                 const out = input >> 1;
-                if (isNaN(addr))
+                if (addr === -1)
                     this.A = out;
                 else
                     this.store(addr, out);
@@ -203,9 +203,9 @@ export class Cpu {
                 this.P = this.pull();
             },
             ROL: (addr) => {
-                const input = isNaN(addr) ? this.A : this.load(addr);
+                const input = addr === -1 ? this.A : this.load(addr);
                 const out = ((input << 1) + +this.C) & 0xFF;
-                if (isNaN(addr))
+                if (addr === -1)
                     this.A = out;
                 else
                     this.store(addr, out);
@@ -214,9 +214,9 @@ export class Cpu {
                 this.C = !!((input >> 7) & 1);
             },
             ROR: (addr) => {
-                const input = isNaN(addr) ? this.A : this.load(addr);
+                const input = addr === -1 ? this.A : this.load(addr);
                 const out = ((input >> 1) + (+this.C << 7)) & 0xFF;
-                if (isNaN(addr))
+                if (addr === -1)
                     this.A = out;
                 else
                     this.store(addr, out);

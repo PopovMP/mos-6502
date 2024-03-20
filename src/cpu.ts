@@ -1,6 +1,6 @@
 // noinspection DuplicatedCode
 
-import {Utils} from "./utils.js";
+import {Utils    } from "./utils.js";
 import {DataSheet} from "./data-sheet.js";
 
 export class Cpu {
@@ -125,7 +125,7 @@ export class Cpu {
     }
 
     private readonly operandAddress: Record<string, (addr: number, x: number, y: number) => number> = {
-        IMPL: (): number => NaN, // Implied and Accumulator modes don't need an address
+        IMPL: (): number => -0x01, // Implied and Accumulator modes don't need an address
         IMM : (addr: number                      ): number => addr,
         ZP  : (addr: number                      ): number => this.load(addr),
         ZPX : (addr: number, x: number           ): number => (this.load(addr) + x) & 0xFF,
@@ -166,12 +166,12 @@ export class Cpu {
 
         ASL: (addr: number): void => {
             // Shift Left One Bit (Memory or Accumulator)
-            const input: number = isNaN(addr) ? this.A : this.load(addr);
+            const input: number = addr === -1 ? this.A : this.load(addr);
             const temp : number = input << 1;
             this.C = (temp >> 8) === 1;
             const val: number = temp & 0xFF;
 
-            if (isNaN(addr))
+            if (addr === -1)
                 this.A = val;
             else
                 this.store(addr, val);
@@ -364,10 +364,10 @@ export class Cpu {
 
         LSR: (addr: number): void => {
             // Logical Shift Right
-            const input: number = isNaN(addr) ? this.A : this.load(addr);
+            const input: number = addr === -1 ? this.A : this.load(addr);
             const out  : number = input >> 1;
 
-            if (isNaN(addr))
+            if (addr === -1)
                 this.A = out;
             else
                 this.store(addr, out);
@@ -410,10 +410,10 @@ export class Cpu {
 
         ROL: (addr: number): void => {
             // Rotate Left
-            const input: number = isNaN(addr) ? this.A : this.load(addr);
+            const input: number = addr === -1 ? this.A : this.load(addr);
             const out  : number = ((input << 1) + +this.C) & 0xFF;
 
-            if (isNaN(addr))
+            if (addr === -1)
                 this.A = out;
             else
                 this.store(addr, out);
@@ -425,10 +425,10 @@ export class Cpu {
 
         ROR: (addr: number): void => {
             // Rotate Right
-            const input: number = isNaN(addr) ? this.A : this.load(addr);
+            const input: number = addr === -1 ? this.A : this.load(addr);
             const out  : number = ((input >> 1) + (+this.C << 7)) & 0xFF;
 
-            if (isNaN(addr))
+            if (addr === -1)
                 this.A = out;
             else
                 this.store(addr, out);
