@@ -8,9 +8,9 @@
                 Z1D              = $1D
                 CH               = $24 ; Cursor horizontal position
                 CV               = $25 ; Cursor vertical position
-                LOMEM            = $4A
-                HIMEM            = $4C
-                RND              = $4E ; ..$4f: random number
+                LOMEM            = $4A ; Lower limit of memory used by BASIC (2 bytes)
+                HIMEM            = $4C ; Upper limit of memory used by BASIC (2 bytes)
+                RND              = $4E ; Random number (2 bytes)
 
                 ; The noun stack and syntax stack appear to overlap, which is OK since
                 ; they apparently are not used simultaneously.
@@ -315,9 +315,9 @@ E173  20 0A E7                  JSR PUSH_A_NOUN_STK
 E176  A0 02                     LDY #$02
 E178  94 78                     STY NOUN_STK_H_STR,X
 E17A  20 0A E7                  JSR PUSH_A_NOUN_STK
-E17D  A9 BF                     LDA #$BF    ; 191 ?
+E17D  A9 BF                     LDA #$BF    ; "?" with B7 set
 E17F  20 C9 E3                  JSR COUT
-E182  A0 00                     LDY #$00
+E182  A0 00                     LDY #$00    ; Reset text buffer
 E184  20 9E E2                  JSR READ_LINE
 E187  94 78                     STY NOUN_STK_H_STR,X
 
@@ -491,9 +491,9 @@ E29E  20 03 E0  READ_LINE:      JSR RDKEY
 E2A1  EA                        NOP
 E2A2  EA                        NOP
 E2A3  20 C9 E3                  JSR COUT
-E2A6  C9 8D                     CMP #$8D    ; "\r" with B7 set
+E2A6  C9 8D                     CMP #$8D        ; "\r" with B7 set
 E2A8  D0 D6                     BNE LE280
-E2AA  A9 DF                     LDA #$DF    ; "_" with B7 set
+E2AA  A9 DF                     LDA #$DF        ; "_" with B7 set
 E2AC  99 00 02                  STA BUFFER,Y
 E2AF  60                        RTS
 
@@ -502,8 +502,8 @@ E2B0  20 D3 EF  COLD:           JSR MEM_INIT_4K
 
                 ; BASIC Warm start entry point
 E2B3  20 CD E3  WARM:           JSR CROUT
-E2B6  46 D9     LE2B6:          LSR RUN_FLAG
-E2B8  A9 BE                     LDA #$BE ; ">" Prompt character B7 set
+E2B6  46 D9     LE2B6:          LSR RUN_FLAG    ; Switch off RUN mode
+E2B8  A9 BE                     LDA #$BE        ; ">" Prompt character B7 set
 E2BA  20 C9 E3                  JSR COUT
 E2BD  A0 00                     LDY #$00
 E2BF  84 FA                     STY LEADZR
@@ -512,7 +512,7 @@ E2C3  10 0C                     BPL LE2D1
 E2C5  A6 F6                     LDX AUTO_LN
 E2C7  A5 F7                     LDA AUTO_LN+1
 E2C9  20 1B E5                  JSR PRDEC
-E2CC  A9 A0                     LDA #$A0 ; " " Space B7 set
+E2CC  A9 A0                     LDA #$A0        ; " " Space B7 set
 E2CE  20 C9 E3                  JSR COUT
 E2D1  A2 FF     LE2D1:          LDX #$FF
 E2D3  9A                        TXS
@@ -520,21 +520,21 @@ E2D4  20 9E E2                  JSR READ_LINE
 E2D7  84 F1                     STY TOKEN_INDEX
 E2D9  8A                        TXA
 E2DA  85 C8                     STA TEXT_INDEX
-E2DC  A2 20                     LDX #$20    ; 32
+E2DC  A2 20                     LDX #$20
 E2DE  20 91 E4                  JSR SE491
 E2E1  A5 C8                     LDA TEXT_INDEX
-E2E3  69 00                     ADC #$00    ; 0 .
+E2E3  69 00                     ADC #$00
 E2E5  85 E0                     STA PVERB
-E2E7  A9 00                     LDA #$00    ; 0 .
+E2E7  A9 00                     LDA #$00
 E2E9  AA                        TAX
-E2EA  69 02                     ADC #$02    ; 2 .
+E2EA  69 02                     ADC #$02
 E2EC  85 E1                     STA PVERB+1
 E2EE  A1 E0                     LDA (PVERB,X)
-E2F0  29 F0                     AND #$F0    ; 240 P
-E2F2  C9 B0                     CMP #$B0    ; 176 0
+E2F0  29 F0                     AND #$F0
+E2F2  C9 B0                     CMP #$B0
 E2F4  F0 03                     BEQ LE2F9
 E2F6  4C 83 E8                  JMP LE883
-E2F9  A0 02     LE2F9:          LDY #$02    ; 2 .
+E2F9  A0 02     LE2F9:          LDY #$02
 E2FB  B1 E0     LE2FB:          LDA (PVERB),Y
 E2FD  99 CD 00                  STA PV+1,Y
 E300  88                        DEY
@@ -542,14 +542,14 @@ E301  D0 F8                     BNE LE2FB
 E303  20 8A E3                  JSR SE38A
 E306  A5 F1                     LDA TOKEN_INDEX
 E308  E5 C8                     SBC TEXT_INDEX
-E30A  C9 04                     CMP #$04    ; 4 .
+E30A  C9 04                     CMP #$04
 E30C  F0 A8                     BEQ LE2B6
 E30E  91 E0                     STA (PVERB),Y
 E310  A5 CA                     LDA PP
 E312  F1 E0                     SBC (PVERB),Y
 E314  85 E4                     STA P2
 E316  A5 CB                     LDA PP+1
-E318  E9 00                     SBC #$00    ; 0 .
+E318  E9 00                     SBC #$00
 E31A  85 E5                     STA P2+1
 E31C  A5 E4                     LDA P2
 E31E  C5 CC                     CMP PV
@@ -560,7 +560,7 @@ E326  A5 CA     LE326:          LDA PP
 E328  F1 E0                     SBC (PVERB),Y
 E32A  85 E6                     STA P3
 E32C  A5 CB                     LDA PP+1
-E32E  E9 00                     SBC #$00    ; 0 .
+E32E  E9 00                     SBC #$00
 E330  85 E7                     STA P3+1
 E332  B1 CA                     LDA (PP),Y
 E334  91 E6                     STA (P3),Y
@@ -594,7 +594,7 @@ E365  10 7E     LE365:          BPL LE3E5
 
 E368                            .BYTE $00,$00,$00,$00
 
-E36B  A0 14     LE36B:          LDY #$14    ; 20 .
+E36B  A0 14     LE36B:          LDY #$14    ; Error: MEM FULL
 E36D  D0 71                     BNE PRINT_ERR_MSG
 
                 ; token $0A - "," in DEL command
@@ -663,10 +663,10 @@ E3DA  8D F2 D0                  STA DSP   ; Output character
 E3DD  60                        RTS
 
                 ; Token length > 256.
-E3DE  A0 06     TOO_LONG_ERR:   LDY #$06
-E3E0  20 D3 EE  PRINT_ERR_MSG:  JSR PRINT_ERR_MSG
+E3DE  A0 06     TOO_LONG_ERR:   LDY #$06    ; Error: TOO LONG
+E3E0  20 D3 EE  PRINT_ERR_MSG:  JSR PRINT_ERR_MSG1
 E3E3  24 D9                     BIT RUN_FLAG
-E3E5  30 03     LE3E5:          BMI LE3EA
+E3E5  30 03     LE3E5:          BMI LE3EA   ; It is RUN mode
 E3E7  4C B6 E2                  JMP LE2B6
 E3EA  4C 9A EB  LE3EA:          JMP LEB9A
 E3ED  2A        LE3ED:          ROL
@@ -683,7 +683,7 @@ E3FF  C8                        INY
 E400  86 C8     LE400:          STX TEXT_INDEX
 E402  98                        TYA
 E403  48                        PHA
-E404  A2 00                     LDX #$00    ; 0 .
+E404  A2 00                     LDX #$00
 E406  A1 FE                     LDA (SYNPAG,X)
 E408  AA                        TAX
 E409  4A        LE409:          LSR
@@ -703,7 +703,7 @@ E419  4C C0 E4                  JMP LE4C0
                 ; buffer [++tokndx] = A
 E41C  E6 F1     PUT_TOKEN:      INC TOKEN_INDEX
 E41E  A6 F1                     LDX TOKEN_INDEX
-E420  F0 BC                     BEQ TOO_LONG_ERR ; Token index overflows to 0 after increment
+E420  F0 BC                     BEQ TOO_LONG_ERR ; Token index roll over to 0 after increment
 E422  9D 00 02                  STA BUFFER,X
 E425  60        LE425:          RTS
 E426  A6 C8     LE426:          LDX TEXT_INDEX
@@ -785,9 +785,9 @@ E4AE  A6 C8                     LDX TEXT_INDEX
 E4B0  E8                        INX
 E4B1  BD 00 02  LE4B1:          LDA BUFFER,X
 E4B4  90 04                     BCC LE4BA
-E4B6  C9 A2                     CMP #$A2    ; 162 "
+E4B6  C9 A2                     CMP #$A2    ; '"' with B7 set
 E4B8  F0 0A                     BEQ LE4C4
-E4BA  C9 DF     LE4BA:          CMP #$DF    ; 223 _
+E4BA  C9 DF     LE4BA:          CMP #$DF    ; "_" with B7 set
 E4BC  F0 06                     BEQ LE4C4
 E4BE  86 C8                     STX TEXT_INDEX
 E4C0  20 1C E4  LE4C0:          JSR PUT_TOKEN
@@ -815,10 +815,10 @@ E4E4  84 C9                     STY LEADBL
 E4E6  18                        CLC
 E4E7  A9 0A     LE4E7:          LDA #$0A    ; "\n"
 E4E9  85 F9                     STA CHAR
-E4EB  A2 00                     LDX #$00    ; 0
+E4EB  A2 00                     LDX #$00
 E4ED  C8                        INY
 E4EE  B9 00 02                  LDA BUFFER,Y
-E4F1  29 0F                     AND #$0F    ; 15
+E4F1  29 0F                     AND #$0F
 E4F3  65 F2     LE4F3:          ADC PCON
 E4F5  48                        PHA
 E4F6  8A                        TXA
@@ -901,14 +901,14 @@ E57E  C5 4C                     CMP HIMEM
 E580  A5 E5                     LDA P2+1
 E582  E5 4D                     SBC HIMEM+1
 E584  B0 26                     BCS LE5AC
-E586  A0 01                     LDY #$01    ; 1 .
+E586  A0 01                     LDY #$01
 E588  B1 E4                     LDA (P2),Y
 E58A  E5 CE                     SBC ACC
 E58C  C8                        INY
 E58D  B1 E4                     LDA (P2),Y
 E58F  E5 CF                     SBC ACC+1
 E591  B0 19                     BCS LE5AC
-E593  A0 00                     LDY #$00    ; 0 .
+E593  A0 00                     LDY #$00
 E595  A5 E6                     LDA P3
 E597  71 E4                     ADC (P2),Y
 E599  85 E6                     STA P3
@@ -981,10 +981,12 @@ E60C  85 CE     EXECUTE_VAR:    STA ACC
 E60E  84 CF                     STY ACC+1
 E610  20 FF E6                  JSR GET_NEXT_PROG_BYTE
 E613  30 0E                     BMI LE623
-E615  C9 40                     CMP #$40    ; 64 @
+E615  C9 40                     CMP #$40    ; "@" with B7 set
 E617  F0 0A                     BEQ LE623
 E619  4C 28 E6                  JMP LE628
-E61C                            .BYTE $06,$C9,$49,$D0,$07,$A9,$49 ; ".IIP.)I"
+
+E61C                            .BYTE $06,$C9,$49,$D0,$07,$A9,$49
+
 E623  85 CF     LE623:          STA ACC+1
 E625  20 FF E6                  JSR GET_NEXT_PROG_BYTE
 E628  A5 4B     LE628:          LDA LOMEM+1
@@ -1009,16 +1011,16 @@ E649  C8                        INY
 E64A  B1 D0                     LDA (SRCH),Y
 E64C  85 D1                     STA TOKNDXSTK
 E64E  68                        PLA
-E64F  A0 00     LE64F:          LDY #$00    ; 0 .
+E64F  A0 00     LE64F:          LDY #$00
 E651  F0 DB                     BEQ LE62E
 E653  A5 D0     LE653:          LDA SRCH
-E655  69 03                     ADC #$03    ; 3 .
+E655  69 03                     ADC #$03
 E657  20 0A E7                  JSR PUSH_A_NOUN_STK
 E65A  A5 D1                     LDA TOKNDXSTK
-E65C  69 00                     ADC #$00    ; 0 .
+E65C  69 00                     ADC #$00
 E65E  95 78                     STA NOUN_STK_H_STR,X
 E660  A5 CF                     LDA ACC+1
-E662  C9 40                     CMP #$40    ; 64 @
+E662  C9 40                     CMP #$40    ; "@" with B7 set
 E664  D0 1C                     BNE FETCH_PROG_BYTE
 E666  88                        DEY
 E667  98                        TYA
@@ -1054,7 +1056,7 @@ E69A  CA                        DEX
 
 E69B  20 FF E6  LE69B:          JSR GET_NEXT_PROG_BYTE
 E69E  B0 E6                     BCS LE686
-E6A0  C9 28     EXECUTE_TOKEN:  CMP #$28    ; 40 (
+E6A0  C9 28     EXECUTE_TOKEN:  CMP #$28    ; "(""
 E6A2  D0 1F                     BNE EXECUTE_VERB
 E6A4  A5 E0                     LDA PVERB
 E6A6  20 0A E7                  JSR PUSH_A_NOUN_STK
@@ -1062,9 +1064,9 @@ E6A9  A5 E1                     LDA PVERB+1
 E6AB  95 78                     STA NOUN_STK_H_STR,X
 E6AD  24 D4                     BIT IF_FLAG
 E6AF  30 0B                     BMI LE6BC
-E6B1  A9 01                     LDA #$01    ; 1 .
+E6B1  A9 01                     LDA #$01
 E6B3  20 0A E7                  JSR PUSH_A_NOUN_STK
-E6B6  A9 00                     LDA #$00    ; 0 .
+E6B6  A9 00                     LDA #$00
 E6B8  95 78                     STA NOUN_STK_H_STR,X
 E6BA  F6 78     LE6BA:          INC NOUN_STK_H_STR,X
 E6BC  20 FF E6  LE6BC:          JSR GET_NEXT_PROG_BYTE
@@ -1072,19 +1074,19 @@ E6BF  30 F9                     BMI LE6BA
 E6C1  B0 D3                     BCS LE696
 E6C3  24 D4     EXECUTE_VERB:   BIT IF_FLAG
 E6C5  10 06                     BPL LE6CD
-E6C7  C9 04                     CMP #$04    ; 4 .
+E6C7  C9 04                     CMP #$04
 E6C9  B0 D0                     BCS LE69B
 E6CB  46 D4                     LSR IF_FLAG
 E6CD  A8        LE6CD:          TAY
 E6CE  85 D6                     STA CURRENT_VERB
 E6D0  B9 98 E9                  LDA VERB_PREC_TBL,Y
-E6D3  29 55                     AND #$55    ; 85 U
+E6D3  29 55                     AND #$55    ; "U"
 E6D5  0A                        ASL
 E6D6  85 D7                     STA PRECEDENCE
 E6D8  68        LE6D8:          PLA
 E6D9  A8                        TAY
 E6DA  B9 98 E9                  LDA VERB_PREC_TBL,Y
-E6DD  29 AA                     AND #$AA    ; 170 *
+E6DD  29 AA                     AND #$AA    ; "*"
 E6DF  C5 D7                     CMP PRECEDENCE
 E6E1  B0 09                     BCS DO_VERB
 E6E3  98                        TYA
@@ -1113,7 +1115,7 @@ E70A  CA        PUSH_A_NOUN_STK: DEX
 E70B  30 03                     BMI LE710
 E70D  95 50                     STA NOUN_STK_L,X
 E70F  60                        RTS
-E710  A0 66     LE710:          LDY #$66    ; 102 F
+E710  A0 66     LE710:          LDY #$66    ; "F"
 E712  4C E0 E3  GO_ERRMESS_3:   JMP PRINT_ERR_MSG
 
 E715  A0 00     GET16BIT:       LDY #$00
@@ -1148,7 +1150,7 @@ E741  D0 06                     BNE LE749
 E743  C5 CF                     CMP ACC+1
 E745  D0 02                     BNE LE749
 E747  F6 50                     INC NOUN_STK_L,X
-E749  60         LE749:         RTS
+E749  60        LE749:          RTS
 
                 ; token $17 - "#" for numeric inequality operator
                 ; token $1B - "<>" for numeric inequality operator
@@ -1237,7 +1239,7 @@ E7C1  20 B1 E7  PRINT_COM_NUM:  JSR TABOUT
 E7C4  20 15 E7  PRINT_NUM:      JSR GET16BIT
 E7C7  A5 CF                     LDA ACC+1
 E7C9  10 0A                     BPL LE7D5
-E7CB  A9 AD                     LDA #$AD    ; 173 -
+E7CB  A9 AD                     LDA #$AD    ; "-" with B7 set
 E7CD  20 C9 E3                  JSR COUT
 E7D0  20 72 E7                  JSR SE772
 E7D3  50 EF                     BVC PRINT_NUM
@@ -1312,7 +1314,7 @@ E827  60        RIGHT_PAREN:    RTS
                 ; token $60 - "IF" statement
 E828  20 CD EF  IF_STMT:        JSR SEFCD
 E82B  F0 07                     BEQ LE834
-E82D  A9 25                     LDA #$25    ; 37 %
+E82D  A9 25                     LDA #$25    ; "%"
 E82F  85 D6                     STA CURRENT_VERB
 E831  88                        DEY
 E832  84 D4                     STY IF_FLAG
@@ -1325,9 +1327,9 @@ E838  A4 CB                     LDY PP+1
 E83A  D0 5A                     BNE LE896
 
                 ; token $5C - "GOSUB" statement
-E83C  A0 41     GOSUB_STMT:     LDY #$41    ; 65 A
+E83C  A0 41     GOSUB_STMT:     LDY #$41    ; "A"
 E83E  A5 FC                     LDA GOSUB_NEST_COUNT
-E840  C9 08                     CMP #$08    ; 8 .
+E840  C9 08                     CMP #$08
 E842  B0 5E                     BCS GO_ERRMESS_4
 E844  A8                        TAY
 E845  E6 FC                     INC GOSUB_NEST_COUNT
@@ -1456,7 +1458,7 @@ E937  C6 FB     LE937:          DEC FOR_NEST_COUNT
 E939  60                        RTS
 
                 ; token $55 - "FOR" statement
-E93A  A0 54     FOR_STMT:       LDY #$54    ; 84 T
+E93A  A0 54     FOR_STMT:       LDY #$54    ; Error: BAD NEXT
 E93C  A5 FB                     LDA FOR_NEST_COUNT
 E93E  C9 08                     CMP #$08    ; 8 .
 E940  F0 9A                     BEQ LE8DC
@@ -1777,7 +1779,7 @@ EE51  60                        RTS
 
 EE52                            .BYTE $FF,$FF
 
-                ; Switch off AUTO mode (not used ?)
+                ; Switch off AUTO mode
 EE54  46 F8     MAN_CMD:        LSR AUTO_FLAG
 EE56  60                        RTS
 
@@ -1850,10 +1852,11 @@ EECD  A8                        TAY
 EECE  A5 C8                     LDA TEXT_INDEX
 EED0  60                        RTS
 
-EED1                            .BYTE $FF,$FF
+EED1                            NOP
+EED2                            NOP
 
                 ; Print error message at Y as: *** message ERR.
-EED3  98        PRINT_ERR_MSG:  TYA         ; Store Y at X temporarily
+EED3  98        PRINT_ERR_MSG1: TYA         ; Store Y at X temporarily
 EED4  AA                        TAX         ;
 EED5  A0 6E                     LDY #$6E    ; "***"
 EED7  20 C4 E3                  JSR OUTPUT_MESSAGE

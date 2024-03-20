@@ -9,21 +9,21 @@
 ;  Memory declaration
 ;-------------------------------------------------------------------------
 
-        XAML    = $24               ; Last "opened" location Low
-        XAMH    = $25               ; Last "opened" location High
-        STL     = $26               ; Store address Low
-        STH     = $27               ; Store address High
-        L       = $28               ; Hex value parsing Low
-        H       = $29               ; Hex value parsing High
-        YSAV    = $2A               ; Used to see if hex value is given
-        MODE    = $2B               ; $00=XAM, $7F=STOR, $AE=BLOCK XAM
+XAML    = $24           ; Last "opened" location Low
+XAMH    = $25           ; Last "opened" location High
+STL     = $26           ; Store address Low
+STH     = $27           ; Store address High
+L       = $28           ; Hex value parsing Low
+H       = $29           ; Hex value parsing High
+YSAV    = $2A           ; Used to see if hex value is given
+MODE    = $2B           ; $00=XAM, $7F=STOR, $AE=BLOCK XAM
 
-        IN      = $0200             ; Input buffer
+IN      = $0200         ; Input buffer
 
-        KBD     = $D010             ; PIA.A keyboard input
-        KBDCR   = $D011             ; PIA.A keyboard control register
-        DSP     = $D012             ; PIA.B display output register
-        DSPCR   = $D013             ; PIA.B display control register
+KBD     = $D010         ; PIA.A keyboard input
+KBDCR   = $D011         ; PIA.A keyboard control register
+DSP     = $D012         ; PIA.B display output register
+DSPCR   = $D013         ; PIA.B display control register
 
 ; KBD b7..b0 are inputs, b6..b0 is ASCII input, b7 is constant high
 ;     Programmed to respond to low to high KBD strobe
@@ -38,10 +38,10 @@
 ;  Constants
 ;-------------------------------------------------------------------------
 
-        BS       = $DF             ; Backspace key, arrow left key
-        CR       = $8D             ; Carriage Return
-        ESC      = $9B             ; ESC key
-        PROMPT   = $DC             ; Prompt character "/"
+BS       = $DF          ; Backspace key (DEL, arrow left key) mapped to "_" (with B7 set)
+CR       = $8D          ; Carriage Return (with B7 set)
+ESC      = $9B          ; ESC key (with B7 set)
+PROMPT   = $DC          ; Prompt character "/" (with B7 set)
 
 ;-------------------------------------------------------------------------
 ;  Let's get started
@@ -247,9 +247,9 @@ ECHO            BIT     DSP             ; DA bit (B7) cleared yet?
 ;  Vector area
 ;-------------------------------------------------------------------------
 
-                .WORD  $0000           ; Unused, what a pity
-NMI_VEC         .WORD  $0F00           ; NMI vector
-RESET_VEC       .WORD  RESET           ; RESET vector
-IRQ_VEC         .WORD  $0000           ; IRQ vector
+            .WORD   $0000   ; Unused, what a pity
+NMI_VEC     .WORD   $0F00   ; NMI vector
+RESET_VEC   .WORD   RESET   ; RESET vector
+IRQ_VEC     .WORD   $0000   ; IRQ vector
 
 ;-------------------------------------------------------------------------
