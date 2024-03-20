@@ -150,17 +150,16 @@ export class DataSheet {
         };
         for (const instructionName of Object.keys(this.Opcodes)) {
             this.instructions.push(instructionName);
-            this.Opcodes[instructionName].forEach((opcode, index) =>
-                            this.populateData(instructionName, opcode, index));
+            for (const opcode of this.Opcodes[instructionName]) {
+                if (isNaN(opcode))
+                    continue;
+                const index = this.Opcodes[instructionName].indexOf(opcode);
+                const addressingMode = this.addressingModes[index];
+                this.opCodeName[opcode] = instructionName;
+                this.opCodeMode[opcode] = addressingMode;
+                this.opCodeBytes[opcode] = this.addressingModeBytes[addressingMode];
+            }
         }
-    }
-    populateData(instructionName, opcode, index) {
-        if (isNaN(opcode))
-            return;
-        const addressingMode = this.addressingModes[index];
-        this.opCodeName[opcode] = instructionName;
-        this.opCodeMode[opcode] = addressingMode;
-        this.opCodeBytes[opcode] = this.addressingModeBytes[addressingMode];
     }
     getOpc(instName, mode) {
         const modeIndex = this.addressingModes.indexOf(mode);

@@ -4,7 +4,7 @@ export class DataSheet {
 	public readonly opCodeMode  : Record<number, string> = {};
 	public readonly opCodeName  : Record<number, string> = {};
 
-	public readonly addressingModes: string[] = [
+	private readonly addressingModes: string[] = [
 		'IMM' ,  // Immediate
 		'ZP'  ,  // Zero Page
 		'ZPX' ,  // X-Indexed Zero Page
@@ -19,7 +19,7 @@ export class DataSheet {
 		'REL' ,  // Relative
 	];
 
-	public readonly addressingModeBytes: Record<string, number> = {
+	private readonly addressingModeBytes: Record<string, number> = {
 		IMM : 2,
 		ZP  : 2,
 		ZPX : 2,
@@ -34,7 +34,7 @@ export class DataSheet {
 		REL : 2,
 	};
 
-	public readonly Opcodes: Record<string, number[]> = {
+	private readonly Opcodes: Record<string, number[]> = {
 		    /* IMM,   ZP,  ZPX,  ZPY,  ABS, ABSX, ABSY,  IND, XZPI, ZPIY, IMPL,  REL */
 		ADC: [0x69, 0x65, 0x75,  NaN, 0x6D, 0x7D, 0x79,  NaN, 0x61, 0x71,  NaN,  NaN],
 		AND: [0x29, 0x25, 0x35,  NaN, 0x2D, 0x3D, 0x39,  NaN, 0x21, 0x31,  NaN,  NaN],
@@ -157,19 +157,14 @@ export class DataSheet {
 		for (const instructionName of Object.keys(this.Opcodes)) {
 			this.instructions.push(instructionName);
 			for (const opcode of this.Opcodes[instructionName]) {
+				if (isNaN(opcode)) continue;
 				const index: number = this.Opcodes[instructionName].indexOf(opcode);
-				this.populateData(instructionName, opcode, index);
+				const addressingMode: string = this.addressingModes[index];
+				this.opCodeName [opcode] = instructionName;
+				this.opCodeMode [opcode] = addressingMode;
+				this.opCodeBytes[opcode] = this.addressingModeBytes[addressingMode];
 			}
 		}
-	}
-
-	private populateData(instructionName: string, opcode: number, index: number): void {
-		if (isNaN(opcode)) return;
-
-		const addressingMode: string = this.addressingModes[index];
-		this.opCodeName [opcode] = instructionName;
-		this.opCodeMode [opcode] = addressingMode;
-		this.opCodeBytes[opcode] = this.addressingModeBytes[addressingMode];
 	}
 
 	public getOpc(instName: string, mode: string): number {

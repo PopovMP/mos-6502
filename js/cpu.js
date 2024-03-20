@@ -6,7 +6,7 @@ export class Cpu {
             "ASL", "DEC", "INC", "LSR", "JMP", "JSR", "ROL", "ROR", "STA", "STX", "STY",
         ];
         this.operandAddress = {
-            IMPL: () => -0x01,
+            IMPL: () => -1,
             IMM: (addr) => addr,
             ZP: (addr) => this.load(addr),
             ZPX: (addr, x) => (this.load(addr) + x) & 0xFF,
@@ -38,15 +38,15 @@ export class Cpu {
                 this.setNZ(this.A);
             },
             ASL: (addr) => {
-                const input = addr === -1 ? this.A : this.load(addr);
-                const temp = input << 1;
-                this.C = (temp >> 8) === 1;
-                const val = temp & 0xFF;
+                const val = addr === -1 ? this.A : this.load(addr);
+                const temp = val << 1;
+                const res = temp & 0xFF;
                 if (addr === -1)
-                    this.A = val;
+                    this.A = res;
                 else
-                    this.store(addr, val);
-                this.setNZ(val);
+                    this.store(addr, res);
+                this.C = (temp >> 8) === 1;
+                this.setNZ(res);
             },
             BCC: (addr) => {
                 if (!this.C)
@@ -122,9 +122,9 @@ export class Cpu {
                 this.setNZ(delta);
             },
             DEC: (addr) => {
-                const val = (this.load(addr) - 1) & 0xFF;
-                this.store(addr, val);
-                this.setNZ(val);
+                const res = (this.load(addr) - 1) & 0xFF;
+                this.store(addr, res);
+                this.setNZ(res);
             },
             DEX: () => {
                 this.X = (this.X - 1) & 0xFF;
@@ -139,9 +139,9 @@ export class Cpu {
                 this.setNZ(this.A);
             },
             INC: (addr) => {
-                const val = (this.load(addr) + 1) & 0xFF;
-                this.store(addr, val);
-                this.setNZ(val);
+                const res = (this.load(addr) + 1) & 0xFF;
+                this.store(addr, res);
+                this.setNZ(res);
             },
             INX: () => {
                 this.X = (this.X + 1) & 0xFF;
@@ -173,15 +173,15 @@ export class Cpu {
                 this.setNZ(this.Y);
             },
             LSR: (addr) => {
-                const input = addr === -1 ? this.A : this.load(addr);
-                const out = input >> 1;
+                const val = addr === -1 ? this.A : this.load(addr);
+                const res = val >> 1;
                 if (addr === -1)
-                    this.A = out;
+                    this.A = res;
                 else
-                    this.store(addr, out);
+                    this.store(addr, res);
                 this.N = false;
-                this.Z = !out;
-                this.C = !!(input & 1);
+                this.Z = !res;
+                this.C = !!(val & 1);
             },
             NOP: () => {
             },
@@ -203,26 +203,26 @@ export class Cpu {
                 this.P = this.pull();
             },
             ROL: (addr) => {
-                const input = addr === -1 ? this.A : this.load(addr);
-                const out = ((input << 1) + +this.C) & 0xFF;
+                const val = addr === -1 ? this.A : this.load(addr);
+                const res = ((val << 1) + +this.C) & 0xFF;
                 if (addr === -1)
-                    this.A = out;
+                    this.A = res;
                 else
-                    this.store(addr, out);
-                this.N = !!((input >> 6) & 1);
-                this.Z = !out;
-                this.C = !!((input >> 7) & 1);
+                    this.store(addr, res);
+                this.N = !!((val >> 6) & 1);
+                this.Z = !res;
+                this.C = !!((val >> 7) & 1);
             },
             ROR: (addr) => {
-                const input = addr === -1 ? this.A : this.load(addr);
-                const out = ((input >> 1) + (+this.C << 7)) & 0xFF;
+                const val = addr === -1 ? this.A : this.load(addr);
+                const res = ((val >> 1) + (+this.C << 7)) & 0xFF;
                 if (addr === -1)
-                    this.A = out;
+                    this.A = res;
                 else
-                    this.store(addr, out);
+                    this.store(addr, res);
                 this.N = this.C;
-                this.Z = !out;
-                this.C = !!(input & 1);
+                this.Z = !res;
+                this.C = !!(val & 1);
             },
             RTI: () => {
                 this.P = this.pull();
@@ -317,13 +317,13 @@ export class Cpu {
             (+this.Z << 1) |
             (+this.C << 0);
     }
-    set P(val) {
-        this.N = !!((val >> 7) & 0x01);
-        this.V = !!((val >> 6) & 0x01);
-        this.D = !!((val >> 3) & 0x01);
-        this.I = !!((val >> 2) & 0x01);
-        this.Z = !!((val >> 1) & 0x01);
-        this.C = !!((val >> 0) & 0x01);
+    set P(ps) {
+        this.N = !!((ps >> 7) & 0x01);
+        this.V = !!((ps >> 6) & 0x01);
+        this.D = !!((ps >> 3) & 0x01);
+        this.I = !!((ps >> 2) & 0x01);
+        this.Z = !!((ps >> 1) & 0x01);
+        this.C = !!((ps >> 0) & 0x01);
     }
     reset() {
         this.A = Utils.randomByte();

@@ -10,6 +10,8 @@ export class Cpu {
         "ASL", "DEC", "INC", "LSR", "JMP", "JSR", "ROL", "ROR", "STA", "STX", "STY",
     ];
     private readonly dataSheet: DataSheet;
+    private readonly load : (addr: number, sync?: boolean) => number;
+    private readonly store: (addr: number, data: number  ) => void;
 
     public A : number; // Accumulator
     public X : number; // X index register
@@ -36,20 +38,18 @@ export class Cpu {
                (+this.C << 0);
     }
 
-    public set P(val: number) {
-        this.N = !!((val >> 7) & 0x01);
-        this.V = !!((val >> 6) & 0x01);
-        this.D = !!((val >> 3) & 0x01);
-        this.I = !!((val >> 2) & 0x01);
-        this.Z = !!((val >> 1) & 0x01);
-        this.C = !!((val >> 0) & 0x01);
+    // Process Status
+    public set P(ps: number) {
+        this.N = !!((ps >> 7) & 0x01);
+        this.V = !!((ps >> 6) & 0x01);
+        this.D = !!((ps >> 3) & 0x01);
+        this.I = !!((ps >> 2) & 0x01);
+        this.Z = !!((ps >> 1) & 0x01);
+        this.C = !!((ps >> 0) & 0x01);
     }
 
-    private readonly load : (addr: number, sync?: boolean) => number;
-    private readonly store: (addr: number, data: number) => void;
-
-    constructor(load : (addr: number) => number,
-                store: (addr: number, data: number) => void) {
+    constructor(load : (addr: number, sync?: boolean) => number,
+                store: (addr: number, data: number  ) => void) {
         this.load      = load;
         this.store     = store;
         this.dataSheet = new DataSheet();
@@ -125,7 +125,7 @@ export class Cpu {
     }
 
     private readonly operandAddress: Record<string, (addr: number, x: number, y: number) => number> = {
-        IMPL: (): number => -0x01, // Implied and Accumulator modes don't need an address
+        IMPL: (): number => -1, // Implied and Accumulator modes don't need an address
         IMM : (addr: number                      ): number => addr,
         ZP  : (addr: number                      ): number => this.load(addr),
         ZPX : (addr: number, x: number           ): number => (this.load(addr) + x) & 0xFF,
@@ -139,13 +139,9 @@ export class Cpu {
         REL : (addr: number                      ): number => addr,
     };
 
-    private loadWord(addr: number): number {
-        return this.load(addr) + (this.load(addr + 1) << 8);
-    }
-
     private readonly instruction: Record<string, (opr: number) => void> = {
+        // Add Memory to Accumulator with Carry
         ADC: (val: number): void => {
-            // Add Memory to Accumulator with Carry
             let res: number = this.A + val + +this.C;
             if (this.D) {
                 if ((this.A & 0x0F) + (val & 0x0F) + +this.C > 0x09) res += 0x06;
@@ -158,47 +154,44 @@ export class Cpu {
             this.setNZ(this.A);
         },
 
+        // "AND" Memory with Accumulator
         AND: (val: number): void => {
-            // "AND" Memory with Accumulator
             this.A &= val;
             this.setNZ(this.A);
         },
 
+        // Shift Left One Bit (Memory or Accumulator)
         ASL: (addr: number): void => {
-            // Shift Left One Bit (Memory or Accumulator)
-            const input: number = addr === -1 ? this.A : this.load(addr);
-            const temp : number = input << 1;
-            this.C = (temp >> 8) === 1;
-            const val: number = temp & 0xFF;
+            const val : number = addr === -1 ? this.A : this.load(addr);
+            const temp: number = val << 1;
+            const res : number = temp & 0xFF;
 
             if (addr === -1)
-                this.A = val;
+                this.A = res;
             else
-                this.store(addr, val);
+                this.store(addr, res);
 
-            this.setNZ(val);
+            this.C = (temp >> 8) === 1;
+            this.setNZ(res);
         },
 
+        // Branch on Carry Clear
         BCC: (addr: number): void => {
-            // Branch on Carry Clear
-            if (!this.C)
-                this.branch(addr);
+            if (!this.C) this.branch(addr);
         },
 
+        // Branch on Carry Set
         BCS: (addr: number): void => {
-            // Branch on Carry Set
-            if (this.C)
-                this.branch(addr);
+            if (this.C) this.branch(addr);
         },
 
+        // Branch on Result Zero
         BEQ: (addr: number): void => {
-            // Branch on Result Zero
-            if (this.Z)
-                this.branch(addr);
+            if (this.Z) this.branch(addr);
         },
 
+        // Test Bits in Memory with Accumulator
         BIT: (val: number): void => {
-            // Test Bits in Memory with Accumulator
             const res: number = this.A & val;
 
             this.N = !!(val & 0x80);
@@ -206,251 +199,251 @@ export class Cpu {
             this.Z = !res;
         },
 
+        // Branch on Result Minus
         BMI: (addr: number): void => {
-            // Branch on Result Minus
             if (this.N)
                 this.branch(addr);
         },
 
+        // Branch on Result not Zero
         BNE: (addr: number): void => {
-            // Branch on Result not Zero
             if (!this.Z)
                 this.branch(addr);
         },
 
+        // Branch on Result Plus
         BPL: (addr: number): void => {
-            // Branch on Result Plus
             if (!this.N)
                 this.branch(addr);
         },
 
+        // Force Break
         BRK: (): void => {
-            // Force Break
             this.PC += 1;
             this.push((this.PC >> 8) & 0xFF);
             this.push(this.PC & 0xFF);
             this.push(this.P | (1 << 5)); // Set B
-            this.I = true;
+            this.I  = true;
             this.PC = this.loadWord(0xFFFE);
         },
 
+        // Branch on Overflow Clear
         BVC: (addr: number): void => {
-            // Branch on Overflow Clear
             if (!this.V)
                 this.branch(addr);
         },
 
+        // Branch on Overflow Set
         BVS: (addr: number): void => {
-            // Branch on Overflow Set
             if (this.V)
                 this.branch(addr);
         },
 
+        // Clear Carry Flag
         CLC: (): void => {
-            // Clear Carry Flag
             this.C = false;
         },
 
+        // Clear Decimal Mode
         CLD: (): void => {
-            // Clear Decimal Mode
             this.D = false;
         },
 
+        // Clear interrupt Disable Bit
         CLI: (): void => {
-            // Clear interrupt Disable Bit
             this.I = false;
         },
 
+        // Clear Overflow Flag
         CLV: (): void => {
-            // Clear Overflow Flag
             this.V = false;
         },
 
+        // Compare Memory and Accumulator
         CMP: (val: number): void => {
-            // Compare Memory and Accumulator
             const delta: number = this.A - val;
             this.C = this.A >= val;
             this.setNZ(delta);
         },
 
+        // Compare Index X to Memory
         CPX: (val: number): void => {
-            // Compare Index X to Memory
             const delta: number = this.X - val;
             this.C = this.X >= val;
             this.setNZ(delta);
         },
 
+        // Compare Index Y to Memory
         CPY: (val: number): void => {
-            // Compare Index Y to Memory
             const delta: number = this.Y - val;
             this.C = this.Y >= val;
             this.setNZ(delta);
         },
 
+        // Decrement memory by One
         DEC: (addr: number): void => {
-            // Decrement memory by One
-            const val: number = (this.load(addr) - 1) & 0xFF;
-            this.store(addr, val);
-            this.setNZ(val);
+            const res: number = (this.load(addr) - 1) & 0xFF;
+            this.store(addr, res);
+            this.setNZ(res);
         },
 
+        // Decrement Index X by One
         DEX: (): void => {
-            // Decrement Index X by One
             this.X = (this.X - 1) & 0xFF;
             this.setNZ(this.X);
         },
 
+        // Decrement Index Y by One
         DEY: (): void => {
-            // Decrement Index Y by One
             this.Y = (this.Y - 1) & 0xFF;
             this.setNZ(this.Y);
         },
 
+        // "Exclusive-Or" Memory with Accumulator
         EOR: (val: number): void => {
-            // "Exclusive-Or" Memory with Accumulator
             this.A ^= val;
             this.setNZ(this.A);
         },
 
+        // Increment Memory by One
         INC: (addr: number): void => {
-            // Increment Memory by One
-            const val: number = (this.load(addr) + 1) & 0xFF;
-            this.store(addr, val);
-            this.setNZ(val);
+            const res: number = (this.load(addr) + 1) & 0xFF;
+            this.store(addr, res);
+            this.setNZ(res);
         },
 
+        // Increment Index X by One
         INX: (): void => {
-            // Increment Index X by One
             this.X = (this.X + 1) & 0xFF;
             this.setNZ(this.X);
         },
 
+        // Increment Index y By One
         INY: (): void => {
-            // Increment Index y By One
             this.Y = (this.Y + 1) & 0xFF;
             this.setNZ(this.Y);
         },
 
+        // Jump to New Location
         JMP: (addr: number): void => {
-            // Jump to New Location
             this.PC = addr;
         },
 
+        // Save the Return Address, Jump to New Location
         JSR: (addr: number): void => {
-            // Save the Return Address, Jump to New Location
             this.PC -= 1;
             this.push((this.PC >> 8) & 0xFF);
             this.push(this.PC & 0xFF);
             this.PC = addr;
         },
 
+        // Load Accumulator with Memory
         LDA: (val: number): void => {
-            // Load Accumulator with Memory
             this.A = val;
             this.setNZ(this.A);
         },
 
+        // Load X Register
         LDX: (val: number): void => {
-            // Load X Register
             this.X = val;
             this.setNZ(this.X);
         },
 
+        // Load Y Register
         LDY: (val: number): void => {
-            // Load Y Register
             this.Y = val;
             this.setNZ(this.Y);
         },
 
+        // Logical Shift Right
         LSR: (addr: number): void => {
-            // Logical Shift Right
-            const input: number = addr === -1 ? this.A : this.load(addr);
-            const out  : number = input >> 1;
+            const val: number = addr === -1 ? this.A : this.load(addr);
+            const res: number = val >> 1;
 
             if (addr === -1)
-                this.A = out;
+                this.A = res;
             else
-                this.store(addr, out);
+                this.store(addr, res);
 
             this.N = false;
-            this.Z = !out;
-            this.C = !!(input & 1);
+            this.Z = !res;
+            this.C = !!(val & 1);
         },
 
+        // No Operation
         NOP: (): void => {
-            // No Operation
         },
 
+        // "OR" Memory with Accumulator
         ORA: (val: number): void => {
-            // "OR" Memory with Accumulator
             this.A |= val;
             this.setNZ(this.A);
         },
 
+        // Push Accumulator On Stack
         PHA: (): void => {
-            // Push Accumulator On Stack
             this.push(this.A);
         },
 
+        // Push Processor Status On Stack
         PHP: (): void => {
-            // Push Processor Status On Stack
             this.push(this.P);
         },
 
+        // Pull Accumulator From Stack
         PLA: (): void => {
-            // Pull Accumulator From Stack
             this.A = this.pull();
             this.setNZ(this.A);
         },
 
+        // Pull Processor Status From Stack
         PLP: (): void => {
-            // Pull Processor Status From Stack
             this.P = this.pull();
         },
 
+        // Rotate Left
         ROL: (addr: number): void => {
-            // Rotate Left
-            const input: number = addr === -1 ? this.A : this.load(addr);
-            const out  : number = ((input << 1) + +this.C) & 0xFF;
+            const val: number = addr === -1 ? this.A : this.load(addr);
+            const res: number = ((val << 1) + +this.C) & 0xFF;
 
             if (addr === -1)
-                this.A = out;
+                this.A = res;
             else
-                this.store(addr, out);
+                this.store(addr, res);
 
-            this.N = !!((input >> 6) & 1);
-            this.Z = !out;
-            this.C = !!((input >> 7) & 1);
+            this.N = !!((val >> 6) & 1);
+            this.Z = !res;
+            this.C = !!((val >> 7) & 1);
         },
 
+        // Rotate Right
         ROR: (addr: number): void => {
-            // Rotate Right
-            const input: number = addr === -1 ? this.A : this.load(addr);
-            const out  : number = ((input >> 1) + (+this.C << 7)) & 0xFF;
+            const val: number = addr === -1 ? this.A : this.load(addr);
+            const res: number = ((val >> 1) + (+this.C << 7)) & 0xFF;
 
             if (addr === -1)
-                this.A = out;
+                this.A = res;
             else
-                this.store(addr, out);
+                this.store(addr, res);
 
             this.N = this.C;
-            this.Z = !out;
-            this.C = !!(input & 1);
+            this.Z = !res;
+            this.C = !!(val & 1);
         },
 
+        // Return from Interrupt
         RTI: (): void => {
-            // Return from Interrupt
             this.P  = this.pull();
             this.PC = this.pull() + (this.pull() << 8);
         },
 
+        // Return from Subroutine
         RTS: (): void => {
-            // Return from Subroutine
             this.PC = this.pull() + (this.pull() << 8) + 1;
         },
 
+        // Subtract Memory from Accumulator with Borrow
         SBC: (val: number): void => {
-            // Subtract Memory from Accumulator with Borrow
             let res: number;
 
             if (this.D) {
@@ -469,86 +462,86 @@ export class Cpu {
             this.setNZ(this.A);
         },
 
+        // Set Carry Flag
         SEC: (): void => {
-            // Set Carry Flag
             this.C = true;
         },
 
+        // Set Decimal Mode
         SED: (): void => {
-            // Set Decimal Mode
             this.D = true;
         },
 
+        // Set Interrupt Disable Status
         SEI: (): void => {
-            // Set Interrupt Disable Status
             this.I = true;
         },
 
+        // Store Accumulator in Memory
         STA: (addr: number): void => {
-            // Store Accumulator in Memory
             this.store(addr, this.A);
         },
 
+        // Store Index X in Memory
         STX: (addr: number): void => {
-            // Store Index X in Memory
             this.store(addr, this.X);
         },
 
+        // Store Index Y in Memory
         STY: (addr: number): void => {
-            // Store Index Y in Memory
             this.store(addr, this.Y);
         },
 
+        // Transfer Accumulator to Index X
         TAX: (): void => {
-            // Transfer Accumulator to Index X
             this.X = this.A;
             this.setNZ(this.X);
         },
 
+        // Transfer Accumulator to Index Y
         TAY: (): void => {
-            // Transfer Accumulator to Index Y
             this.Y = this.A;
             this.setNZ(this.Y);
         },
 
+        // Transfer Stack Pointer to Index X
         TSX: (): void => {
-            // Transfer Stack Pointer to Index X
             this.X = this.S;
             this.setNZ(this.X);
         },
 
+        // Transfer Index X to Accumulator
         TXA: (): void => {
-            // Transfer Index X to Accumulator
             this.A = this.X;
             this.setNZ(this.A);
         },
 
+        // Transfer Index X to Stack Pointer
         TXS: (): void => {
-            // Transfer Index X to Stack Pointer
             this.S = this.X;
         },
 
+        // Transfer Index Y to Accumulator
         TYA: (): void => {
-            // Transfer Index Y to Accumulator
             this.A = this.Y;
             this.setNZ(this.A);
         },
     };
 
+    private loadWord(addr: number): number {
+        return this.load(addr) + (this.load(addr + 1) << 8);
+    }
+
     private push(val: number): void {
         this.store(0x0100 + this.S,  val);
 
         this.S -= 1;
-
-        if (this.S < 0)
-            this.S = 0xFF;
+        if (this.S < 0) this.S = 0xFF;
     }
 
     private pull(): number {
         this.S += 1;
-
-        if (this.S > 0xFF)
-            this.S = 0;
+        if (this.S > 0xFF) this.S = 0;
 
         return this.load(0x0100 + this.S);
     }
