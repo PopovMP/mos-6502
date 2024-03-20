@@ -185,7 +185,8 @@ function keydown (event) {
         return;
     }
 
-    if (event.key === "Backspace") {
+    if (event.key === "Backspace" ||
+        event.key === "ArrowLeft") {
         event.preventDefault();
         kbdBuffer.push(0xDF);
         return;
