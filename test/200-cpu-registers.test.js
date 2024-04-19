@@ -8,37 +8,37 @@ const cpu    = new Cpu((addr) => memory[addr], (addr, data) => memory[addr] = da
 
 test("N 0 -> clear", () => {
     cpu.setNZ(0);
-    strictEqual(cpu.N, false);
+    strictEqual(cpu.N, 0);
 });
 
 test("N 1 -> clear", () => {
     cpu.setNZ(1);
-    strictEqual(cpu.N, false);
+    strictEqual(cpu.N, 0);
 });
 
 test("N 127 ( 0x7F ) -> clear", () => {
     cpu.setNZ(0x7F);
-    strictEqual(cpu.N, false);
+    strictEqual(cpu.N, 0);
 });
 
 test("N 128 ( 0x80 ) -> set", () => {
     cpu.setNZ(0x80);
-    strictEqual(cpu.N, true);
+    strictEqual(cpu.N, 1);
 });
 
 test("N 255 ( 0xFF ) -> set", () => {
     cpu.setNZ(0xFF);
-    strictEqual(cpu.N, true);
+    strictEqual(cpu.N, 1);
 });
 
 test("Z: 0 -> set", () => {
     cpu.setNZ(0);
-    strictEqual(cpu.Z, true);
+    strictEqual(cpu.Z, 1);
 });
 
 test("Z: 1 -> clear", () => {
     cpu.setNZ(1);
-    strictEqual(cpu.Z, false);
+    strictEqual(cpu.Z, 0);
 });
 
 test("P: Set N -> 0b1010_0000", () => {
@@ -50,7 +50,7 @@ test("P: Set N -> 0b1010_0000", () => {
 test("Set P -> N, V, C, ..", () => {
     cpu.setNZ(1);
     cpu.P = 0b1010_0001;
-    strictEqual(cpu.N, true);
-    strictEqual(cpu.V, false);
-    strictEqual(cpu.C, true);
+    strictEqual(cpu.N, 1);
+    strictEqual(cpu.V, 0);
+    strictEqual(cpu.C, 1);
 });

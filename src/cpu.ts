@@ -19,33 +19,33 @@ export class Cpu {
     public S : number; // Stack Pointer
     public PC: number; // Program Counter
 
-    public N: boolean; // Negative flag
-    public V: boolean; // Overflow flag
-    public D: boolean; // Decimal flag
-    public I: boolean; // Interrupt disabled flag
-    public Z: boolean; // Zero flag
-    public C: boolean; // Carry flag
+    public N: number; // Negative flag
+    public V: number; // Overflow flag
+    public D: number; // Decimal flag
+    public I: number; // Interrupt disabled flag
+    public Z: number; // Zero flag
+    public C: number; // Carry flag
 
     // Processor Status
     public get P(): number {
-        return (+this.N << 7) |
-               (+this.V << 6) |
-               (      1 << 5) |
-               (      1 << 4) |
-               (+this.D << 3) |
-               (+this.I << 2) |
-               (+this.Z << 1) |
-               (+this.C << 0);
+        return (this.N << 7) |
+               (this.V << 6) |
+               (     1 << 5) |
+               (     1 << 4) |
+               (this.D << 3) |
+               (this.I << 2) |
+               (this.Z << 1) |
+               (this.C << 0);
     }
 
     // Process Status
     public set P(ps: number) {
-        this.N = !!((ps >> 7) & 0x01);
-        this.V = !!((ps >> 6) & 0x01);
-        this.D = !!((ps >> 3) & 0x01);
-        this.I = !!((ps >> 2) & 0x01);
-        this.Z = !!((ps >> 1) & 0x01);
-        this.C = !!((ps >> 0) & 0x01);
+        this.N = (ps >> 7) & 0x01;
+        this.V = (ps >> 6) & 0x01;
+        this.D = (ps >> 3) & 0x01;
+        this.I = (ps >> 2) & 0x01;
+        this.Z = (ps >> 1) & 0x01;
+        this.C = (ps >> 0) & 0x01;
     }
 
     constructor(load : (addr: number, sync?: boolean) => number,
@@ -59,12 +59,12 @@ export class Cpu {
         this.Y = Utils.randomByte();
         this.S = Utils.randomByte();
 
-        this.N = false;
-        this.V = false;
-        this.D = false;
-        this.I = true;
-        this.Z = false;
-        this.C = false;
+        this.N = 0;
+        this.V = 0;
+        this.D = 0;
+        this.I = 1;
+        this.Z = 0;
+        this.C = 0;
 
         this.PC = this.loadWord(0xFFFC);
     }
@@ -75,12 +75,12 @@ export class Cpu {
         this.Y = Utils.randomByte();
         this.S = Utils.randomByte();
 
-        this.N = false;
-        this.V = false;
-        this.D = false;
-        this.I = true;
-        this.Z = false;
-        this.C = false;
+        this.N = 0;
+        this.V = 0;
+        this.D = 0;
+        this.I = 1;
+        this.Z = 0;
+        this.C = 0;
 
         this.PC = this.loadWord(0xFFFC);
     }
@@ -142,14 +142,14 @@ export class Cpu {
     private readonly instruction: Record<string, (opr: number) => void> = {
         // Add Memory to Accumulator with Carry
         ADC: (val: number): void => {
-            let res: number = this.A + val + +this.C;
+            let res: number = this.A + val + this.C;
             if (this.D) {
-                if ((this.A & 0x0F) + (val & 0x0F) + +this.C > 0x09) res += 0x06;
+                if ((this.A & 0x0F) + (val & 0x0F) + this.C > 0x09) res += 0x06;
                 if (res > 0x99) res += 0x60;
             }
 
-            this.C = res > 0xFF;
-            this.V = !((this.A ^ val) & 0x80) && !!((this.A ^ res) & 0x80);
+            this.C = +(res > 0xFF);
+            this.V = +(!((this.A ^ val) & 0x80) && !!((this.A ^ res) & 0x80));
             this.A = res & 0xFF;
             this.setNZ(this.A);
         },
@@ -171,7 +171,7 @@ export class Cpu {
             else
                 this.store(addr, res);
 
-            this.C = (temp >> 8) === 1;
+            this.C = (temp >> 8) & 0x01;
             this.setNZ(res);
         },
 
@@ -194,9 +194,9 @@ export class Cpu {
         BIT: (val: number): void => {
             const res: number = this.A & val;
 
-            this.N = !!(val & 0x80);
-            this.V = !!(val & 0x40);
-            this.Z = !res;
+            this.N = (val & 0x80) >> 7;
+            this.V = (val & 0x40) >> 6;
+            this.Z = +!res;
         },
 
         // Branch on Result Minus
@@ -223,7 +223,7 @@ export class Cpu {
             this.push((this.PC >> 8) & 0xFF);
             this.push(this.PC & 0xFF);
             this.push(this.P | (1 << 5)); // Set B
-            this.I  = true;
+            this.I  = 1;
             this.PC = this.loadWord(0xFFFE);
         },
 
@@ -241,39 +241,39 @@ export class Cpu {
 
         // Clear Carry Flag
         CLC: (): void => {
-            this.C = false;
+            this.C = 0;
         },
 
         // Clear Decimal Mode
         CLD: (): void => {
-            this.D = false;
+            this.D = 0;
         },
 
         // Clear interrupt Disable Bit
         CLI: (): void => {
-            this.I = false;
+            this.I = 0;
         },
 
         // Clear Overflow Flag
         CLV: (): void => {
-            this.V = false;
+            this.V = 0;
         },
 
         // Compare Memory and Accumulator
         CMP: (val: number): void => {
-            this.C = this.A >= val;
+            this.C = +(this.A >= val);
             this.setNZ(this.A - val);
         },
 
         // Compare Index X to Memory
         CPX: (val: number): void => {
-            this.C = this.X >= val;
+            this.C = +(this.X >= val);
             this.setNZ(this.X - val);
         },
 
         // Compare Index Y to Memory
         CPY: (val: number): void => {
-            this.C = this.Y >= val;
+            this.C = +(this.Y >= val);
             this.setNZ(this.Y - val);
         },
 
@@ -362,9 +362,9 @@ export class Cpu {
             else
                 this.store(addr, res);
 
-            this.N = false;
-            this.Z = !res;
-            this.C = !!(val & 1);
+            this.N = 0;
+            this.Z = +!res;
+            this.C = val & 0x01;
         },
 
         // No Operation
@@ -408,9 +408,9 @@ export class Cpu {
             else
                 this.store(addr, res);
 
-            this.N = !!((val >> 6) & 1);
-            this.Z = !res;
-            this.C = !!((val >> 7) & 1);
+            this.N = (val >> 6) & 0x01;
+            this.Z = +!res;
+            this.C = (val >> 7) & 0x01;
         },
 
         // Rotate Right
@@ -424,19 +424,19 @@ export class Cpu {
                 this.store(addr, res);
 
             this.N = this.C;
-            this.Z = !res;
-            this.C = !!(val & 1);
+            this.Z = +!res;
+            this.C = val & 0x01;
         },
 
         // Return from Interrupt
         RTI: (): void => {
             this.P  = this.pull();
-            this.PC = this.pull() + (this.pull() << 8);
+            this.PC = this.pull() | (this.pull() << 8);
         },
 
         // Return from Subroutine
         RTS: (): void => {
-            this.PC = this.pull() + (this.pull() << 8) + 1;
+            this.PC = (this.pull() | (this.pull() << 8)) + 1;
         },
 
         // Subtract Memory from Accumulator with Borrow
@@ -447,31 +447,31 @@ export class Cpu {
                 let tmp: number = (this.A & 0x0F) - (val & 0x0F) - +!this.C;
                 if (tmp < 0) tmp -= 0x06;
                 res = (this.A & 0xF0) - (val & 0xF0) + tmp;
-                this.C = res >= 0;
+                this.C = +(res >= 0);
                 if (res < 0) res -= 0x60;
             } else {
-                res = 0xFF + this.A - val + +this.C;
-                this.C = res >= 0x100;
+                res = 0xFF + this.A - val + this.C;
+                this.C = +(res > 0xFF);
             }
 
-            this.V = !!((this.A ^ val) & (this.A ^ res) & 0x80);
+            this.V = ((this.A ^ val) & (this.A ^ res) & 0x80) >> 7;
             this.A = res & 0xFF;
             this.setNZ(this.A);
         },
 
         // Set Carry Flag
         SEC: (): void => {
-            this.C = true;
+            this.C = 1;
         },
 
         // Set Decimal Mode
         SED: (): void => {
-            this.D = true;
+            this.D = 1;
         },
 
         // Set Interrupt Disable Status
         SEI: (): void => {
-            this.I = true;
+            this.I = 1;
         },
 
         // Store Accumulator in Memory
@@ -548,7 +548,7 @@ export class Cpu {
     }
 
     private setNZ(val: number): void {
-        this.N = !!(val & 0x80);
-        this.Z = !val;
+        this.N = (val & 0x80) >> 7;
+        this.Z = +!val;
     }
 }

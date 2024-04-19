@@ -16,8 +16,8 @@ describe("CPU - transfer", () => {
         cpu.step();
 
         strictEqual(cpu.X, cpu.A);
-        strictEqual(cpu.Z, false);
-        strictEqual(cpu.N, true);
+        strictEqual(cpu.Z, 0);
+        strictEqual(cpu.N, 1);
         strictEqual(cpu.PC, 0x0801);
     });
 });

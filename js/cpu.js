@@ -21,15 +21,15 @@ export class Cpu {
         };
         this.instruction = {
             ADC: (val) => {
-                let res = this.A + val + +this.C;
+                let res = this.A + val + this.C;
                 if (this.D) {
-                    if ((this.A & 0x0F) + (val & 0x0F) + +this.C > 0x09)
+                    if ((this.A & 0x0F) + (val & 0x0F) + this.C > 0x09)
                         res += 0x06;
                     if (res > 0x99)
                         res += 0x60;
                 }
-                this.C = res > 0xFF;
-                this.V = !((this.A ^ val) & 0x80) && !!((this.A ^ res) & 0x80);
+                this.C = +(res > 0xFF);
+                this.V = +(!((this.A ^ val) & 0x80) && !!((this.A ^ res) & 0x80));
                 this.A = res & 0xFF;
                 this.setNZ(this.A);
             },
@@ -45,7 +45,7 @@ export class Cpu {
                     this.A = res;
                 else
                     this.store(addr, res);
-                this.C = (temp >> 8) === 1;
+                this.C = (temp >> 8) & 0x01;
                 this.setNZ(res);
             },
             BCC: (addr) => {
@@ -62,9 +62,9 @@ export class Cpu {
             },
             BIT: (val) => {
                 const res = this.A & val;
-                this.N = !!(val & 0x80);
-                this.V = !!(val & 0x40);
-                this.Z = !res;
+                this.N = (val & 0x80) >> 7;
+                this.V = (val & 0x40) >> 6;
+                this.Z = +!res;
             },
             BMI: (addr) => {
                 if (this.N)
@@ -83,7 +83,7 @@ export class Cpu {
                 this.push((this.PC >> 8) & 0xFF);
                 this.push(this.PC & 0xFF);
                 this.push(this.P | (1 << 5));
-                this.I = true;
+                this.I = 1;
                 this.PC = this.loadWord(0xFFFE);
             },
             BVC: (addr) => {
@@ -95,31 +95,28 @@ export class Cpu {
                     this.branch(addr);
             },
             CLC: () => {
-                this.C = false;
+                this.C = 0;
             },
             CLD: () => {
-                this.D = false;
+                this.D = 0;
             },
             CLI: () => {
-                this.I = false;
+                this.I = 0;
             },
             CLV: () => {
-                this.V = false;
+                this.V = 0;
             },
             CMP: (val) => {
-                const delta = this.A - val;
-                this.C = this.A >= val;
-                this.setNZ(delta);
+                this.C = +(this.A >= val);
+                this.setNZ(this.A - val);
             },
             CPX: (val) => {
-                const delta = this.X - val;
-                this.C = this.X >= val;
-                this.setNZ(delta);
+                this.C = +(this.X >= val);
+                this.setNZ(this.X - val);
             },
             CPY: (val) => {
-                const delta = this.Y - val;
-                this.C = this.Y >= val;
-                this.setNZ(delta);
+                this.C = +(this.Y >= val);
+                this.setNZ(this.Y - val);
             },
             DEC: (addr) => {
                 const res = (this.load(addr) - 1) & 0xFF;
@@ -179,9 +176,9 @@ export class Cpu {
                     this.A = res;
                 else
                     this.store(addr, res);
-                this.N = false;
-                this.Z = !res;
-                this.C = !!(val & 1);
+                this.N = 0;
+                this.Z = +!res;
+                this.C = val & 0x01;
             },
             NOP: () => {
             },
@@ -209,9 +206,9 @@ export class Cpu {
                     this.A = res;
                 else
                     this.store(addr, res);
-                this.N = !!((val >> 6) & 1);
-                this.Z = !res;
-                this.C = !!((val >> 7) & 1);
+                this.N = (val >> 6) & 0x01;
+                this.Z = +!res;
+                this.C = (val >> 7) & 0x01;
             },
             ROR: (addr) => {
                 const val = addr === -1 ? this.A : this.load(addr);
@@ -221,15 +218,15 @@ export class Cpu {
                 else
                     this.store(addr, res);
                 this.N = this.C;
-                this.Z = !res;
-                this.C = !!(val & 1);
+                this.Z = +!res;
+                this.C = val & 0x01;
             },
             RTI: () => {
                 this.P = this.pull();
-                this.PC = this.pull() + (this.pull() << 8);
+                this.PC = this.pull() | (this.pull() << 8);
             },
             RTS: () => {
-                this.PC = this.pull() + (this.pull() << 8) + 1;
+                this.PC = (this.pull() | (this.pull() << 8)) + 1;
             },
             SBC: (val) => {
                 let res;
@@ -238,26 +235,26 @@ export class Cpu {
                     if (tmp < 0)
                         tmp -= 0x06;
                     res = (this.A & 0xF0) - (val & 0xF0) + tmp;
-                    this.C = res >= 0;
+                    this.C = +(res >= 0);
                     if (res < 0)
                         res -= 0x60;
                 }
                 else {
-                    res = 0xFF + this.A - val + +this.C;
-                    this.C = res >= 0x100;
+                    res = 0xFF + this.A - val + this.C;
+                    this.C = +(res > 0xFF);
                 }
-                this.V = !!((this.A ^ val) & (this.A ^ res) & 0x80);
+                this.V = ((this.A ^ val) & (this.A ^ res) & 0x80) >> 7;
                 this.A = res & 0xFF;
                 this.setNZ(this.A);
             },
             SEC: () => {
-                this.C = true;
+                this.C = 1;
             },
             SED: () => {
-                this.D = true;
+                this.D = 1;
             },
             SEI: () => {
-                this.I = true;
+                this.I = 1;
             },
             STA: (addr) => {
                 this.store(addr, this.A);
@@ -299,43 +296,43 @@ export class Cpu {
         this.X = Utils.randomByte();
         this.Y = Utils.randomByte();
         this.S = Utils.randomByte();
-        this.N = false;
-        this.V = false;
-        this.D = false;
-        this.I = true;
-        this.Z = false;
-        this.C = false;
+        this.N = 0;
+        this.V = 0;
+        this.D = 0;
+        this.I = 1;
+        this.Z = 0;
+        this.C = 0;
         this.PC = this.loadWord(0xFFFC);
     }
     get P() {
-        return (+this.N << 7) |
-            (+this.V << 6) |
+        return (this.N << 7) |
+            (this.V << 6) |
             (1 << 5) |
             (1 << 4) |
-            (+this.D << 3) |
-            (+this.I << 2) |
-            (+this.Z << 1) |
-            (+this.C << 0);
+            (this.D << 3) |
+            (this.I << 2) |
+            (this.Z << 1) |
+            (this.C << 0);
     }
     set P(ps) {
-        this.N = !!((ps >> 7) & 0x01);
-        this.V = !!((ps >> 6) & 0x01);
-        this.D = !!((ps >> 3) & 0x01);
-        this.I = !!((ps >> 2) & 0x01);
-        this.Z = !!((ps >> 1) & 0x01);
-        this.C = !!((ps >> 0) & 0x01);
+        this.N = (ps >> 7) & 0x01;
+        this.V = (ps >> 6) & 0x01;
+        this.D = (ps >> 3) & 0x01;
+        this.I = (ps >> 2) & 0x01;
+        this.Z = (ps >> 1) & 0x01;
+        this.C = (ps >> 0) & 0x01;
     }
     reset() {
         this.A = Utils.randomByte();
         this.X = Utils.randomByte();
         this.Y = Utils.randomByte();
         this.S = Utils.randomByte();
-        this.N = false;
-        this.V = false;
-        this.D = false;
-        this.I = true;
-        this.Z = false;
-        this.C = false;
+        this.N = 0;
+        this.V = 0;
+        this.D = 0;
+        this.I = 1;
+        this.Z = 0;
+        this.C = 0;
         this.PC = this.loadWord(0xFFFC);
     }
     step() {
@@ -386,8 +383,8 @@ export class Cpu {
         this.PC += offset < 128 ? offset : offset - 256;
     }
     setNZ(val) {
-        this.N = !!(val & 0x80);
-        this.Z = !val;
+        this.N = (val & 0x80) >> 7;
+        this.Z = +!val;
     }
 }
 //# sourceMappingURL=cpu.js.map
