@@ -96,10 +96,10 @@ export class Cpu {
         const addressingMode: string = this.dataSheet.opCodeMode[opcode];
         const operandAddr   : number = this.operandAddress[addressingMode](this.PC + 1, this.X, this.Y);
         const operandValue  : number = this.addressInstructions.includes(instructionName)
-                                    ? operandAddr                 // Instruction needs an effective address
-                                    : addressingMode === "IMPL"   // Implied addressing mode doesn't require address
-                                        ? this.A                  // However, it may need the A register value
-                                        : this.load(operandAddr); // Operand value
+                                ? operandAddr                 // Instruction needs an effective address
+                                : addressingMode === "IMPL"   // Implied addressing mode doesn't require address
+                                    ? this.A                  // However, it may need the A register value
+                                    : this.load(operandAddr); // Operand value
 
         this.PC += this.dataSheet.opCodeBytes[opcode];
 
@@ -261,23 +261,20 @@ export class Cpu {
 
         // Compare Memory and Accumulator
         CMP: (val: number): void => {
-            const delta: number = this.A - val;
             this.C = this.A >= val;
-            this.setNZ(delta);
+            this.setNZ(this.A - val);
         },
 
         // Compare Index X to Memory
         CPX: (val: number): void => {
-            const delta: number = this.X - val;
             this.C = this.X >= val;
-            this.setNZ(delta);
+            this.setNZ(this.X - val);
         },
 
         // Compare Index Y to Memory
         CPY: (val: number): void => {
-            const delta: number = this.Y - val;
             this.C = this.Y >= val;
-            this.setNZ(delta);
+            this.setNZ(this.Y - val);
         },
 
         // Decrement memory by One
