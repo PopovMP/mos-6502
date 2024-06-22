@@ -125,7 +125,7 @@ export class Cpu {
     }
 
     private readonly operandAddress: Record<string, (addr: number, x: number, y: number) => number> = {
-        IMPL: (): number => -1, // Implied and Accumulator modes don't need an address
+        IMPL: (                                  ): number => -1, // Implied and Accumulator modes don't need an address
         IMM : (addr: number                      ): number => addr,
         ZP  : (addr: number                      ): number => this.load(addr),
         ZPX : (addr: number, x: number           ): number => (this.load(addr) + x) & 0xFF,
@@ -177,12 +177,14 @@ export class Cpu {
 
         // Branch on Carry Clear
         BCC: (addr: number): void => {
-            if (!this.C) this.branch(addr);
+            if (!this.C)
+                this.branch(addr);
         },
 
         // Branch on Carry Set
         BCS: (addr: number): void => {
-            if (this.C) this.branch(addr);
+            if (this.C)
+                this.branch(addr);
         },
 
         // Branch on Result Zero
@@ -401,7 +403,7 @@ export class Cpu {
         // Rotate Left
         ROL: (addr: number): void => {
             const val: number = addr === -1 ? this.A : this.load(addr);
-            const res: number = ((val << 1) + +this.C) & 0xFF;
+            const res: number = ((val << 1) + this.C) & 0xFF;
 
             if (addr === -1)
                 this.A = res;
@@ -416,7 +418,7 @@ export class Cpu {
         // Rotate Right
         ROR: (addr: number): void => {
             const val: number = addr === -1 ? this.A : this.load(addr);
-            const res: number = ((val >> 1) + (+this.C << 7)) & 0xFF;
+            const res: number = ((val >> 1) + (this.C << 7)) & 0xFF;
 
             if (addr === -1)
                 this.A = res;
