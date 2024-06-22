@@ -1,6 +1,24 @@
 import { Utils } from "./utils.js";
 import { DataSheet } from "./data-sheet.js";
 export class Cpu {
+    get P() {
+        return (this.N << 7) |
+            (this.V << 6) |
+            (1 << 5) |
+            (1 << 4) |
+            (this.D << 3) |
+            (this.I << 2) |
+            (this.Z << 1) |
+            (this.C << 0);
+    }
+    set P(ps) {
+        this.N = (ps >> 7) & 0x01;
+        this.V = (ps >> 6) & 0x01;
+        this.D = (ps >> 3) & 0x01;
+        this.I = (ps >> 2) & 0x01;
+        this.Z = (ps >> 1) & 0x01;
+        this.C = (ps >> 0) & 0x01;
+    }
     constructor(load, store) {
         this.addressInstructions = [
             "ASL", "DEC", "INC", "LSR", "JMP", "JSR", "ROL", "ROR", "STA", "STX", "STY",
@@ -303,24 +321,6 @@ export class Cpu {
         this.Z = 0;
         this.C = 0;
         this.PC = this.loadWord(0xFFFC);
-    }
-    get P() {
-        return (this.N << 7) |
-            (this.V << 6) |
-            (1 << 5) |
-            (1 << 4) |
-            (this.D << 3) |
-            (this.I << 2) |
-            (this.Z << 1) |
-            (this.C << 0);
-    }
-    set P(ps) {
-        this.N = (ps >> 7) & 0x01;
-        this.V = (ps >> 6) & 0x01;
-        this.D = (ps >> 3) & 0x01;
-        this.I = (ps >> 2) & 0x01;
-        this.Z = (ps >> 1) & 0x01;
-        this.C = (ps >> 0) & 0x01;
     }
     reset() {
         this.A = Utils.randomByte();

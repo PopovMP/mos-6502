@@ -1,9 +1,6 @@
 import { Utils } from "./utils.js";
 import { DataSheet } from "./data-sheet.js";
 export class Assembler {
-    constructor() {
-        this.dataSheet = new DataSheet();
-    }
     static hexDump(codePages) {
         const dumpLines = [];
         for (const pageAddress of Object.keys(codePages)) {
@@ -12,6 +9,9 @@ export class Assembler {
                 .join(" "));
         }
         return dumpLines.sort().join("\n");
+    }
+    constructor() {
+        this.dataSheet = new DataSheet();
     }
     load(sourcecode, memory) {
         const codePages = this.assemble(sourcecode);
