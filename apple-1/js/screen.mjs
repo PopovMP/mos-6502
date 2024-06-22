@@ -20,8 +20,8 @@ export class Screen {
     /** @field {ScreenBuffer} */
     #screenBuffer;
 
-    /** @field {string[]} Drown content */
-    #drownBuffer;
+    /** @field {string[]} Drawn content */
+    #drawnBuffer;
 
     /** @field {boolean} */
     #isCursorVisible;
@@ -39,9 +39,10 @@ export class Screen {
         this.#ctx             = this.#canvas.getContext("2d");
         this.#scale           = scale;
         this.#screenBuffer    = new ScreenBuffer();
-        this.#drownBuffer     = new Array(this.#ROWS * this.#COLS).fill(" ");
+        this.#drawnBuffer     = new Array(this.#ROWS * this.#COLS).fill(" ");
         this.#isCursorVisible = false;
-        this.setScale(scale);
+
+        this.setScale(this.#scale);
 
         setTimeout(this.#drawCursor.bind(this), 500);
     }
@@ -58,9 +59,9 @@ export class Screen {
      */
     setScale(scale) {
         this.#scale = scale;
-        this.#canvas.width  = scale * this.#FONT_WIDTH  * this.#COLS;
-        this.#canvas.height = scale * this.#FONT_HEIGHT * this.#ROWS;
-        this.#drownBuffer.fill(" ");
+        this.#canvas.width  = this.#scale * this.#FONT_WIDTH  * this.#COLS;
+        this.#canvas.height = this.#scale * this.#FONT_HEIGHT * this.#ROWS;
+        this.#drawnBuffer.fill(" ");
         this.#render();
     }
 
@@ -104,8 +105,8 @@ export class Screen {
     #render() {
         for (let i = 0; i < this.#ROWS * this.#COLS; i += 1) {
             const character = this.#screenBuffer.getCharacter(i);
-            if (this.#drownBuffer[i] !== character) {
-                this.#drownBuffer[i] = character;
+            if (this.#drawnBuffer[i] !== character) {
+                this.#drawnBuffer[i] = character;
                 this.#drawCharacter(character, i);
             }
         }
@@ -117,13 +118,13 @@ export class Screen {
      * @private
      *
      * @param {string} character - The character to draw.
-     * @param {number} i - buffer index
+     * @param {number} index - buffer index
      *
      * @return {void}
      */
-    #drawCharacter(character, i) {
-        const col = i % this.#COLS;
-        const row = Math.floor(i / this.#COLS);
+    #drawCharacter(character, index) {
+        const col = index % this.#COLS;
+        const row = Math.floor(index / this.#COLS);
         const x   = col * this.#FONT_WIDTH  * this.#scale;
         const y   = row * this.#FONT_HEIGHT * this.#scale;
 
@@ -153,7 +154,7 @@ export class Screen {
         this.#isCursorVisible = !this.#isCursorVisible;
         const index  = this.#screenBuffer.getCursorPosition();
         const cursor = this.#isCursorVisible ? "@" : " ";
-        this.#drownBuffer[index] = cursor;
+        this.#drawnBuffer[index] = cursor;
         this.#drawCharacter(cursor, index);
 
         setTimeout(this.#drawCursor.bind(this), 500);
