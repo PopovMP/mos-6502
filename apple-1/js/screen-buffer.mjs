@@ -11,28 +11,15 @@ export class ScreenBuffer {
     #ROWS = 24;
 
     /** @field {string[]} character content */
-    #screenBuffer;
+    #screenBuffer = new Array(this.#ROWS * this.#COLS);
 
     /** @field {number} - the cursor position */
-    #bufferIndex;
-
-    /**
-     * Creates a new instance of the constructor.
-     * Initializes the ##screenBuffer with an array of size ##ROWS * ##COLS.
-     * Calls the clear() method to clear the screen buffer.
-     *
-     * @constructor
-     * @return {void}
-     */
-    constructor() {
-        this.#screenBuffer = new Array(this.#ROWS * this.#COLS);
-        this.clear();
-    }
+    #bufferIndex = 0;
 
     /**
      * Clears the screen buffer and sets the cursor position to the beginning.
      *
-     * @return {void}
+     * @returns {void}
      */
     clear() {
         this.#bufferIndex = 0;
@@ -43,6 +30,7 @@ export class ScreenBuffer {
      * Prints a character on the screen buffer.
      *
      * @param {string} character - The character to be printed.
+     * @returns {void}
      */
     print(character) {
         if (character === "\r") {
@@ -53,8 +41,9 @@ export class ScreenBuffer {
             this.#screenBuffer[this.#bufferIndex] = character;
         }
 
-        if (this.#bufferIndex === this.#screenBuffer.length - 1)
+        if (this.#bufferIndex === this.#screenBuffer.length - 1) {
             this.#scrollBuffer();
+        }
 
         // Increment the index
         this.#bufferIndex += 1;
@@ -64,7 +53,7 @@ export class ScreenBuffer {
      * Retrieves the character at the specified index in the screen buffer.
      *
      * @param {number} index - The index of the character to retrieve.
-     * @return {string} - The character at the specified index.
+     * @returns {string} - The character at the specified index.
      */
     getCharacter(index) {
         return this.#screenBuffer[index];
@@ -73,7 +62,7 @@ export class ScreenBuffer {
     /**
      * Returns the current cursor position.
      *
-     * @return {number} The index of the cursor position within the buffer.
+     * @returns {number} The index of the cursor position within the buffer.
      */
     getCursorPosition() {
         return this.#bufferIndex;
@@ -82,16 +71,18 @@ export class ScreenBuffer {
     /**
      * Scrolls the buffer one row upwards.
      *
-     * @return {void}
+     * @returns {void}
      */
     #scrollBuffer() {
         // Shift the buffer data one row upwards
-        for (let i = this.#COLS; i < this.#screenBuffer.length; i += 1)
+        for (let i = this.#COLS; i < this.#screenBuffer.length; i++) {
             this.#screenBuffer[i - this.#COLS] = this.#screenBuffer[i];
+        }
 
         // Empty the last line
-        for (let i = this.#screenBuffer.length - this.#COLS; i < this.#screenBuffer.length; i += 1)
+        for (let i = this.#screenBuffer.length - this.#COLS; i < this.#screenBuffer.length; i++) {
             this.#screenBuffer[i] = " ";
+        }
 
         // Set the index to the beginning of the last line
         this.#bufferIndex = this.#screenBuffer.length - this.#COLS - 1;

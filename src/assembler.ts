@@ -372,7 +372,7 @@ export class Assembler {
                 continue;
             }
 
-            // OPC ($FFFF) ; Absolut Indirect
+            // OPC ($FFFF) ; Absolute Indirect
             const matchIND: RegExpMatchArray | null = /^[A-Z]{3} \(([$%]?[\dA-Z_]+)\)$/.exec(line);
             if (matchIND) {
                 const opc  : number          = this.dataSheet.getOpc(name, "IND");
@@ -441,11 +441,11 @@ export class Assembler {
         // Parse a decimal number
         const value: number = parseInt(valueText, 10);
         if (isNaN(value)) {
-            const valuetextUp: string = valueText.toUpperCase(); // Because pragma operands are not uppercase
-            if (labels.hasOwnProperty(valuetextUp))
-                return isNaN(labels[valuetextUp]) ? valuetextUp : labels[valuetextUp];
-            if (variables.hasOwnProperty(valuetextUp))
-                return this.parseValue(variables[valuetextUp]);
+            const valueTextUp: string = valueText.toUpperCase(); // Because pragma operands are not uppercase
+            if (labels.hasOwnProperty(valueTextUp))
+                return isNaN(labels[valueTextUp]) ? valueTextUp : labels[valueTextUp];
+            if (variables.hasOwnProperty(valueTextUp))
+                return this.parseValue(variables[valueTextUp]);
 
             throw new Error(`Cannot find a label: ${valueText}`);
         }

@@ -7,7 +7,7 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "https://github.com/popovmp/mos-6502"
+    "url": "git@github.com:PopovMP/mos-6502.git"
   },
   "keywords": [
     "6502",
@@ -15,7 +15,7 @@
     "Assembler"
   ],
   "devDependencies": {
-    "typescript": "^5.5.2"
+    "typescript": "^5.8.3"
   },
   "scripts": {
     "test": "node --test",

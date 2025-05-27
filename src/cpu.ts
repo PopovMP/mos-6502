@@ -90,8 +90,9 @@ export class Cpu {
 
         const instructionName: string = this.dataSheet.opCodeName[opcode];
 
-        if (instructionName === undefined)
+        if (instructionName === undefined) {
             throw new Error(`Invalid instruction '${Utils.byteToHex(opcode)}' at: $${Utils.wordToHex(this.PC)}`);
+        }
 
         const addressingMode: string = this.dataSheet.opCodeMode[opcode];
         const operandAddr   : number = this.operandAddress[addressingMode](this.PC + 1, this.X, this.Y);
@@ -144,8 +145,10 @@ export class Cpu {
         ADC: (val: number): void => {
             let res: number = this.A + val + this.C;
             if (this.D) {
-                if ((this.A & 0x0F) + (val & 0x0F) + this.C > 0x09) res += 0x06;
-                if (res > 0x99) res += 0x60;
+                if ((this.A & 0x0F) + (val & 0x0F) + this.C > 0x09)
+                    res += 0x06;
+                if (res > 0x99)
+                    res += 0x60;
             }
 
             this.C = +(res > 0xFF);
@@ -189,7 +192,8 @@ export class Cpu {
 
         // Branch on Result Zero
         BEQ: (addr: number): void => {
-            if (this.Z) this.branch(addr);
+            if (this.Z)
+                this.branch(addr);
         },
 
         // Test Bits in Memory with Accumulator

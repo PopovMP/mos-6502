@@ -339,11 +339,11 @@ export class Assembler {
         }
         const value = parseInt(valueText, 10);
         if (isNaN(value)) {
-            const valuetextUp = valueText.toUpperCase();
-            if (labels.hasOwnProperty(valuetextUp))
-                return isNaN(labels[valuetextUp]) ? valuetextUp : labels[valuetextUp];
-            if (variables.hasOwnProperty(valuetextUp))
-                return this.parseValue(variables[valuetextUp]);
+            const valueTextUp = valueText.toUpperCase();
+            if (labels.hasOwnProperty(valueTextUp))
+                return isNaN(labels[valueTextUp]) ? valueTextUp : labels[valueTextUp];
+            if (variables.hasOwnProperty(valueTextUp))
+                return this.parseValue(variables[valueTextUp]);
             throw new Error(`Cannot find a label: ${valueText}`);
         }
         return value;

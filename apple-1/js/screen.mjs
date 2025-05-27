@@ -1,9 +1,9 @@
-import {ScreenBuffer} from "./screen-buffer.mjs";
-import {fontBitmap} from "./font-bitmap.mjs";
+import { ScreenBuffer } from "./screen-buffer.mjs";
+import { fontBitmap }   from "./font-bitmap.mjs";
 
 export class Screen {
-    #COLS = 40;
-    #ROWS = 24;
+    #COLS        = 40;
+    #ROWS        = 24;
     #FONT_WIDTH  = 6;
     #FONT_HEIGHT = 8;
 
@@ -29,14 +29,12 @@ export class Screen {
     /**
      * Constructor for initializing a new instance of the Screen class.
      *
-     * @param {HTMLCanvasElement} canvasElem
+     * @param {HTMLCanvasElement} canvasElement
      * @param {number} scale
-     *
-     * @return {void}
      */
-    constructor(canvasElem, scale) {
-        this.#canvas          = canvasElem;
-        this.#ctx             = this.#canvas.getContext("2d");
+    constructor(canvasElement, scale) {
+        this.#canvas          = canvasElement;
+        this.#ctx             = /** @type { CanvasRenderingContext2D }} */ (this.#canvas.getContext("2d"));
         this.#scale           = scale;
         this.#screenBuffer    = new ScreenBuffer();
         this.#drawnBuffer     = new Array(this.#ROWS * this.#COLS).fill(" ");
@@ -44,18 +42,15 @@ export class Screen {
 
         this.setScale(this.#scale);
 
-        setTimeout(this.#drawCursor.bind(this), 500);
+        setInterval(this.#drawCursor.bind(this), 500);
     }
 
     /**
      * Sets the #scale of the #canvas.
      * Render the screen.
      *
-     * @public
-     *
      * @param {number} scale - The #scale value to set. Must be a positive number.
-     *
-     * @return {void}
+     * @returns {void}
      */
     setScale(scale) {
         this.#scale = scale;
@@ -68,10 +63,8 @@ export class Screen {
     /**
      * Print a character to the screen.
      *
-     * @public
      * @param {string} character - The character to be printed.
-     *
-     * @return {void}
+     * @returns {void}
      */
     print(character) {
         this.#screenBuffer.print(character);
@@ -82,9 +75,7 @@ export class Screen {
      * Clears the screen.
      * Draws the cursor.
      *
-     * @public
-     *
-     * @return {void}
+     * @returns {void}
      */
     clear() {
         this.#screenBuffer.clear();
@@ -103,7 +94,7 @@ export class Screen {
      * @returns {void}
      */
     #render() {
-        for (let i = 0; i < this.#ROWS * this.#COLS; i += 1) {
+        for (let i = 0; i < this.#ROWS * this.#COLS; i++) {
             const character = this.#screenBuffer.getCharacter(i);
             if (this.#drawnBuffer[i] !== character) {
                 this.#drawnBuffer[i] = character;
@@ -115,31 +106,31 @@ export class Screen {
     /**
      * Draws a character at coordinates X and Y.
      *
-     * @private
-     *
-     * @param {string} character - The character to draw.
-     * @param {number} index - buffer index
-     *
-     * @return {void}
+     * @param {string} character - character to draw.
+     * @param {number} index     - buffer index
+     * @returns {void}
      */
     #drawCharacter(character, index) {
-        const col = index % this.#COLS;
-        const row = Math.floor(index / this.#COLS);
-        const x   = col * this.#FONT_WIDTH  * this.#scale;
-        const y   = row * this.#FONT_HEIGHT * this.#scale;
+        const chWidth  = this.#FONT_WIDTH  * this.#scale;
+        const chHeight = this.#FONT_HEIGHT * this.#scale;
+        const col      = index % this.#COLS;
+        const row      = Math.floor(index / this.#COLS);
+        const chX      = col * chWidth;
+        const chY      = row * chHeight;
 
         // Clear character
         this.#ctx.fillStyle = this.#backgroundColor;
-        this.#ctx.fillRect(x, y, this.#FONT_WIDTH * this.#scale, this.#FONT_HEIGHT * this.#scale);
+        this.#ctx.fillRect(chX, chY, chWidth, chHeight);
 
         if (character === " ") return;
 
         // Draw new character
         this.#ctx.fillStyle = this.#foregroundColor;
-        for (let i = 1; i < this.#FONT_HEIGHT; i += 1) {
-            for (let j = 0; j < this.#FONT_WIDTH - 1; j += 1) {
-                if (fontBitmap[character][(i - 1) * (this.#FONT_WIDTH - 1) + j] === 1)
-                    this.#ctx.fillRect(x + j * this.#scale, y + i * this.#scale, this.#scale, this.#scale);
+        for (let i = 1; i < this.#FONT_HEIGHT; i++) {
+            for (let j = 0; j < this.#FONT_WIDTH - 1; j++) {
+                if (fontBitmap[character][(i - 1) * (this.#FONT_WIDTH - 1) + j] === 1) {
+                    this.#ctx.fillRect(chX + j * this.#scale, chY + i * this.#scale, this.#scale, this.#scale);
+                }
             }
         }
     }
@@ -147,8 +138,7 @@ export class Screen {
     /**
      * Draws a flashing cursor at the cursorPosition from the ScreenBuffer.
      *
-     * @private
-     * @return {void}
+     * @returns {void}
      */
     #drawCursor() {
         this.#isCursorVisible = !this.#isCursorVisible;
@@ -156,7 +146,5 @@ export class Screen {
         const cursor = this.#isCursorVisible ? "@" : " ";
         this.#drawnBuffer[index] = cursor;
         this.#drawCharacter(cursor, index);
-
-        setTimeout(this.#drawCursor.bind(this), 500);
     }
 }

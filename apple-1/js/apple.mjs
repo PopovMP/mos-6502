@@ -1,10 +1,10 @@
-import {Assembler} from "../../js/assembler.js";
-import {DataSheet} from "../../js/data-sheet.js";
-import {Cpu}       from "../../js/cpu.js";
-import {Utils}     from "../../js/utils.js";
-import {Screen}    from "./screen.mjs";
-import {WazMon}    from "./wazmon.mjs";
-import {Basic}     from "./basic.mjs";
+import { Assembler } from "../../js/assembler.js";
+import { DataSheet } from "../../js/data-sheet.js";
+import { Cpu }       from "../../js/cpu.js";
+import { Utils }     from "../../js/utils.js";
+import { Screen }    from "./screen.mjs";
+import { WazMon }    from "./wazmon.mjs";
+import { Basic }     from "./basic.mjs";
 
 // 6521 registers addresses
 const KBD    = 0xD010 // PIA.A keyboard input
@@ -25,7 +25,7 @@ let lastPC    = 0;
 
 // noinspection SpellCheckingInspection
 const charset   = " !\"#$%&'()*+,-./0123456789:;<=>?\r@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_";
-const canvasElm = document.getElementById("screen");
+const canvasElm = /** @type {HTMLCanvasElement} */ (document.getElementById("screen"));
 const screen    = new Screen(canvasElm, scale);
 const memory    = new Uint8Array(0xFFFF + 1);
 const assembler = new Assembler();
@@ -51,7 +51,7 @@ export function startApple() {
 /**
  *
  * @param {number} addr
- * @param {boolean} [sync] - Synchronise with Op Code
+ * @param {boolean} [sync] - Synchronize with Op Code
  * @returns {number}
  */
 function load(addr, sync=false) {
@@ -116,21 +116,24 @@ function print() {
     let charCode = dsp & 0x7F;              // Reset 8th bit
     if (charCode >= 0x60) charCode -= 0x20; // Make uppercase
     const char = String.fromCharCode(charCode);
-    if (charset.includes(char))
+    if (charset.includes(char)) {
         screen.print(char);
+    }
 }
 
 function run() {
     cpu.step();
 
     loops += 1;
-    if (loops > 100)
+    if (loops > 100) {
         loops = 0;
+    }
 
-    if (loops > 0)
+    if (loops > 0) {
         run();
-    else
+    } else {
         setTimeout(run, 0);
+    }
 }
 
 function keydown (event) {
@@ -205,8 +208,9 @@ function keydown (event) {
         return;
     }
     const character = event.key === "Enter" ? "\r" : event.key.toUpperCase();
-    if (charset.includes(character))
+    if (charset.includes(character)) {
         kbdBuffer.push(character.charCodeAt(0));
+    }
 }
 
 function dump() {
@@ -228,17 +232,21 @@ $2B MODE    = ${Utils.byteToHex(memory[0x2B])}   ; $00=XAM, $7F=STOR, $AE=BLOCK 
 }
 
 function getCpuDump() {
-    const getRegText = (val) =>
-        `${Utils.byteToHex(val)}  ${val.toString().padStart(3, " ")}  ${Utils.byteToSInt(val).padStart(4, " ")}`;
-
     const flagsText = `${+cpu.N} ${+cpu.V} 1 1 ${+cpu.D} ${+cpu.I} ${+cpu.Z} ${+cpu.C}`;
 
     return "" +
         "R  Hex  Dec   +/-    R   Hex   N V - B D I Z C\n" +
         "-----------------    -------   ---------------\n" +
-        `A   ${getRegText(cpu.A)}    P    ${Utils.byteToHex(cpu.P)}   ${flagsText}\n` +
-        `X   ${getRegText(cpu.X)}    S    ${Utils.byteToHex(cpu.S)}\n` +
-        `Y   ${getRegText(cpu.Y)}    PC ${Utils.wordToHex(cpu.PC)}`;
+        `A   ${dumpRegister(cpu.A)}    P    ${Utils.byteToHex(cpu.P)}   ${flagsText}\n` +
+        `X   ${dumpRegister(cpu.X)}    S    ${Utils.byteToHex(cpu.S)}\n` +
+        `Y   ${dumpRegister(cpu.Y)}    PC ${Utils.wordToHex(cpu.PC)}`;
+}
+
+function dumpRegister(val) {
+    return "" +
+        Utils.byteToHex(val)            + "  " + // Hex
+        val.toString().padStart(3, " ") + "  " + // Unsigned dec
+        Utils.byteToSInt(val).padStart(4, " ");  // Signed dec
 }
 
 function getInstructionDump() {

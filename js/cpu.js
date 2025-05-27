@@ -219,7 +219,7 @@ export class Cpu {
             },
             ROL: (addr) => {
                 const val = addr === -1 ? this.A : this.load(addr);
-                const res = ((val << 1) + +this.C) & 0xFF;
+                const res = ((val << 1) + this.C) & 0xFF;
                 if (addr === -1)
                     this.A = res;
                 else
@@ -230,7 +230,7 @@ export class Cpu {
             },
             ROR: (addr) => {
                 const val = addr === -1 ? this.A : this.load(addr);
-                const res = ((val >> 1) + (+this.C << 7)) & 0xFF;
+                const res = ((val >> 1) + (this.C << 7)) & 0xFF;
                 if (addr === -1)
                     this.A = res;
                 else
@@ -338,8 +338,9 @@ export class Cpu {
     step() {
         const opcode = this.load(this.PC, true);
         const instructionName = this.dataSheet.opCodeName[opcode];
-        if (instructionName === undefined)
+        if (instructionName === undefined) {
             throw new Error(`Invalid instruction '${Utils.byteToHex(opcode)}' at: $${Utils.wordToHex(this.PC)}`);
+        }
         const addressingMode = this.dataSheet.opCodeMode[opcode];
         const operandAddr = this.operandAddress[addressingMode](this.PC + 1, this.X, this.Y);
         const operandValue = this.addressInstructions.includes(instructionName)
