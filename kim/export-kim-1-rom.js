@@ -2,7 +2,8 @@
 
 const fs = require('fs')
 
-const { Assembler, Utils } = require('../js/index.js')
+const { Assembler } = require('../js/assembler.js')
+const { Utils} = require ('../js/utils.js')
 
 const sourceDir   = (__dirname).endsWith('kim') ? __dirname : __dirname + '/kim'
 const sourcePath  = sourceDir + '/kim-1-6530-002.asm'

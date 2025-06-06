@@ -3,6 +3,9 @@ import type * as Types from "./def.js"
 import {Utils} from "./utils.js";
 import {DataSheet} from "./data-sheet.js";
 
+const OPC_BYTE = -1;
+const OPC_WORD = -2;
+
 export class Assembler {
     public static hexDump(codePages: Types.CodePages): string {
         const dumpLines: string[] = [];
@@ -205,11 +208,12 @@ export class Assembler {
 
         // Make pages
         for (const token of instTokens) {
-            for (let b: number = 0; b < token.bytes.length; b += 1) {
+            for (let b: number = 0; b < token.bytes.length; b++) {
                 const pageAddress: number = token.pc + b - (token.pc + b) % 16;
                 const pageKey    : string = Utils.wordToHex(pageAddress);
-                if (!pages.hasOwnProperty(pageKey))
+                if (!pages.hasOwnProperty(pageKey)) {
                     pages[pageKey] = new Array(16).fill(null);
+                }
                 pages[pageKey][token.pc + b - pageAddress] = token.bytes[b];
             }
         }
@@ -255,23 +259,26 @@ export class Assembler {
             if (token.tokenType === "directive") {
                 if (token.instrName === ".BYTE" && token.directiveData) {
                     const bytes: number[] = token.directiveData
-                        .split(/,[ \t]*/)
-                        .map((num :string): number =>
-                                 this.parseValue(num as string, codeTokenDto.labels, codeTokenDto.variables) as number);
-                    instructionTokens.push({pc, bytes, name: ".BYTE", opc: -1});
+                        .split (/,[ \t]*/)
+                        .map   ((e: string): string  => e.trim())
+                        .filter((e: string): boolean => e.length > 0)
+                        .map   ((v: string): number  =>
+                                this.parseValue(v, codeTokenDto.labels, codeTokenDto.variables) as number);
+                    instructionTokens.push({pc, bytes, name: ".BYTE", opc: OPC_BYTE});
                     pc += bytes.length;
-                }
-                if (token.instrName === ".WORD" && token.directiveData) {
+                } else if (token.instrName === ".WORD" && token.directiveData) {
                     const bytes: number[] = token.directiveData
-                        .split(/,[ \t]*/)
-                        .map((num :string): number =>
-                                 this.parseValue(num as string, codeTokenDto.labels, codeTokenDto.variables) as number)
+                        .split (/,[ \t]*/)
+                        .map   ((e: string): string  => e.trim())
+                        .filter((e: string): boolean => e.length > 0)
+                        .map   ((v: string): number  =>
+                                 this.parseValue(v, codeTokenDto.labels, codeTokenDto.variables) as number)
                         .reduce((acc: number[], word: number) => {
                             acc.push(word & 0xFF);
                             acc.push((word >> 8) & 0xFF);
                             return acc;
                         }, []);
-                    instructionTokens.push({pc, bytes, name: ".WORD", opc: -1});
+                    instructionTokens.push({pc, bytes, name: ".WORD", opc: OPC_WORD});
                     pc += bytes.length;
                 }
                 continue;

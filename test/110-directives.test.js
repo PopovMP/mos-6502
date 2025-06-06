@@ -31,6 +31,24 @@ describe("Assembler - Directives", () => {
             strictEqual(memory[0x0802], 0xAD);
         });
 
+        it("Sets multiple records", () => {
+            const sourceCode = `
+				* = $0800
+                lda #$AB
+                * = $E200
+                message ; "Hello, MOS 65C02!\r\n\0"
+                        .BYTE $48, $65, $6C, $6C, $6F, $2C, $20, $4D, $4F, $53
+                        .BYTE $20, $36, $35, $43, $30, $32, $21, $0D, $0A, $00
+			`;
+            memory.fill(0x00);
+            assembler.load(sourceCode, memory);
+            strictEqual(memory[0x0801], 0xAB);
+            strictEqual(memory[0xE200], 0x48);
+            strictEqual(memory[0xE209], 0x53);
+            strictEqual(memory[0xE20A], 0x20);
+            strictEqual(memory[0xE212], 0x0A);
+        });
+
         it("Sets a byte with a label", () => {
             const sourceCode = `
 				* = $0800

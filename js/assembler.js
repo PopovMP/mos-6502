@@ -1,5 +1,7 @@
 import { Utils } from "./utils.js";
 import { DataSheet } from "./data-sheet.js";
+const OPC_BYTE = -1;
+const OPC_WORD = -2;
 export class Assembler {
     static hexDump(codePages) {
         const dumpLines = [];
@@ -162,11 +164,12 @@ export class Assembler {
     composeMachineCodePages(instTokens) {
         const pages = {};
         for (const token of instTokens) {
-            for (let b = 0; b < token.bytes.length; b += 1) {
+            for (let b = 0; b < token.bytes.length; b++) {
                 const pageAddress = token.pc + b - (token.pc + b) % 16;
                 const pageKey = Utils.wordToHex(pageAddress);
-                if (!pages.hasOwnProperty(pageKey))
+                if (!pages.hasOwnProperty(pageKey)) {
                     pages[pageKey] = new Array(16).fill(null);
+                }
                 pages[pageKey][token.pc + b - pageAddress] = token.bytes[b];
             }
         }
@@ -201,20 +204,24 @@ export class Assembler {
                 if (token.instrName === ".BYTE" && token.directiveData) {
                     const bytes = token.directiveData
                         .split(/,[ \t]*/)
-                        .map((num) => this.parseValue(num, codeTokenDto.labels, codeTokenDto.variables));
-                    instructionTokens.push({ pc, bytes, name: ".BYTE", opc: -1 });
+                        .map((e) => e.trim())
+                        .filter((e) => e.length > 0)
+                        .map((v) => this.parseValue(v, codeTokenDto.labels, codeTokenDto.variables));
+                    instructionTokens.push({ pc, bytes, name: ".BYTE", opc: OPC_BYTE });
                     pc += bytes.length;
                 }
-                if (token.instrName === ".WORD" && token.directiveData) {
+                else if (token.instrName === ".WORD" && token.directiveData) {
                     const bytes = token.directiveData
                         .split(/,[ \t]*/)
-                        .map((num) => this.parseValue(num, codeTokenDto.labels, codeTokenDto.variables))
+                        .map((e) => e.trim())
+                        .filter((e) => e.length > 0)
+                        .map((v) => this.parseValue(v, codeTokenDto.labels, codeTokenDto.variables))
                         .reduce((acc, word) => {
                         acc.push(word & 0xFF);
                         acc.push((word >> 8) & 0xFF);
                         return acc;
                     }, []);
-                    instructionTokens.push({ pc, bytes, name: ".WORD", opc: -1 });
+                    instructionTokens.push({ pc, bytes, name: ".WORD", opc: OPC_WORD });
                     pc += bytes.length;
                 }
                 continue;
