@@ -670,7 +670,7 @@ export class Assembler {
     }
 
     private matchCodePC(codeLine: string): Types.CodePCMatch {
-        const matchInitialPC: RegExpMatchArray | null = /\*=\$([A-H\d]{4})/.exec(codeLine);
+        const matchInitialPC: RegExpMatchArray | null = /^(?:\*|\.ORG)\s*=\s*\$([A-Fa-f\d]{1,4})/i.exec(codeLine);
         if (matchInitialPC) {
             const valueText: string = matchInitialPC[1];
             const pcValue: number   = parseInt(valueText, 16);

@@ -541,7 +541,7 @@ export class Assembler {
         };
     }
     matchCodePC(codeLine) {
-        const matchInitialPC = /\*=\$([A-H\d]{4})/.exec(codeLine);
+        const matchInitialPC = /^(?:\*|\.ORG)\s*=\s*\$([A-Fa-f\d]{1,4})/i.exec(codeLine);
         if (matchInitialPC) {
             const valueText = matchInitialPC[1];
             const pcValue = parseInt(valueText, 16);
@@ -597,4 +597,3 @@ export class Assembler {
         return { isLabel: false };
     }
 }
-//# sourceMappingURL=assembler.js.map

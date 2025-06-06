@@ -7,6 +7,52 @@ const assembler      = new Assembler();
 const memory         = new Uint8Array(0xFFFF + 1);
 
 describe("Assembler - Directives", () => {
+    describe(".ORG", () => {
+        it("Sets the origin address", () => {
+            const sourceCode = `
+                .ORG $0800
+                LDA #$01
+                STA $0200
+            `;
+            memory.fill(0x00);
+            assembler.load(sourceCode, memory);
+            strictEqual(memory[0x0800], 0xA9); // LDA #$01
+            strictEqual(memory[0x0801], 0x01); // #$01
+            strictEqual(memory[0x0802], 0x8D); // STA $0200
+            strictEqual(memory[0x0803], 0x00); // Low byte of $0200
+            strictEqual(memory[0x0804], 0x02); // High byte of $0200
+        });
+        it("Sets the origin address with a label", () => {
+            const sourceCode = `
+                .org $0800
+                start LDA #$01
+                STA $0200
+            `;
+            memory.fill(0x00);
+            assembler.load(sourceCode, memory);
+            strictEqual(memory[0x0800], 0xA9); // LDA #$01
+            strictEqual(memory[0x0801], 0x01); // #$01
+            strictEqual(memory[0x0802], 0x8D); // STA $0200
+            strictEqual(memory[0x0803], 0x00); // Low byte of $0200
+            strictEqual(memory[0x0804], 0x02); // High byte of $0200
+
+        });
+        it("Sets the origin address with a variable", () => {
+            const sourceCode = `
+                .ORG $0800
+                VARA = $0200
+                LDA #$01
+                STA VARA
+            `;
+            memory.fill(0x00);
+            assembler.load(sourceCode, memory);
+            strictEqual(memory[0x0800], 0xA9); // LDA #$01
+            strictEqual(memory[0x0801], 0x01); // #$01
+            strictEqual(memory[0x0802], 0x8D); // STA $0200
+            strictEqual(memory[0x0803], 0x00); // Low byte of $0200
+            strictEqual(memory[0x0804], 0x02); // High byte of $0200
+        });
+    });
 
     describe(".BYTE", () => {
         it("Sets a byte in memory", () => {
