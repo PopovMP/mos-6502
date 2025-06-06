@@ -1,6 +1,6 @@
-; 6502 Assembly program to echo via 65C51N ACIA
-; Assumptions: 1.8432 MHz clock, 9600 baud, 8-N-1, no interrupts
-
+;
+; Hello, MOS 65C02!
+;
 
 ; ACIA register addresses
 ACIA_DATA       = $D000 ; Data register
