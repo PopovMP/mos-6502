@@ -1,5 +1,5 @@
-; Simple 65C02S Monitor Firmware (WozMon + KIM-1 Inspired)
-; Uses 65C51 ACIA for serial I/O and 65C21 PIA for LED output
+; Simple 65C02S Monitor Firmware (WozMon inpired)
+; Uses 65C51 ACIA for serial I/O and 65C21 PIA (not yet)
 ; Features: Memory read/write, program execution, hex command parser
 
 ; Zero page variables
@@ -10,16 +10,16 @@ ZP_MODE     = $13   ; Mode: 0=read, 1=write, 2=run
 ZP_TEMP     = $14   ; Temporary storage
 
 ; ACIA register addresses
-ACIA_DATA       = $D000 ; Data register
-ACIA_STATUS     = $D001 ; Status register
-ACIA_CMD        = $D002 ; Command register
-ACIA_CTRL       = $D003 ; Control register
+ACIA_DATA   = $D000 ; Data register
+ACIA_STATUS = $D001 ; Status register
+ACIA_CMD    = $D002 ; Command register
+ACIA_CTRL   = $D003 ; Control register
 
 ; PIA register addresses
-PIA_PORT_A      = $D010 ; Either DDR or Data port A (CTRL A bit 2 set)
-PIA_CTRL_A      = $D011
-PIA_PORT_B      = $D012 ; Either DDR or Data port B (CTRL B bit 2 set)
-PIA_CTRL_B      = $D013
+PIA_PORT_A  = $D010 ; Either DDR or Data port A (CTRL A bit 2 set)
+PIA_CTRL_A  = $D011
+PIA_PORT_B  = $D012 ; Either DDR or Data port B (CTRL B bit 2 set)
+PIA_CTRL_B  = $D013
 
 ; ASCII constants
 CR          = $0D   ; Carriage return
@@ -30,83 +30,83 @@ COLON       = $3A   ; Colon (:)
 R_CMD       = $52   ; 'R' for run
 
 ; Start of ROM (8kB 0xE000 - 0xFFFF)
-*=$E000
+.ORG = $E000
 
 ;
 ; NMI entry point
 ;
-nmi_handler             ; Receives a NMI
-    rti             ; Return
+nmi_handler:        ; Receives a NMI
+    RTI             ; Return
 
 
 ;
 ; Reset entry point
 ;
-reset_handler       ; Receives a Reset
+reset_handler:      ; Receives a Reset
     ; Reset CPU
-    cld             ; Clear decimal mode
-    cli             ; Enable IRQ interrupts.
-    ldx #$FF
-    txs             ; Set stack pointer to $FF (top of stack)
+    CLD             ; Clear decimal mode
+    CLI             ; Enable IRQ interrupts.
+    LDX #$FF
+    TXS             ; Set stack pointer to $FF (top of stack)
 
     ; Initialize ACIA
-                    ; Software reset 
-    lda #$00        ; The data does not mater
-    sta ACIA_STATUS ; Doesn't do actual write. Resets bits in CTRL and CMD registers.
-    lda #$1E        ; Control reg: 0b00011110
-    sta ACIA_CTRL   ; 9600 baud rate (1.8432 MHz clock), 8 bits, 1 stop
-    lda #$0B        ; Command reg: 0b00001011
-    sta ACIA_CMD    ; No parity, no echo, no IRQ, RTS low, DTR low
+                    ; Software reset
+    LDA #$00        ; The data does not mater
+    STA ACIA_STATUS ; Doesn't do actual write. Resets bits in CTRL and CMD registers.
+    LDA #$1E        ; Control reg: 0b00011110
+    STA ACIA_CTRL   ; 9600 baud rate (1.8432 MHz clock), 8 bits, 1 stop
+    LDA #$0B        ; Command reg: 0b00001011
+    STA ACIA_CMD    ; No parity, no echo, no IRQ, RTS low, DTR low
 
     ; Initialize PIA
                     ; Set port A to output
-    lda #$00        ; Select DDR A by setting bit 2 to 0
-    sta PIA_CTRL_A  ;
-    lda #$FF        ; Set all pins to output: 0b11111111
-    sta PIA_PORT_A  ; 
-    lda #$04        ; Select peripheral mode for A by setting bit 2 to 1
-    sta PIA_CTRL_A  ;
+    LDA #$00        ; Select DDR A by setting bit 2 to 0
+    STA PIA_CTRL_A  ;
+    LDA #$FF        ; Set all pins to output: 0b11111111
+    STA PIA_PORT_A  ;
+    LDA #$04        ; Select peripheral mode for A by setting bit 2 to 1
+    STA PIA_CTRL_A  ;
                     ; Set port B to input
-    lda #$00        ; Select DDR B by setting bit 2 to 0
-    sta PIA_CTRL_B  ;
-    lda #$00        ; Set all pins to input: 0b00000000
-    sta PIA_PORT_B  ; 
-    lda #$04        ; Select peripheral mode for B by setting bit 2 to 1
-    sta PIA_CTRL_B  ;
+    LDA #$00        ; Select DDR B by setting bit 2 to 0
+    STA PIA_CTRL_B  ;
+    LDA #$00        ; Set all pins to input: 0b00000000
+    STA PIA_PORT_B  ;
+    LDA #$04        ; Select peripheral mode for B by setting bit 2 to 1
+    STA PIA_CTRL_B  ;
 
-    jmp start       ; Jump to the main program entry point
+    JMP start       ; Jump to the main program entry point
 
 
 ;
 ; IRQ entry point
 ;
-irq_handler
-    lda ACIA_STATUS ; Check ACIA (bit 7 set means IRQ)
-    and #$80        ; Bit 7 mask: 0b10000000
-    bne acia_irq    ; Branch if the bit matches
+irq_handler:
+    LDA ACIA_STATUS ; Check ACIA (bit 7 set means IRQ)
+    AND #$80        ; Bit 7 mask: 0b10000000
+    BNE acia_irq    ; Branch if the bit matches
                     ;
-    lda PIA_CTRL_A  ; Check PIA Port A (bits 6 or 7 set means IRQ)
-    and #$C0        ; Bits 7 and 6 mask: 11000000
-    bne pia_a_irq   ; Branch if any bit matches
+    LDA PIA_CTRL_A  ; Check PIA Port A (bits 6 or 7 set means IRQ)
+    AND #$C0        ; Bits 7 and 6 mask: 11000000
+    BNE pia_a_irq   ; Branch if any bit matches
                     ;
-    lda PIA_CTRL_B  ; Check PIA Port B (bits 6 or 7 set means IRQ)
-    and #$C0        ; Bits 7 and 6 mask: 11000000
-    bne pia_b_irq   ; Branch if any bit matches
+    LDA PIA_CTRL_B  ; Check PIA Port B (bits 6 or 7 set means IRQ)
+    AND #$C0        ; Bits 7 and 6 mask: 11000000
+    BNE pia_b_irq   ; Branch if any bit matches
                     ;
-    rti             ; No known IRQ source, just return
+    RTI             ; No known IRQ source, just return
 
-acia_irq            ; Handle ACIA IRQ here
-    lda ACIA_STATUS
-    lda ACIA_DATA   ; Read to clear RX interrupt
-    rti
+acia_irq:           ; Handle ACIA IRQ here
+    LDA ACIA_STATUS
+    LDA ACIA_DATA   ; Read to clear RX interrupt
+    RTI
 
-pia_a_irq           ; Handle PIA Port A IRQ here
-    lda PIA_PORT_A  ; Read to clear interrupt
-    rti
+pia_a_irq:          ; Handle PIA Port A IRQ here
+    LDA PIA_PORT_A  ; Read to clear interrupt
+    RTI
 
-pia_b_irq           ; Handle PIA Port B IRQ here
-    lda PIA_PORT_B  ; Read to clear interrupt
-    rti
+pia_b_irq:          ; Handle PIA Port B IRQ here
+    LDA PIA_PORT_B  ; Read to clear interrupt
+    RTI
 
 
 start:
@@ -221,10 +221,10 @@ put_char:
 
 print_hex:
     PHA
-    LSR A
-    LSR A
-    LSR A
-    LSR A            ; Get high nibble
+    LSR
+    LSR
+    LSR
+    LSR              ; Get high nibble
     JSR print_nibble
     PLA
     AND #$0F         ; Get low nibble
@@ -275,10 +275,10 @@ is_hex_lower:
     RTS
 
 store_hex:
-    ASL A
-    ASL A
-    ASL A
-    ASL A            ; Shift to high nibble
+    ASL
+    ASL
+    ASL
+    ASL             ; Shift to high nibble
     STA ZP_TEMP
 
 get_next_nibble:
@@ -322,10 +322,10 @@ get_next_nibble:
     JSR parse_hex
     BCS get_next_nibble    ; Retry if invalid
 
-    ASL A
-    ASL A
-    ASL A
-    ASL A
+    ASL
+    ASL
+    ASL
+    ASL
     STA ZP_TEMP
 
     JSR get_char
@@ -361,48 +361,48 @@ store_addr:
 
 ; Wait for 1300 cycles
 ; It takes 705us on 1.8432 MHz clock
-wait_1300               ;
-    pha             ; Store A to the stack
-    txa             ;
-    pha             ; Store X to the stack
+wait_1300:          ;
+    PHA             ; Store A to the stack
+    TXA             ;
+    PHA             ; Store X to the stack
                     ;
-    ldx #$FF        ; Init counter
-wait_1300_              ; Loop's entry point
-    dex             ; Decrement counter. Sets Z flag
-    bne wait_1300_  ; Loop if X > 0
+    LDX #$FF        ; Init counter
+wait_1300_:         ; Loop's entry point
+    DEX             ; Decrement counter. Sets Z flag
+    BNE wait_1300_  ; Loop if X > 0
                     ;
-    pla             ; Epilogue
-    tax             ; Recover X from the stack
-    pla             ; Recover A from the stack
-    rts             ; Return
+    PLA             ; Epilogue
+    TAX             ; Recover X from the stack
+    PLA             ; Recover A from the stack
+    RTS             ; Return
 
 ;
 ; Prints welcome message to ACIA
 ;
-say_hi
-    pha             ; Store A to the stack
-    txa             ; Copy X to A
-    pha             ; Push X to the stack
-    ldx #$00        ; Initialize index to 0
-say_hi_loop         ; Loop entry point
-    lda message,x   ; Load character at x
-    beq say_hi_done ; If zero (end of string), exit
+say_hi:
+    PHA             ; Store A to the stack
+    TXA             ; Copy X to A
+    PHA             ; Push X to the stack
+    LDX #$00        ; Initialize index to 0
+say_hi_loop:        ; Loop entry point
+    LDA message,X   ; Load character at x
+    BEQ say_hi_done ; If zero (end of string), exit
     JSR put_char    ; Transmit the character at A
-    inx             ; Increment x
-    jmp say_hi_loop ; Loop
-say_hi_done         ; Ready
-    pla             ; Pool X value from the stack
-    tax             ; Recover X from the stack
-    pla             ; Recover A from the stack
-    rts             ; Return
+    INX             ; Increment x
+    JMP say_hi_loop ; Loop
+say_hi_done:        ; Ready
+    PLA             ; Pool X value from the stack
+    TAX             ; Recover X from the stack
+    PLA             ; Recover A from the stack
+    RTS             ; Return
 
-*=$F200
-message ; "Hello, MOS 65C02!\r\n\0"
+.ORG = $F200
+message: ; "Hello, MOS 65C02!\r\n\0"
         .BYTE $48, $65, $6C, $6C, $6F, $2C, $20, $4D, $4F, $53
         .BYTE $20, $36, $35, $43, $30, $32, $21, $0D, $0A, $00
 
 ; Entry vectors
-*=$FFFA
+.ORG = $FFFA
     .WORD nmi_handler       ; NMI
     .WORD reset_handler     ; Reset
     .WORD irq_handler       ; IRQ

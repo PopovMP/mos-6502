@@ -166,4 +166,3 @@ export class DataSheet {
         return this.Opcodes[instName][modeIndex];
     }
 }
-//# sourceMappingURL=data-sheet.js.map

@@ -246,4 +246,3 @@ export class Emulator {
         }
     }
 }
-//# sourceMappingURL=emulator.js.map

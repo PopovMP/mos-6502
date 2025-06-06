@@ -388,4 +388,3 @@ export class Cpu {
         this.Z = +!val;
     }
 }
-//# sourceMappingURL=cpu.js.map
