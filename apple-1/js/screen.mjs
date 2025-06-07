@@ -37,7 +37,6 @@ export class Screen {
         this.#ctx             = /** @type { CanvasRenderingContext2D }} */ (this.#canvas.getContext("2d"));
         this.#scale           = scale;
         this.#screenBuffer    = new ScreenBuffer();
-        this.#screenBuffer.clear();
         this.#drawnBuffer     = new Array(this.#ROWS * this.#COLS).fill(" ");
         this.#isCursorVisible = false;
 

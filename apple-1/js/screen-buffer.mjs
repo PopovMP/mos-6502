@@ -11,7 +11,7 @@ export class ScreenBuffer {
     #ROWS = 24;
 
     /** @field {string[]} character content */
-    #screenBuffer = new Array(this.#ROWS * this.#COLS);
+    #screenBuffer = new Array(this.#ROWS * this.#COLS).fill(" ");
 
     /** @field {number} - the cursor position */
     #bufferIndex = 0;
