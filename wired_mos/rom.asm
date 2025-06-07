@@ -50,13 +50,22 @@ reset_handler:      ; Receives a Reset
     TXS             ; Set stack pointer to $FF (top of stack)
 
     ; Initialize ACIA
-                    ; Software reset
-    LDA #$00        ; The data does not mater
+    LDA #$00        ; Software reset. The data does not mater
     STA ACIA_STATUS ; Doesn't do actual write. Resets bits in CTRL and CMD registers.
-    LDA #$1E        ; Control reg: 0b00011110
-    STA ACIA_CTRL   ; 9600 baud rate (1.8432 MHz clock), 8 bits, 1 stop
+                    ;
+    LDA #$1F        ; Control reg: 0b00011111
+    STA ACIA_CTRL   ; bit 7 = 0 - Stop bit - 0 (1 stop bit)
+                    ; bit 6 = 0, bit 5 = 0 - WL (Word Length) - 8 bits
+                    ; bit 4 = 1 - RSC (Receiver clock) - Use internal clock
+                    ; bit 3 - bit 0 = 1111 - SBR (Selected boud rate) - 19200 baud
+                    ;
     LDA #$0B        ; Command reg: 0b00001011
-    STA ACIA_CMD    ; No parity, no echo, no IRQ, RTS low, DTR low
+    STA ACIA_CMD    ; bit 7 = 0, bit 6 = 0 - PMC (Parity Mode Control) - Use but no parity
+                    ; bit 5 = 0 - PME (Parity mode enabled) - Parity disabled
+                    ; bit 4 = 0 - REM (Receive Enable Mode) - RX disabled
+                    ; bit 3 = 1, bit 2 = 0 - TIC (Transmit Interrupt Control) - RTSB -> Low. Tx interrupts disabled
+                    ; bit 1 = 1 - IRD (Receiver Interrupt Request Disable) - IRQB disabled
+                    ; bit 0 = 1 - DTR  (Data Terminal Ready) - DTRB -> Low. Data terminal ready
 
     ; Initialize PIA
                     ; Set port A to output
@@ -213,10 +222,20 @@ get_char:
     JSR put_char     ; Echo character
     RTS
 
+;
+; Transmit a character to ACIA
+;
 put_char:
-    sta ACIA_DATA   ; Transmit char
-    jsr wait_1300   ; Because of 65C51N bug, wait programmatically to transmit
-    jsr wait_1300   ; Transmission takes 1042us at 9600. We wait for 2x705us
+    PHA             ; Store A to the stack
+put_char_lp:        ; Loop entry point
+    LDA ACIA_STATUS ; Check if ACIA is ready to transmit
+    AND #$40        ; 0b01000000 Inspect bit 6 (Data Set Ready)
+    BNE put_char_lp ; Loop while bit 6 is set.
+                    ; Due to bug in 65C51 we use 555 timer with C1 = 0.1uf and R1 = 51om
+                    ; to generate a positive signal on DSRB line during the duration of Tx.
+                    ; We keep the DSRB line high until the end of transmission.
+    PLA             ; Recover A from the stack
+    STA ACIA_DATA   ; Transmit char
     RTS
 
 print_hex:
@@ -358,24 +377,6 @@ store_addr:
     CLC
     RTS
 
-
-; Wait for 1300 cycles
-; It takes 705us on 1.8432 MHz clock
-wait_1300:          ;
-    PHA             ; Store A to the stack
-    TXA             ;
-    PHA             ; Store X to the stack
-                    ;
-    LDX #$FF        ; Init counter
-wait_1300_:         ; Loop's entry point
-    DEX             ; Decrement counter. Sets Z flag
-    BNE wait_1300_  ; Loop if X > 0
-                    ;
-    PLA             ; Epilogue
-    TAX             ; Recover X from the stack
-    PLA             ; Recover A from the stack
-    RTS             ; Return
-
 ;
 ; Prints welcome message to ACIA
 ;
@@ -385,7 +386,7 @@ say_hi:
     PHA             ; Push X to the stack
     LDX #$00        ; Initialize index to 0
 say_hi_loop:        ; Loop entry point
-    LDA message,X   ; Load character at x
+    LDA cstr_hi,X   ; Load character at x
     BEQ say_hi_done ; If zero (end of string), exit
     JSR put_char    ; Transmit the character at A
     INX             ; Increment x
@@ -396,8 +397,11 @@ say_hi_done:        ; Ready
     PLA             ; Recover A from the stack
     RTS             ; Return
 
-.ORG = $F200
-message: ; "Hello, MOS 65C02!\r\n\0"
+;
+; String region. Contains zero-terminated strings
+;
+.ORG = $FF00
+cstr_hi: ; "Hello, MOS 65C02!\r\n\0"
         .BYTE $48, $65, $6C, $6C, $6F, $2C, $20, $4D, $4F, $53
         .BYTE $20, $36, $35, $43, $30, $32, $21, $0D, $0A, $00
 
