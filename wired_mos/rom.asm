@@ -90,6 +90,8 @@ reset_handler:      ; Receives a Reset
 ; IRQ entry point
 ;
 irq_handler:
+    PHA             ; Save A
+                    ;
     LDA ACIA_STATUS ; Check ACIA (bit 7 set means IRQ)
     AND #$80        ; Bit 7 mask: 0b10000000
     BNE acia_irq    ; Branch if the bit matches
@@ -102,19 +104,23 @@ irq_handler:
     AND #$C0        ; Bits 7 and 6 mask: 11000000
     BNE pia_b_irq   ; Branch if any bit matches
                     ;
+    PLA             ; Restore A
     RTI             ; No known IRQ source, just return
 
 acia_irq:           ; Handle ACIA IRQ here
     LDA ACIA_STATUS
     LDA ACIA_DATA   ; Read to clear RX interrupt
+    PLA             ; Restore A
     RTI
 
 pia_a_irq:          ; Handle PIA Port A IRQ here
     LDA PIA_PORT_A  ; Read to clear interrupt
+    PLA             ; Restore A
     RTI
 
 pia_b_irq:          ; Handle PIA Port B IRQ here
     LDA PIA_PORT_B  ; Read to clear interrupt
+    PLA             ; Restore A
     RTI
 
 
