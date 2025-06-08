@@ -217,25 +217,42 @@ run_program:
 ; Transmit a character to ACIA
 ;
 put_char:
-    PHA             ; Store A to the stack
-put_char_lp:        ; Loop entry point
-    LDA ACIA_STATUS ; Check if ACIA is ready to transmit
-    AND #$40        ; 0b01000000 - Inspect bit 6 (Data Set Ready)
-    BNE put_char_lp ; Loop while bit 6 is set.
-                    ; Due to bug in 65C51 an external timer generates
-                    ; a positive signal on DSRB line during the transmission.
-                    ; We use a NE555 timer with C1 = 0.1uf and R1 = 5.1ko
-                    ; to achieve delay 561us (Required min 521us for 19200 baud rate).
-    PLA             ; Recover A from the stack
-    STA ACIA_DATA   ; Transmit char
-    RTS
+    PHA                         ; Store A to the stack
+    TXA                         ;
+    PHA                         ; Store X on stack
+                                ;
+    LDA ACIA_STATUS             ; Load ACIA status to check  DSR (Data Set Ready)
+    AND #$40                    ; Check DSR (bit 6)
+    BEQ put_char_transmit       ; If DSR is low, skip delay
+                                ;
+put_char_wait_dsr_clear:        ; Loop entry point
+    LDA ACIA_STATUS             ; Check if ACIA is ready to transmit
+    AND #$40                    ; 0b01000000 - Inspect bit 6 (Data Set Ready)
+    BNE put_char_wait_dsr_clear ; Loop while bit 6 is set.
+                                ;
+                                ; Due to bug in 65C51 an external timer generates
+                                ; a positive signal on DSRB line during the transmission.
+                                ; We use a NE555 timer with C1 = 0.1uf and R1 = 5.1ko
+                                ; to achieve delay 561us (Required min 521us for 19200 baud rate).
+                                ;
+    LDX #$0F                    ; Make an additional delay to ensure 555 timer has enough time
+put_char_delay:                 ; This loop will take 74 cycles (about 18.5us at 4MHz)
+    DEX                         ; Decrement X
+    BNE put_char_delay          ; Loop until X is zero
+                                ;
+put_char_transmit:              ;
+    PLA                         ; Recover X from the stack
+    TAX                         ;
+    PLA                         ; Recover A from the stack
+    STA ACIA_DATA               ; Transmit char at A to ACIA
+                                ;
+    RTS                         ; Return from subroutine
 
 
 ;
 ; Wait for a character from ACIA
 ;
 get_char:
-    PHA             ; Store A to the stack
     LDA ACIA_STATUS ; Check status
     AND #$08        ; 0b0000100 - inspect bit 3 (Receiver Data Register Full)
     BEQ get_char    ; Wait until ready
