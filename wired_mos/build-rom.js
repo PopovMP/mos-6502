@@ -5,7 +5,7 @@ import { Assembler } from "../js/assembler.js";
 import { Utils     } from "../js/utils.js";
 
 import { fileURLToPath } from "node:url";
-import { dirname       } from "node:path";
+import { dirname, join } from "node:path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
@@ -55,3 +55,18 @@ console.log();
 Object.keys(codeDto.labels).forEach((key) => {
 	console.log(`${key.toUpperCase().padEnd(8, " ")} ${codeDto.labels[key].toString(16).toUpperCase()}`);
 });
+
+// Export JS file for the browser
+
+const hexData = Array.from(buffer).map((byte) => `0x${byte.toString(16).padStart(2, "0")}`).join(", ");
+
+const jsContent = `export class Rom {
+    static start = 0xE000;
+
+    static data = [
+        ${hexData}
+    ];
+}
+`;
+
+writeFileSync(join(__dirname, "js", "rom.js"), jsContent);

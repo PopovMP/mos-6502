@@ -23,7 +23,6 @@ PIA_CTRL_B  = $D013
 
 ; ASCII constants
 CR          = $0D   ; Carriage return
-LF          = $0A   ; Line feed
 SPACE       = $20   ; Space
 DOT         = $2E   ; Period (.)
 COLON       = $3A   ; Colon (:)
@@ -46,7 +45,7 @@ reset_handler:      ; Receives a Reset
     ; Reset CPU
     CLD             ; Clear decimal mode
     CLI             ; Enable IRQ interrupts.
-    LDX #$FF
+    LDX #$FF        ;
     TXS             ; Set stack pointer to $FF (top of stack)
 
     ; Initialize ACIA
@@ -65,7 +64,7 @@ reset_handler:      ; Receives a Reset
                     ; bit 4 = 0 - REM (Receive Enable Mode) - RX disabled
                     ; bit 3 = 1, bit 2 = 0 - TIC (Transmit Interrupt Control) - RTSB -> Low. Tx interrupts disabled
                     ; bit 1 = 1 - IRD (Receiver Interrupt Request Disable) - IRQB disabled
-                    ; bit 0 = 1 - DTR  (Data Terminal Ready) - DTRB -> Low. Data terminal ready
+                    ; bit 0 = 1 - DTR (Data Terminal Ready) - DTRB -> Low. Data terminal ready
 
     ; Initialize PIA
                     ; Set port A to output
@@ -124,6 +123,9 @@ pia_b_irq:          ; Handle PIA Port B IRQ here
     RTI
 
 
+;
+; Main program entry point
+;
 start:
     ; Initialize variables
     LDA #$00
@@ -210,23 +212,6 @@ write_data:
 run_program:
     JMP (ZP_ADDR_LO) ; Jump to user program
 
-; Subroutines
-print_prompt:
-    LDA #$3E         ; '>'
-    JSR put_char
-    LDA #CR
-    JSR put_char
-    LDA #LF
-    JSR put_char
-    RTS
-
-get_char:
-    LDA ACIA_STATUS  ; Check status
-    AND #$08         ; RX data available?
-    BEQ get_char     ; Wait until ready
-    LDA ACIA_DATA    ; Read character
-    JSR put_char     ; Echo character
-    RTS
 
 ;
 ; Transmit a character to ACIA
@@ -235,39 +220,82 @@ put_char:
     PHA             ; Store A to the stack
 put_char_lp:        ; Loop entry point
     LDA ACIA_STATUS ; Check if ACIA is ready to transmit
-    AND #$40        ; 0b01000000 Inspect bit 6 (Data Set Ready)
+    AND #$40        ; 0b01000000 - Inspect bit 6 (Data Set Ready)
     BNE put_char_lp ; Loop while bit 6 is set.
-                    ; Due to bug in 65C51 we use 555 timer with C1 = 0.1uf and R1 = 51om
-                    ; to generate a positive signal on DSRB line during the duration of Tx.
-                    ; We keep the DSRB line high until the end of transmission.
+                    ; Due to bug in 65C51 an external timer generates
+                    ; a positive signal on DSRB line during the transmission.
+                    ; We use a NE555 timer with C1 = 0.1uf and R1 = 5.1ko
+                    ; to achieve delay 561us (Required min 521us for 19200 baud rate).
     PLA             ; Recover A from the stack
     STA ACIA_DATA   ; Transmit char
     RTS
 
+
+;
+; Wait for a character from ACIA
+;
+get_char:
+    PHA             ; Store A to the stack
+    LDA ACIA_STATUS ; Check status
+    AND #$08        ; 0b0000100 - inspect bit 3 (Receiver Data Register Full)
+    BEQ get_char    ; Wait until ready
+    LDA ACIA_DATA   ; Read character
+    JSR put_char    ; Echo character
+    RTS
+
+
+;
+; Prints the prompt character '>'
+;
+print_prompt:
+    PHA             ; Store A to the stack
+    LDA #$3E        ; '>'
+    JSR put_char
+    PLA             ; Recover A from the stack
+    RTS
+
+
+;
+; Prints a nibble (4 bits) as hex digit
+;
+print_nibble:
+    PHA             ; Store A to the stack
+    CMP #$0A
+    BCC is_digit    ; It is digit when < 10
+    ADC #$06        ; Convert A-F to ASCII
+is_digit:
+    ADC #$30        ; Convert 0-9 to ASCII
+    JSR put_char
+    PLA             ; Recover A from the stack
+    RTS
+
+
+;
+; Prints a byte as two hex digits
+;
 print_hex:
+    PHA             ; Store A to the stack
     PHA
     LSR
     LSR
     LSR
-    LSR              ; Get high nibble
+    LSR             ; Get high nibble
     JSR print_nibble
     PLA
-    AND #$0F         ; Get low nibble
+    AND #$0F        ; Get low nibble
     JSR print_nibble
+    PLA             ; Recover A from the stack
     RTS
 
-print_nibble:
-    CMP #$0A
-    BCC is_digit
-    ADC #$06         ; Convert A-F to ASCII
-is_digit:
-    ADC #$30         ; Convert 0-9 to ASCII
-    JSR put_char
-    RTS
 
+;
+; Prints a space character
+;
 print_space:
+    PHA             ; Store A to the stack
     LDA #SPACE
     JSR put_char
+    PLA             ; Recover A from the stack
     RTS
 
 parse_hex:
@@ -403,6 +431,7 @@ say_hi_done:        ; Ready
     PLA             ; Recover A from the stack
     RTS             ; Return
 
+
 ;
 ; String region. Contains zero-terminated strings
 ;
@@ -411,7 +440,10 @@ cstr_hi: ; "Hello, MOS 65C02!\r\n\0"
         .BYTE $48, $65, $6C, $6C, $6F, $2C, $20, $4D, $4F, $53
         .BYTE $20, $36, $35, $43, $30, $32, $21, $0D, $0A, $00
 
+
+;
 ; Entry vectors
+;
 .ORG = $FFFA
     .WORD nmi_handler       ; NMI
     .WORD reset_handler     ; Reset
